@@ -15,4 +15,9 @@
       update: yes
     tags: ["main"]
 
-  - include_tasks: "repo.yml"
+  - name: "update client repos"
+    include_tasks: "repo.yml"
+    loop: "{{ repos }}"  
+    loop_control:
+      loop_var: repo
+      label: "{{ repo.name }}"
