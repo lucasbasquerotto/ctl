@@ -15,13 +15,4 @@
       update: yes
     tags: ["main"]
 
-  - name: "update client repos"
-    git:
-      repo: "{{ main_item.repo }}"
-      version: "{{ main_item.version }}"
-      dest: "{{ main_item.dest }}"
-      update: yes
-    loop: "{{ repos }}"  
-    loop_control:
-      loop_var: main_item
-      label: "{{ main_item.name }}"
+  - include_tasks: "repo.yml"
