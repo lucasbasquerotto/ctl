@@ -1,0 +1,29 @@
+- name: "{{ repo.name }} - create the directories in {{ repo.dest }}"
+  file:
+    path: "{{ repo_item }}"
+    state: directory
+    mode: 0700
+  loop: 
+  - "{{ repo.dest }}/env"
+  - "{{ repo.dest }}/external"
+  loop_control:
+    loop_var: repo_item
+
+- name: "{{ repo.name }} - download the client environment repo"
+  git:
+    repo: "{{ repo.source }}"
+    version: "{{ repo.version }}"
+    dest: "{{ repo.dest }}/env"
+    update: yes
+
+- name: "{{ repo.name }} - copy the hosts file"
+  copy:
+    src: "{{ main_repo }}/hosts"
+    dest: "{{ repo.dest }}/external/hosts"
+    mode: 0600
+
+- name: "{{ repo.name }} - copy the executable file"
+  template:
+    src: "templates/run.tpl.sh"
+    dest: "{{ repo.dest }}/run.sh"
+    mode: 0700

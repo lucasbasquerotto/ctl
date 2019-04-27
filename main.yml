@@ -1,0 +1,27 @@
+- name: Play 01 - Create Cloud Instances
+  hosts: main
+  vars_files: 
+  - "env.yml"
+  gather_facts: no  
+  tasks:  
+  - name: Gathering facts
+    setup: 
+
+  - name: "update main repo"
+    git:
+      repo: "{{ main_repo }}"
+      version: "{{ main_repo_version }}"
+      dest: "{{ main_repo_dest }}"
+      update: yes
+    tags: ["main"]
+
+  - name: "update client repos"
+    git:
+      repo: "{{ main_item.repo }}"
+      version: "{{ main_item.version }}"
+      dest: "{{ main_item.dest }}"
+      update: yes
+    loop: "{{ repos }}"  
+    loop_control:
+      loop_var: main_item
+      label: "{{ main_item.name }}"
