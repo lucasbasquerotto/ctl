@@ -9,9 +9,6 @@ set -euo pipefail
 ### SCRIPT VARIABLES ###
 ########################
 
-# Internal domain name (VPN)
-INTERNAL_DOMAIN_NAME="devdomain.tk"
-
 # Name of the user to create and grant sudo privileges
 ## USERNAME=sammy
 USERNAME="main"
@@ -127,27 +124,6 @@ ufw --force enable
 apt autoremove -y
 
 echo "Main logic finished" >> "/var/log/setup.log"
-
-########################
-###     VPN DNS      ###
-########################
-
-echo "Defining VPN DNS..." >> "/var/log/setup.log"
-
-apt update
-apt install -y resolvconf
-
-touch /etc/resolvconf/resolv.conf.d/head
-
-{ 
-	echo "search $INTERNAL_DOMAIN_NAME"
-	echo "nameserver 8.8.8.8"
-	echo "nameserver 8.8.4.4"
-} >> /etc/resolvconf/resolv.conf.d/head
-
-resolvconf -u
-
-echo "VPN DNS Defined" >> "/var/log/setup.log"
 
 ########################
 ###      ANSIBLE     ###
