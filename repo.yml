@@ -18,7 +18,7 @@
 
 - name: "{{ repo.name }} - copy the hosts file"
   copy:
-    src: "{{ main_repo }}/hosts"
+    src: "{{ main_repo_dest }}/hosts"
     dest: "{{ repo.dest }}/external/hosts"
     mode: 0600
 
