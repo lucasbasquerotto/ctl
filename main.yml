@@ -1,5 +1,7 @@
 - name: Play 01 - Create Cloud Instances
   hosts: main
+  vars_files:
+  - "vars/main.yml"
   gather_facts: no  
   tasks:  
   - name: Gathering facts
