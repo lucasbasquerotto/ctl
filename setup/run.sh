@@ -15,8 +15,5 @@ shopt -s dotglob
 mv "$REPO_NAME"/* ansible/
 rm -rf "$REPO_NAME"
 
-mkdir -p ~/env
-mv -vn ~/ansible/env/hosts ~/env/hosts
-
 cd ~/ansible/
 ansible-playbook main.yml "$@"
