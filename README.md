@@ -16,7 +16,7 @@ This example uses https://github.com/lucasbasquerotto/ansible-docker.git as the 
 
 ## 3) Define the repositories that contains the environment variables
 
-This example uses https://github.com/lucasbasquerotto/ansible-env-demo.git as each client repository.
+This example uses https://github.com/lucasbasquerotto/ansible-env-demo.git as each client repository, each file refering to a different setup (in a real use case, each client repository could be in a separate repository).
 
 Each of these repositories may contain variables to create instances and deploy containers to deploy something like a discourse website, a blog and so on. 
 
