@@ -1,29 +1,115 @@
-- name: "{{ repo.name }} - create the directories in {{ repo.dest }}"
+- name: "{{ repo.name }} - set_fact"
+  set_fact: 
+    repo_dest: "{{ repo_base_dest_workspace }}/{{ repo.local_repo }}"
+    repo_private: "{{ repo.private | default(false) }}"
+  tags: ["other"]
+
+- name: "{{ repo.name }} - set_fact"
+  set_fact: 
+    repo_key_file: >-
+      {{ 
+      (repo_private | bool) | 
+      ternary(repo_base_dest + '/var/key_file', None) | 
+      default(omit) 
+      }}
+  tags: ["other"]
+
+- name: "{{ repo.name }} - create the directories in {{ repo_dest }}"
   file:
     path: "{{ repo_item }}"
     state: directory
     mode: 0700
   loop: 
-  - "{{ repo.dest }}/env"
-  - "{{ repo.dest }}/external"
+  - "{{ repo_base_dest }}/var"
+  - "{{ repo_dest }}/env"
+  - "{{ repo_dest }}/var"
   loop_control:
     loop_var: repo_item
+  tags: ["other"]
 
-- name: "{{ repo.name }} - download the client environment repo"
+- name: "{{ repo.name }} - copy encrypted file to set location"
+  copy:
+    src: "env/{{ repo.key_file_encrypted }}"
+    dest: "{{ repo_key_file }}"
+    decrypt: yes
+    mode: 0600
+  when: (repo_private | bool)
+  tags: ["other"]
+  
+- name: "{{ repo.name }} - create file to verify idempotence (if there is still no file)"
+  copy: 
+    force: no
+    content: ""
+    dest: "{{ repo_dest }}/var/{{ repo.env_file }}"
+    mode: 0600
+  tags: ["other"]
+  
+- name: "{{ repo.name }} - download the workspace environment repo"
   git:
     repo: "{{ repo.source }}"
     version: "{{ repo.version }}"
-    dest: "{{ repo.dest }}/env"
+    dest: "{{ repo_dest }}/env"
+    key_file: "{{ repo_key_file }}"
+    accept_hostkey: yes
     update: yes
+    force: yes
+  tags: ["other"]
 
-- name: "{{ repo.name }} - copy the hosts file"
+- name: "{{ repo.name }} - copy the temporary hosts file to verify changes"
   copy:
     src: "{{ main_repo_dest }}/hosts"
-    dest: "{{ repo.dest }}/external/hosts"
+    dest: "{{ repo_dest }}/var/hosts.tmp"
     mode: 0600
+  register: diff_hosts
+  tags: ["other"]
 
-- name: "{{ repo.name }} - copy the executable file"
+- name: "{{ repo.name }} - copy the hosts file when changed"
+  copy:
+    src: "{{ main_repo_dest }}/hosts"
+    dest: "{{ repo_dest }}/var/hosts"
+    mode: 0600
+  when: diff_hosts.changed
+  tags: ["other"]
+
+- name: "{{ repo.name }} - verify if it will create a specific main repository"
+  set_fact:
+    specific_repo: >-
+      {{
+      ((repo.main_repo is defined) and (repo.main_repo != main_repo))
+      or
+      ((repo.main_repo_version is defined) and (repo.main_repo_version != main_repo_version))
+      }}
+  tags: ["other"]
+    
+- name: "{{ repo.name }} - update specific main repo if there is one specified"
+  git:
+    repo: "{{ repo.main_repo | default(main_repo) }}"
+    version: "{{ repo.main_repo_version | default(main_repo_version) }}"
+    dest: "{{ repo_dest }}/main"
+    update: yes
+    force: no
+  when: specific_repo | bool
+  tags: ["other"]
+
+- name: "{{ repo.name }} - set_fact"
+  set_fact:
+    repo_main_repo_dest: >-
+      {{ 
+      specific_repo | 
+      ternary(repo_dest + '/main', main_repo_dest) 
+      }}
+  tags: ["other"]
+
+- name: "{{ repo.name }} - copy the executable files"
   template:
     src: "templates/run.tpl.sh"
-    dest: "{{ repo.dest }}/run.sh"
+    dest: "{{ repo_dest }}/{{ repo_item.name }}"
     mode: 0700
+  vars:
+    repo_run_force: "{{ repo_item.force }}"
+  loop:
+  - { name: "run", force: "true" }
+  - { name: "upgrade", force: "false" }
+  loop_control:
+    loop_var: repo_item
+  tags: ["other"]

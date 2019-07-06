@@ -1,0 +1,95 @@
+#!/bin/bash
+set -eou pipefail
+
+command="${1:-}"
+commands="setup, reset, main, dev, run"
+dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+CYAN='\033[0;36m'
+YELLOW='\033[0;33m'
+RED='\033[0;31m'
+NC='\033[0m' # No Color
+
+if [ -z "$command" ]; then
+    echo -e "${RED}No command passed (valid commands: $commands)${NC}"
+    exit 1
+fi
+
+if [ "$command" = "setup" ]; then
+    echo -e "${CYAN}Setup started at $(date '+%F %X')${NC}"
+
+    git_repo=''
+
+    if [ -d "$dir/env" ]; then
+        git_repo=$(git --git-dir="$dir/env/.git" remote get-url origin || :);
+    fi
+
+    if [ -z "$git_repo" ]; then
+        rm -rf "$dir/env"
+        read -e -p "Enter the main git environment repository: " \
+            -i "https://lucasbasquerotto@bitbucket.org/lucasbasquerotto/ansible-main-env-demo.git" git_repo
+        git config --global credential.helper store
+        git clone "$git_repo" "$dir/env"
+    fi
+
+    echo -e "${CYAN}Main git environment repository: $git_repo at $dir/env${NC}"
+
+    "$dir"/setup/local.sh
+
+    echo -e "${CYAN}Building the docker images...${NC}"
+
+    cd "$dir"
+    sudo docker-compose build
+
+    echo -e "${CYAN}Docker images created${NC}"
+
+    echo -e "${CYAN}Setup finished at $(date '+%F %X')${NC}"
+elif [ "$command" = "reset" ]; then
+    rm -rf "$dir/env"
+elif [ "$command" = "main" ] || [ "$command" = "dev" ]; then
+    service=''
+
+    if [ "$command" = "main" ]; then
+        service='ansible'
+    elif [ "$command" = "dev" ]; then
+        service='ansible-dev'
+    fi
+
+    if [ ! -z "$service" ]; then
+        cd "$dir"
+        sudo docker-compose up -d "$service"
+        sudo docker-compose exec "$service" /bin/bash
+    fi
+elif [ "$command" = "run" ]; then
+    cd "$dir"
+    hostname=''
+    tags=''
+    dev="${DEV:-}"
+    
+    if [ ! -z "$dev" ]; then
+        if [ "$dev" = "1" ]; then
+            hostname='ansible-dev'
+            tags='--tags=other'
+        else
+            hostname='ansible'
+        fi
+    fi
+
+    if [ "$hostname" != "$HOSTNAME" ]; then
+        echo -e "${RED}Run the main or dev command before to enter a container${NC}"
+        exit 1
+    fi
+
+    mkdir -p /root/vars
+
+    if [ ! -f /root/vars/main ]; then        
+        read -e -p "Enter the main vault pass (to decrypt the ssh keys of the environment repositories): " \
+            -i "ghi789" vault_pass
+        echo "$vault_pass" > /root/vars/main
+    fi
+
+    ansible-playbook --vault-id ~/vars/main main.yml $tags
+else
+    echo -e "${RED}Invalid command: $command (valid commands: $commands)${NC}"
+    exit 1
+fi

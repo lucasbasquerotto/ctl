@@ -1,11 +1,12 @@
-- name: Play 01 - Create Cloud Instances
+- name: Play 01 - Create and update the main and the environment repositories
   hosts: main
   vars_files:
-  - "vars/main.yml"
+  - "env/vars.yml"
   gather_facts: no  
   tasks:  
   - name: Gathering facts
     setup: 
+    tags: ["other"]
 
   - name: "update main repo"
     git:
@@ -13,11 +14,22 @@
       version: "{{ main_repo_version }}"
       dest: "{{ main_repo_dest }}"
       update: yes
-    tags: ["main"]
+      force: no
+    tags: ["main", "print_action"]
 
-  - name: "update client repos"
+  - name: "update workspace repos"
     include_tasks: "repo.yml"
     loop: "{{ repos }}"  
     loop_control:
       loop_var: repo
       label: "{{ repo.name }}"
+    tags: ["env", "other"]
+
+  - name: "executable files"
+    debug: 
+      msg: "{{ repo_base_dest_workspace }}/{{ repo.local_repo }}/upgrade"
+    loop: "{{ repos }}"  
+    loop_control:
+      loop_var: repo
+      label: "{{ repo.name }}"
+    tags: ["other", "print_action"]

@@ -1,23 +1,73 @@
-# ansible-manager
+# Installation and usage
 
-This repository allows to manage several non-related repositories containing a file with environment variables.
+## 1. Setup
 
-It runs ansible in a main repository (that has all the logic to create instances, deploy containers and so on) and pass the environment variables to it.
+Download the main environment repository, install docker and build the images.
 
-This way, the logic in the main repository can be reused by different use cases.
+```bash
+./launch setup
+```
 
-The repository is an example of how to setup your own manager repository. The variables you should change to adapt to your use case are in `vars/main.yml`.
+## 2. Enter the container with ansible installed
 
-## 1) Create an instance and install ansible in it
+```bash
+./launch main
+```
 
-## 2) Define the main repository that contains the logic you will use
+(For development run `./launch dev`)
 
-This example uses https://github.com/lucasbasquerotto/ansible-docker.git as the main repository.
+## 3. Run the playbook to pull and update environment repositories
 
-## 3) Define the repositories that contains the environment variables
+In the first run it will store the vault password for the private key(s) to download the private repositories.
 
-This example uses https://github.com/lucasbasquerotto/ansible-env-demo.git as each client repository, each file refering to a different setup (in a real use case, each client repository could be in a separate repository).
+```bash
+# This step should be executed inside the container with Ansible
+./launch run
+```
 
-Each of these repositories may contain variables to create instances and deploy containers to deploy something like a discourse website, a blog and so on. 
+## 4. Run the playbook for the specific environment repository
 
-You can specify the platform, if it will be deployed in one or mor machines and so on.
+The recommended commands are shown after running `./launch run`. Example:
+
+```bash
+# This step should be executed inside the container with Ansible
+/root/r/w/client2-forum/upgrade
+```
+
+## 5. Destroy droplets and buckets (dev)
+
+The following should be executed only in a development environment:
+
+```bash
+# This step should be executed inside the container with Ansible
+/root/r/w/client2-forum/run --tags destroy
+```
+
+# Encrypt with Ansible
+
+## 1. Generate a ssh key pair and encrypt the private key
+
+```bash
+cd ~
+ssh-keygen -t rsa -C "some-name"
+[location in '$HOME/id_rsa']
+ansible-vault encrypt id_rsa
+```
+
+(Add the public key to the repository, so that you can access it through ssh)
+
+## 2. Encrypt strings (for variables, to put in the environment repositories)
+
+```bash
+# The VAR_NAME is the name of the variable that will be created
+# E.g.: if the variable is called db_pass, use it instead of VAR_NAME
+ansible-vault encrypt_string --vault-id workspace@prompt --stdin-name 'VAR_NAME'
+[enter the vault password twice]
+[enter the value to be encripted and press Ctrl+d twice]
+```
+
+```
+#TODO: Generate base image of discourse
+#TODO: Add current controller ip to firewall
+#TODO: Create snapshot of droplet image
+```

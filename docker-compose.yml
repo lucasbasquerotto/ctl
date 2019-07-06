@@ -1,0 +1,36 @@
+version: '3.4'
+
+x-logging:
+  logging: &logging
+    options:
+      max-size: 50m
+
+services:
+  
+  ansible:
+    container_name: ansible
+    hostname: ansible
+    build: 
+      context: ./
+    environment:
+    - DEV=0
+    volumes:
+    - .:/root/ansible-manager:ro
+    - /main/r:/root/r:rw
+    logging: *logging 
+    command: sleep infinity
+  
+  ansible-dev:
+    container_name: ansible-dev
+    hostname: ansible-dev
+    build: 
+      context: ./
+    environment:
+    - DEV=1
+    volumes:
+    - .:/root/ansible-manager:ro
+    - /main/ansible-docker:/root/r/main:ro
+    - /main/r/w:/root/r/w:rw
+    - /main/r/var:/root/r/var:rw
+    logging: *logging 
+    command: sleep infinity
