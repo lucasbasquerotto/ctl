@@ -8,7 +8,7 @@ NC='\033[0m' # No Color
 if (docker --version &> /dev/null) && (which docker-compose &> /dev/null); then 
     echo -e "${CYAN}$(date '+%F %T') Docker and Docker Compose already installed${NC}"
 else
-    echo -e "${CYAN}$(date '+%F %T') Installing docker...${NC}"
+    echo -e "${CYAN}$(date '+%F %T') Installing Docker and Docker Compose...${NC}"
 
     sudo apt install -y apt-transport-https ca-certificates curl software-properties-common
     curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
