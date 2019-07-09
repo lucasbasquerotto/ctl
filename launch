@@ -2,7 +2,7 @@
 set -eou pipefail
 
 command="${1:-}"
-commands="setup, reset, main, dev, run"
+commands="setup, reset, main, dev, run, stop"
 dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 CYAN='\033[0;36m'
@@ -89,6 +89,9 @@ elif [ "$command" = "run" ]; then
     fi
 
     ansible-playbook --vault-id ~/vars/main main.yml $tags
+elif [ "$command" = "stop" ]; then
+    cd "$dir"
+    sudo docker-compose stop
 else
     echo -e "${RED}Invalid command: $command (valid commands: $commands)${NC}"
     exit 1
