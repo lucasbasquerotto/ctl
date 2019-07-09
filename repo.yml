@@ -23,6 +23,7 @@
   - "{{ repo_base_dest }}/var"
   - "{{ repo_dest }}/env"
   - "{{ repo_dest }}/var"
+  - "{{ repo_dest }}/tmp"
   loop_control:
     loop_var: repo_item
   tags: ["other"]
