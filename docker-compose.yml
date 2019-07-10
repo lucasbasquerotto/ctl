@@ -30,7 +30,8 @@ services:
     volumes:
     - .:/root/ansible-manager:ro
     - /main/ansible-docker:/root/r/main:ro
-    - /main/r/w:/root/r/w:rw
+    - /main/dev:/root/dev:rw
+    - /main/r/var:/root/r/var:rw
     - /main/r/var:/root/r/var:rw
     logging: *logging 
     command: sleep infinity

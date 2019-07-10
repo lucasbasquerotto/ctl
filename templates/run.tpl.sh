@@ -1,22 +1,23 @@
 #!/bin/bash
 set -euo pipefail
 
-FORCE="{{ repo_run_force }}"
-MAIN_REPO="{{ repo_main_repo_dest }}"
-HOSTS="{{ repo_dest }}/var/hosts"
-ENV_FILE="{{ repo_dest }}/env/{{ repo.env_file }}"
-ENV_FILE_TMP="{{ repo_dest }}/var/{{ repo.env_file }}"
-TMP_DIR="{{ repo_dest }}/tmp"
-VAULT="{{ repo.use_vault | ternary('--vault-id workspace@prompt', '') }}"
-PLAYBOOK="{{ repo.platform }}.yml"
+force="{{ repo_run_force }}"
+main_repo="{{ repo_main_repo_dest }}"
+hosts="{{ repo_dest }}/var/hosts"
+env_file="{{ repo_dest }}/env/{{ repo.env_file }}"
+env_file_tmp="{{ repo_dest }}/var/{{ repo.env_file }}"
+tmp_dir="{{ repo_dest }}/tmp"
+vault="{{ repo.use_vault | ternary('--vault-id workspace@prompt', '') }}"
+playbook="{{ repo.type }}.yml"
+run=1
 
-cmp="$(cmp --quiet "$ENV_FILE" "$ENV_FILE_TMP" && echo 0 || echo 1)"
+if [ "$force" != "true" ]; then
+  run="$(cmp --quiet "$env_file" "$env_file_tmp" && echo 0 || echo 1)"
+fi
 
-if [ "$FORCE" = "true" ] || [ "$cmp" -eq 1 ]; then
-  cd "$MAIN_REPO"
-  ansible-playbook $VAULT "$PLAYBOOK" -i "$HOSTS" \
-    -e "env_file=$ENV_FILE" -e "env_tmp_dir=$TMP_DIR" "$@"    
-  cp "$ENV_FILE" "$ENV_FILE_TMP"
-else
-  echo 'Already up to date'
+if [ "$run" -eq 1 ]; then
+  cd "$main_repo"
+  ansible-playbook $vault "$playbook" -i "$hosts" \
+    -e "env_file=$env_file" -e "env_tmp_dir=$tmp_dir" "$@"    
+  cp "$env_file" "$env_file_tmp"
 fi
