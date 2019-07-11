@@ -33,5 +33,6 @@ services:
     - /main/dev:/root/dev:rw
     - /main/r/w:/root/r/w:rw
     - /main/r/var:/root/r/var:rw
+    - /main/dev:/main/dev:rw
     logging: *logging 
     command: sleep infinity
