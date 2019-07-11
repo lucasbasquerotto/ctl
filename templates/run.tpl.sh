@@ -20,4 +20,6 @@ if [ "$run" -eq 1 ]; then
   ansible-playbook $vault "$playbook" -i "$hosts" \
     -e "env_file=$env_file" -e "env_tmp_dir=$tmp_dir" "$@"    
   cp "$env_file" "$env_file_tmp"
+else
+  echo 'Already up to date'
 fi
