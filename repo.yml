@@ -108,9 +108,11 @@
     mode: 0700
   vars:
     repo_run_force: "{{ repo_item.force }}"
+    repo_env_dev_dir: "{{ (repo_item.dev | bool) | ternary(repo.env_dev_dir, '') | default('') }}"
   loop:
   - { name: "run", force: "true" }
   - { name: "upgrade", force: "false" }
+  - { name: "dev", force: "true", dev: true }
   loop_control:
     loop_var: repo_item
   tags: ["other"]
