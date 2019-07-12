@@ -110,12 +110,17 @@
     repo_run_force: "{{ repo_item.force }}"
     repo_env_dir: >-
       {{ (repo_item.dev | default(false) | bool) 
-      | ternary(repo.env_dev_dir, repo_dest + '/env') | default(repo_dest + '/env') 
+      | ternary('/main/env/' + (repo.env_dev_dir | default('')), repo_dest + '/env') 
       }}
+    repo_use_vault: "{{ repo.use_vault and not (repo_item.dev | default(false) | bool) }}"
   loop:
   - { name: "run", force: "true" }
   - { name: "upgrade", force: "false" }
   - { name: "dev", force: "true", dev: true }
   loop_control:
     loop_var: repo_item
+  when: >-
+    (not (repo_item.dev | default(false) | bool)) 
+    or 
+    ((repo.env_dev_dir is defined) and (repo.env_dev_dir != ''))
   tags: ["other"]

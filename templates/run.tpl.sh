@@ -8,7 +8,7 @@ env_dir="{{ repo_env_dir }}"
 env_file="{{ repo_env_dir }}/{{ repo.env_file }}"
 env_file_tmp="{{ repo_dest }}/var/{{ repo.env_file }}"
 tmp_dir="{{ repo_dest }}/tmp"
-vault="{{ repo.use_vault | ternary('--vault-id workspace@prompt', '') }}"
+vault="{{ repo_use_vault | ternary('--vault-id workspace@prompt', '') }}"
 playbook="{{ repo.type }}.yml"
 run=1
 
@@ -19,7 +19,7 @@ fi
 if [ "$run" -eq 1 ]; then
   cd "$main_repo"
   ansible-playbook $vault "$playbook" -i "$hosts" \
-    -e "env_file=$env_file"-e "env_dir=$env_dir" -e "env_tmp_dir=$tmp_dir" "$@"    
+    -e "env_file=$env_file" -e "env_dir=$env_dir" -e "env_tmp_dir=$tmp_dir" "$@"    
   cp "$env_file" "$env_file_tmp"
 else
   echo 'Already up to date'

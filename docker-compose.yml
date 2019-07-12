@@ -30,6 +30,7 @@ services:
     volumes:
     - .:/root/ansible-manager:ro
     - /main/ansible-docker:/root/r/main:ro
+    - /main/env:/main/env:ro
     - /main/dev:/root/dev:rw
     - /main/r/w:/root/r/w:rw
     - /main/r/var:/root/r/var:rw
