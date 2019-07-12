@@ -108,7 +108,10 @@
     mode: 0700
   vars:
     repo_run_force: "{{ repo_item.force }}"
-    repo_env_dev_dir: "{{ (repo_item.dev | bool) | ternary(repo.env_dev_dir, '') | default('') }}"
+    repo_env_dir: >-
+      {{ (repo_item.dev | default(false) | bool) 
+      | ternary(repo.env_dev_dir, repo_dest + '/env') | default(repo_dest + '/env') 
+      }}
   loop:
   - { name: "run", force: "true" }
   - { name: "upgrade", force: "false" }
