@@ -46,19 +46,24 @@ if [ "$command" = "setup" ]; then
     echo -e "${CYAN}Setup finished at $(date '+%F %X')${NC}"
 elif [ "$command" = "reset" ]; then
     rm -rf "$dir/env"
-elif [ "$command" = "main" ] || [ "$command" = "dev" ]; then
+elif [ "$command" = "main" ] || [ "$command" = "dev" ] || [ "$command" = "dev-cmd" ]; then
     service=''
+    cmd='/bin/bash'
 
     if [ "$command" = "main" ]; then
         service='ansible'
-    elif [ "$command" = "dev" ]; then
+    elif [ "$command" = "dev" ] || [ "$command" = "dev-cmd" ]; then
         service='ansible-dev'
+    fi
+
+    if [ "$command" = "dev-cmd" ]; then
+        cmd="$2"
     fi
 
     if [ ! -z "$service" ]; then
         cd "$dir"
         sudo docker-compose up -d "$service"
-        sudo docker-compose exec "$service" /bin/bash
+        sudo docker-compose exec "$service" "$cmd"
     fi
 elif [ "$command" = "run" ]; then
     cd "$dir"
