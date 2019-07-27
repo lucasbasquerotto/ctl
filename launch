@@ -2,6 +2,8 @@
 set -eou pipefail
 
 command="${1:-}"
+set -- "${@:2}" #removed the 1st parameter
+
 commands="setup, reset, main, dev, run, stop"
 dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
@@ -68,13 +70,11 @@ elif [ "$command" = "main" ] || [ "$command" = "dev" ] || [ "$command" = "dev-cm
 elif [ "$command" = "run" ]; then
     cd "$dir"
     hostname=''
-    tags=''
     dev="${DEV:-}"
     
     if [ ! -z "$dev" ]; then
         if [ "$dev" = "1" ]; then
             hostname='ctl-dev'
-            tags='--tags=other'
         else
             hostname='ctl'
         fi
@@ -94,7 +94,7 @@ elif [ "$command" = "run" ]; then
         echo "$vault_pass" > /root/vars/main
     fi
 
-    ansible-playbook --vault-id ~/vars/main main.yml $tags
+    ansible-playbook --vault-id ~/vars/main main.yml ${@}
 elif [ "$command" = "stop" ]; then
     cd "$dir"
     sudo docker-compose stop

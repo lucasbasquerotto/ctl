@@ -2,6 +2,8 @@
   set_fact: 
     repo_dest: "{{ repo_base_dest_workspace }}/{{ repo.local_repo }}"
     repo_private: "{{ repo.private | default(false) }}"
+    repo_base_dir_pod: "/main/pod"
+    repo_base_dir_app: "/main/app"
   tags: ["other"]
 
 - name: "{{ repo.name }} - set_fact"

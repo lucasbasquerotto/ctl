@@ -30,6 +30,7 @@ services:
     volumes:
     - .:/root/ctl:ro
     - ../r:/root/r:rw
+    - ../cloud:/root/r/cloud:ro
     - ../env:/main/env:rw
     - ../cloud:/main/cloud:rw
     - ../pod:/main/pod:rw

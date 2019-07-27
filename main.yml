@@ -12,9 +12,9 @@
     git:
       repo: "{{ cloud_repo }}"
       version: "{{ cloud_repo_version }}"
-      dest: "{{ cloud_repo_dest }}"
-      update: yes
-      force: no
+      dest: "{{ (lookup('env', 'DEV') == '1') | ternary('/main/cloud', cloud_repo_dest) }}"
+      update: "{{ (lookup('env', 'DEV') == '1') | ternary('no', 'yes') }}"
+      force: "{{ (lookup('env', 'DEV') == '1') | ternary('no', 'yes') }}"
     tags: ["main", "print_action"]
 
   - name: "update workspace repos"
