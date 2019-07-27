@@ -51,9 +51,9 @@ elif [ "$command" = "main" ] || [ "$command" = "dev" ] || [ "$command" = "dev-cm
     cmd='/bin/bash'
 
     if [ "$command" = "main" ]; then
-        service='ansible'
+        service='ctl'
     elif [ "$command" = "dev" ] || [ "$command" = "dev-cmd" ]; then
-        service='ansible-dev'
+        service='ctl-dev'
     fi
 
     if [ "$command" = "dev-cmd" ]; then
@@ -73,10 +73,10 @@ elif [ "$command" = "run" ]; then
     
     if [ ! -z "$dev" ]; then
         if [ "$dev" = "1" ]; then
-            hostname='ansible-dev'
+            hostname='ctl-dev'
             tags='--tags=other'
         else
-            hostname='ansible'
+            hostname='ctl'
         fi
     fi
 
@@ -87,9 +87,10 @@ elif [ "$command" = "run" ]; then
 
     mkdir -p /root/vars
 
-    if [ ! -f /root/vars/main ]; then        
-        read -e -p "Enter the main vault pass (to decrypt the ssh keys of the environment repositories): " \
-            -i "ghi789" vault_pass
+    if [ ! -f /root/vars/main ]; then
+        echo -n "Enter the main vault pass (to decrypt the ssh keys of the environment repositories): "
+        read -s vault_pass
+        echo
         echo "$vault_pass" > /root/vars/main
     fi
 

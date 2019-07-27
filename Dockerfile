@@ -1,6 +1,6 @@
 FROM lucasbasquerotto/ansible:0.0.2
 
-WORKDIR /root/ansible-manager
+WORKDIR /root/ctl
 
 COPY setup/image.sh /tmp/
 COPY env/ /tmp/env/

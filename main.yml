@@ -8,11 +8,11 @@
     setup: 
     tags: ["other"]
 
-  - name: "update main repo"
+  - name: "update main repo (cloud)"
     git:
-      repo: "{{ main_repo }}"
-      version: "{{ main_repo_version }}"
-      dest: "{{ main_repo_dest }}"
+      repo: "{{ cloud_repo }}"
+      version: "{{ cloud_repo_version }}"
+      dest: "{{ cloud_repo_dest }}"
       update: yes
       force: no
     tags: ["main", "print_action"]

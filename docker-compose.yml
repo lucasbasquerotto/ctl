@@ -7,34 +7,33 @@ x-logging:
 
 services:
   
-  ansible:
-    container_name: ansible
-    hostname: ansible
+  ctl:
+    container_name: ctl
+    hostname: ctl
     build: 
       context: ./
     environment:
     - DEV=0
     volumes:
-    - .:/root/ansible-manager:ro
-    - /main/r:/root/r:rw
+    - .:/root/ctl:ro
+    - ../r:/root/r:rw
     logging: *logging 
     command: sleep infinity
   
-  ansible-dev:
-    container_name: ansible-dev
-    hostname: ansible-dev
+  ctl-dev:
+    container_name: ctl-dev
+    hostname: ctl-dev
     build: 
       context: ./
     environment:
     - DEV=1
     volumes:
-    - .:/root/ansible-manager:ro
-    - /main/ansible-docker:/root/r/main:ro
-    - /main/env:/main/env:ro
-    - /main/dev:/root/dev:rw
-    - /main/r/w:/root/r/w:rw
-    - /main/r/var:/root/r/var:rw
-    - /main/dev:/main/dev:rw
-    - /data:/data:rw
+    - .:/root/ctl:ro
+    - ../r:/root/r:rw
+    - ../env:/main/env:rw
+    - ../cloud:/main/cloud:rw
+    - ../pod:/main/pod:rw
+    - ../app:/main/app:rw
+    - ../data:/data:rw
     logging: *logging 
     command: sleep infinity
