@@ -4,10 +4,15 @@
     repo_private: "{{ repo.private | default(false) }}"
     repo_base_dir_pod: "/main/pod"
     repo_base_dir_app: "/main/app"
-  tags: ["other"]
+    repo_env_dev_dir_base: "/main/env"
 
-- name: "{{ repo.name }} - set_fact"
+- name: "{{ repo.name }} - set_fact - repo_env_dir and repo_key_file"
   set_fact: 
+    repo_env_dir: >-
+      {{ 
+      ((lookup('env', 'DEV') == '1') and ((repo.env_dev_dir | default('')) != ''))
+      | ternary(repo_env_dev_dir_base +'/' + (repo.env_dev_dir | default('')), repo_dest + '/env')
+      }}
     repo_key_file: >-
       {{ 
       (repo_private | bool) | 
@@ -56,6 +61,17 @@
     accept_hostkey: yes
     update: yes
     force: yes
+  tags: ["other", "print_action"]
+  
+- name: "{{ repo.name }} - download the workspace environment repo for real-time development (1st time)"
+  git:
+    repo: "{{ repo.source }}"
+    version: "{{ repo.version }}"
+    dest: "{{ repo_env_dir }}"
+    key_file: "{{ repo_key_file }}"
+    accept_hostkey: yes
+    update: no
+  when: (lookup('env', 'DEV') == '1') and ((repo.env_dev_dir | default('')) != '')
   tags: ["other"]
 
 - name: "{{ repo.name }} - copy the temporary hosts file to verify changes"
@@ -66,41 +82,54 @@
   register: diff_hosts
   tags: ["other"]
 
+- name: load environment vars
+  include_vars:
+    file: "{{ repo_env_dir }}/{{ repo.env_file }}"
+    name: repo_env
+
+- name: "{{ repo.name }} - verify if it will create a specific main repository"
+  set_fact:
+    repo_specific: >-
+      {{
+      ((repo_env.cloud.repo is defined) and (repo_env.cloud.repo != cloud_repo))
+      or
+      ((repo_env.cloud.repo_version is defined) and (repo_env.cloud.repo_version != cloud_repo_version))
+      }}
+  tags: ["other"]
+
+- name: "{{ repo.name }} - set_fact - repo_cloud_repo_dest"
+  set_fact:
+    repo_cloud_repo_dest: >-
+      {{ 
+      repo_specific | 
+      ternary(repo_dest + '/cloud', cloud_repo_dest) 
+      }}
+  tags: ["other"]
+    
+- debug:
+    var: repo_specific
+  tags: ["print_action"]
+    
+- debug:
+    var: repo_cloud_repo_dest
+  tags: ["print_action"]
+
+- name: "{{ repo.name }} - update specific cloud repo if there is one specified"
+  git:
+    repo: "{{ repo_env.cloud.repo | default(cloud_repo) }}"
+    version: "{{ repo_env.cloud.repo_version | default(cloud_repo_version) }}"
+    dest: "{{ repo_dest }}/cloud"
+    update: yes
+    force: no
+  when: repo_specific | bool
+  tags: ["other"]
+
 - name: "{{ repo.name }} - copy the hosts file when changed"
   copy:
     src: "{{ cloud_repo_dest }}/hosts"
     dest: "{{ repo_dest }}/var/hosts"
     mode: 0600
   when: diff_hosts.changed
-  tags: ["other"]
-
-- name: "{{ repo.name }} - verify if it will create a specific main repository"
-  set_fact:
-    specific_repo: >-
-      {{
-      ((repo.cloud_repo is defined) and (repo.cloud_repo != cloud_repo))
-      or
-      ((repo.cloud_repo_version is defined) and (repo.cloud_repo_version != cloud_repo_version))
-      }}
-  tags: ["other"]
-    
-- name: "{{ repo.name }} - update specific cloud repo if there is one specified"
-  git:
-    repo: "{{ repo.cloud_repo | default(cloud_repo) }}"
-    version: "{{ repo.cloud_repo_version | default(cloud_repo_version) }}"
-    dest: "{{ repo_dest }}/cloud"
-    update: yes
-    force: no
-  when: specific_repo | bool
-  tags: ["other"]
-
-- name: "{{ repo.name }} - set_fact"
-  set_fact:
-    repo_cloud_repo_dest: >-
-      {{ 
-      specific_repo | 
-      ternary(repo_dest + '/cloud', cloud_repo_dest) 
-      }}
   tags: ["other"]
 
 - name: "{{ repo.name }} - copy the executable files"
@@ -110,10 +139,6 @@
     mode: 0700
   vars:
     repo_run_force: "{{ repo_item.force }}"
-    repo_env_dir: >-
-      {{ (repo_item.dev | default(false) | bool) 
-      | ternary('/main/env/' + (repo.env_dev_dir | default('')), repo_dest + '/env') 
-      }}
     repo_use_vault: "{{ repo.use_vault and not (repo_item.dev | default(false) | bool) }}"
   loop:
   - { name: "run", force: "true" }
@@ -124,5 +149,5 @@
   when: >-
     (not (repo_item.dev | default(false) | bool)) 
     or 
-    ((repo.env_dev_dir is defined) and (repo.env_dev_dir != ''))
+    ((repo.env_dev_dir | default('')) != '')
   tags: ["other"]
