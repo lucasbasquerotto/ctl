@@ -1,22 +1,26 @@
 - name: "{{ repo.name }} - set_fact"
   set_fact: 
-    repo_dest: "{{ repo_base_dest_workspace }}/{{ repo.local_repo }}"
-    repo_private: "{{ repo.private | default(false) }}"
+    repo_dest: "{{ env.repo_base_dest_workspace }}/{{ repo.local_repo }}"
+    env_repo: "{{ (repo.global_env_repo | default(false)) | ternary(env.env_repo, repo.env_repo) }}"
     repo_base_dir_pod: "/main/pod"
     repo_base_dir_app: "/main/app"
     repo_env_dev_dir_base: "/main/env"
 
-- name: "{{ repo.name }} - set_fact - repo_env_dir and repo_key_file"
+- name: "{{ repo.name }} - set_fact"
   set_fact: 
+    repo_private: "{{ env_repo.private | default(false) }}"
     repo_env_dir: >-
       {{ 
       ((lookup('env', 'DEV') == '1') and ((repo.env_dev_dir | default('')) != ''))
       | ternary(repo_env_dev_dir_base +'/' + (repo.env_dev_dir | default('')), repo_dest + '/env')
       }}
+
+- name: "{{ repo.name }} - set_fact"
+  set_fact: 
     repo_key_file: >-
       {{ 
       (repo_private | bool) | 
-      ternary(repo_base_dest + '/var/key_file', None) | 
+      ternary(env.repo_base_dest + '/var/key_file', None) | 
       default(omit) 
       }}
   tags: ["other"]
@@ -27,7 +31,7 @@
     state: directory
     mode: 0700
   loop: 
-  - "{{ repo_base_dest }}/var"
+  - "{{ env.repo_base_dest }}/var"
   - "{{ repo_dest }}/env"
   - "{{ repo_dest }}/var"
   - "{{ repo_dest }}/tmp"
@@ -37,7 +41,7 @@
 
 - name: "{{ repo.name }} - copy encrypted file to set location"
   copy:
-    src: "env/{{ repo.key_file_encrypted }}"
+    src: "env/{{ env_repo.key_file_encrypted }}"
     dest: "{{ repo_key_file }}"
     decrypt: yes
     mode: 0600
@@ -54,8 +58,8 @@
   
 - name: "{{ repo.name }} - download the workspace environment repo"
   git:
-    repo: "{{ repo.source }}"
-    version: "{{ repo.version }}"
+    repo: "{{ env_repo.source }}"
+    version: "{{ env_repo.version }}"
     dest: "{{ repo_dest }}/env"
     key_file: "{{ repo_key_file }}"
     accept_hostkey: yes
@@ -65,8 +69,8 @@
   
 - name: "{{ repo.name }} - download the workspace environment repo for real-time development (1st time)"
   git:
-    repo: "{{ repo.source }}"
-    version: "{{ repo.version }}"
+    repo: "{{ env_repo.source }}"
+    version: "{{ env_repo.version }}"
     dest: "{{ repo_env_dir }}"
     key_file: "{{ repo_key_file }}"
     accept_hostkey: yes
@@ -76,7 +80,7 @@
 
 - name: "{{ repo.name }} - copy the temporary hosts file to verify changes"
   copy:
-    src: "{{ cloud_repo_dest }}/hosts"
+    src: "{{ env.cloud_repo_dest }}/hosts"
     dest: "{{ repo_dest }}/var/hosts.tmp"
     mode: 0600
   register: diff_hosts
@@ -91,9 +95,13 @@
   set_fact:
     repo_specific: >-
       {{
-      ((repo_env.cloud.repo is defined) and (repo_env.cloud.repo != cloud_repo))
+      ((repo_env.cloud.repo is defined) and (repo_env.cloud.repo != env.cloud_repo))
       or
-      ((repo_env.cloud.repo_version is defined) and (repo_env.cloud.repo_version != cloud_repo_version))
+      (
+      (repo_env.cloud.repo_version is defined) 
+      and 
+      (repo_env.cloud.repo_version != env.cloud_repo_version)
+      )
       }}
   tags: ["other"]
 
@@ -102,22 +110,14 @@
     repo_cloud_repo_dest: >-
       {{ 
       repo_specific | 
-      ternary(repo_dest + '/cloud', cloud_repo_dest) 
+      ternary(repo_dest + '/cloud', env.cloud_repo_dest) 
       }}
   tags: ["other"]
-    
-- debug:
-    var: repo_specific
-  tags: ["print_action"]
-    
-- debug:
-    var: repo_cloud_repo_dest
-  tags: ["print_action"]
 
 - name: "{{ repo.name }} - update specific cloud repo if there is one specified"
   git:
-    repo: "{{ repo_env.cloud.repo | default(cloud_repo) }}"
-    version: "{{ repo_env.cloud.repo_version | default(cloud_repo_version) }}"
+    repo: "{{ repo_env.cloud.repo | default(env.cloud_repo) }}"
+    version: "{{ repo_env.cloud.repo_version | default(env.cloud_repo_version) }}"
     dest: "{{ repo_dest }}/cloud"
     update: yes
     force: no
@@ -126,7 +126,7 @@
 
 - name: "{{ repo.name }} - copy the hosts file when changed"
   copy:
-    src: "{{ cloud_repo_dest }}/hosts"
+    src: "{{ env.cloud_repo_dest }}/hosts"
     dest: "{{ repo_dest }}/var/hosts"
     mode: 0600
   when: diff_hosts.changed
@@ -139,7 +139,7 @@
     mode: 0700
   vars:
     repo_run_force: "{{ repo_item.force }}"
-    repo_use_vault: "{{ repo.use_vault and not (repo_item.dev | default(false) | bool) }}"
+    repo_use_vault: "{{ env_repo.use_vault and not (repo_item.dev | default(false) | bool) }}"
   loop:
   - { name: "run", force: "true" }
   - { name: "upgrade", force: "false" }

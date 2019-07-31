@@ -1,25 +1,28 @@
 - name: Play 01 - Create and update the main and the environment repositories
   hosts: main
-  vars_files:
-  - "env/vars.yml"
   gather_facts: no  
   tasks:  
   - name: Gathering facts
     setup: 
     tags: ["other"]
 
+  - name: load environment vars
+    include_vars:
+      file: "env/vars.yml"
+      name: env
+      
   - name: "update main repo (cloud)"
     git:
-      repo: "{{ cloud_repo }}"
-      version: "{{ cloud_repo_version }}"
-      dest: "{{ (lookup('env', 'DEV') == '1') | ternary('/main/cloud', cloud_repo_dest) }}"
+      repo: "{{ env.cloud_repo }}"
+      version: "{{ env.cloud_repo_version }}"
+      dest: "{{ (lookup('env', 'DEV') == '1') | ternary('/main/cloud', env.cloud_repo_dest) }}"
       update: "{{ (lookup('env', 'DEV') == '1') | ternary('no', 'yes') }}"
       force: "{{ (lookup('env', 'DEV') == '1') | ternary('no', 'yes') }}"
     tags: ["main", "print_action"]
 
   - name: "update workspace repos"
     include_tasks: "repo.yml"
-    loop: "{{ repos }}"  
+    loop: "{{ env.repos }}"  
     loop_control:
       loop_var: repo
       label: "{{ repo.name }}"
@@ -27,8 +30,8 @@
 
   - name: "executable files"
     debug: 
-      msg: "{{ repo_base_dest_workspace }}/{{ repo.local_repo }}/upgrade"
-    loop: "{{ repos }}"  
+      msg: "{{ env.repo_base_dest_workspace }}/{{ repo.local_repo }}/upgrade"
+    loop: "{{ env.repos }}"  
     loop_control:
       loop_var: repo
       label: "{{ repo.name }}"

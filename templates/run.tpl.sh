@@ -14,8 +14,10 @@ playbook="{{ repo.type }}.yml"
 
 {% set env_local_pod_dir = 
   (repo.local_pod_dir is defined) 
-  | ternary('-e local_pod_dir="' + repo_base_dir_pod + '/' 
-  + (repo.local_pod_dir| default('')) + '"', '""') 
+  | ternary(
+  '-e local_pod_dir_rel="' + (repo.local_pod_dir | default('')) + '" ' +
+  '-e local_pod_dir="' + repo_base_dir_pod + '/' + (repo.local_pod_dir | default('')) + '"'
+  , '""') 
   | default('""') 
 -%}
 
@@ -27,6 +29,8 @@ env_local_pod_dir='{{ env_local_pod_dir }}'
 {%- for local_app_dir in repo.local_app_dir_list %}
 {% set env_local_app_dir_list = 
   env_local_app_dir_list 
+  + '-e local_app_dir_rel_' + local_app_dir.name 
+  + '="' + local_app_dir.dir + '" ' 
   + '-e local_app_dir_' + local_app_dir.name 
   + '="' + repo_base_dir_app + '/' + local_app_dir.dir + '"' 
 -%}

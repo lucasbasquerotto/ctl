@@ -5,16 +5,16 @@
 Download the main environment repository, install docker and build the images.
 
 ```bash
-./launch setup
+./run setup
 ```
 
 ## 2. Enter the container with ansible installed
 
 ```bash
-./launch main
+./run main
 ```
 
-(For development run `./launch dev`)
+(For development run `./run dev`)
 
 ## 3. Run the playbook to pull and update environment repositories
 
@@ -22,12 +22,12 @@ In the first run it will store the vault password for the private key(s) to down
 
 ```bash
 # This step should be executed inside the container with Ansible
-./launch run
+./run run
 ```
 
 ## 4. Run the playbook for the specific environment repository
 
-The recommended commands are shown after running `./launch run`. Example:
+The recommended commands are shown after running `./run run`. Example:
 
 ```bash
 # This step should be executed inside the container with Ansible
