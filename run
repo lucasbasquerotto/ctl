@@ -59,13 +59,13 @@ elif [ "$command" = "main" ] || [ "$command" = "dev" ] || [ "$command" = "dev-cm
     fi
 
     if [ "$command" = "dev-cmd" ]; then
-        cmd="$1"
+        cmd="${@}"
     fi
 
     if [ ! -z "$service" ]; then
         cd "$dir"
         sudo docker-compose up -d "$service"
-        sudo docker-compose exec "$service" "$cmd"
+        sudo docker-compose exec "$service" $cmd
     fi
 elif [ "$command" = "run" ]; then
     cd "$dir"
