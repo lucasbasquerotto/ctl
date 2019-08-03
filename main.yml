@@ -38,7 +38,9 @@
       label: "{{ repo.name }}"
     tags: ["other", "print_action"]
   
-  - name: "{{ repo.name }} - update the repositories and directories permissions (dev)"
+  - name: "update the repositories and directories permissions (dev)"
     command: "chown -R --reference=/root/ctl/ /main/"
-    when: (lookup('env', 'DEV') == '1') and ((repo.env_dev_dir | default('')) != '')
-    tags: ["never", "local"]
+    args:
+      warn: false
+    when: (lookup('env', 'DEV') == '1')
+    tags: ["never", "local", "print_action"]

@@ -71,10 +71,6 @@ elif [ "$command" = "main" ] || [ "$command" = "dev" ] || [ "$command" = "dev-cm
     fi
 
     if [ ! -z "$service" ]; then
-	echo "dir=$dir"
-	echo "service=$service"
-	echo "cmd=$cmd"
-
         cd "$dir"
         sudo docker-compose up -d "$service"
         sudo docker-compose exec "$service" $cmd
