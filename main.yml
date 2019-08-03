@@ -4,12 +4,13 @@
   tasks:  
   - name: Gathering facts
     setup: 
-    tags: ["other"]
+    tags: ["main", "other"]
 
   - name: load environment vars
     include_vars:
       file: "env/vars.yml"
       name: env
+    tags: ["main", "other"]
       
   - name: "update main repo (cloud)"
     git:
@@ -36,3 +37,8 @@
       loop_var: repo
       label: "{{ repo.name }}"
     tags: ["other", "print_action"]
+  
+  - name: "{{ repo.name }} - update the repositories and directories permissions (dev)"
+    command: "chown -R --reference=/root/ctl/ /main/"
+    when: (lookup('env', 'DEV') == '1') and ((repo.env_dev_dir | default('')) != '')
+    tags: ["never", "local"]

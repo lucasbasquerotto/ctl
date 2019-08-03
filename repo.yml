@@ -5,6 +5,7 @@
     repo_base_dir_pod: "/main/pod"
     repo_base_dir_app: "/main/app"
     repo_env_dev_dir_base: "/main/env"
+  tags: ["other"]
 
 - name: "{{ repo.name }} - set_fact"
   set_fact: 
@@ -14,6 +15,7 @@
       ((lookup('env', 'DEV') == '1') and ((repo.env_dev_dir | default('')) != ''))
       | ternary(repo_env_dev_dir_base +'/' + (repo.env_dev_dir | default('')), repo_dest + '/env')
       }}
+  tags: ["other"]
 
 - name: "{{ repo.name }} - set_fact"
   set_fact: 
@@ -90,6 +92,7 @@
   include_vars:
     file: "{{ repo_env_dir }}/{{ repo.env_file }}"
     name: repo_env
+  tags: ["other"]
 
 - name: "{{ repo.name }} - verify if it will create a specific main repository"
   set_fact:
@@ -151,3 +154,11 @@
     or 
     ((repo.env_dev_dir | default('')) != '')
   tags: ["other"]
+  
+- name: "{{ repo.name }} - execute the commands of the local repositories (dev)"
+  command: "{{ env.repo_base_dest_workspace }}/{{ repo.local_repo }}/dev"
+  when: >-
+    ((repo.type | default('')) == 'local')
+    and
+    (lookup('env', 'DEV') == '1') and ((repo.env_dev_dir | default('')) != '')
+  tags: ["never", "local"]

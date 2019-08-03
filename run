@@ -18,7 +18,7 @@ if [ -z "$command" ]; then
 fi
 
 if [ "$command" = "setup" ]; then
-    echo -e "${CYAN}Setup started at $(date '+%F %X')${NC}"
+    echo -e "${CYAN}$(date '+%F %X') Setup started at $(date '+%F %X')${NC}"
 
     git_repo=''
 
@@ -34,18 +34,26 @@ if [ "$command" = "setup" ]; then
         git clone "$git_repo" "$dir/env"
     fi
 
-    echo -e "${CYAN}Main git environment repository: $git_repo at $dir/env${NC}"
+    echo -e "${CYAN}$(date '+%F %X') Main git environment repository: $git_repo at $dir/env${NC}"
 
     "$dir"/setup/local.sh
 
-    echo -e "${CYAN}Building the docker images...${NC}"
+    echo -e "${CYAN}$(date '+%F %X') Building the docker images...${NC}"
 
     cd "$dir"
     sudo docker-compose build
 
-    echo -e "${CYAN}Docker images created${NC}"
+    echo -e "${CYAN}$(date '+%F %X') Docker images created${NC}"
 
-    echo -e "${CYAN}Setup finished at $(date '+%F %X')${NC}"
+    echo -e "${CYAN}$(date '+%F %X') Setup finished at $(date '+%F %X')${NC}"
+elif [ "$command" = "setup-dev" ]; then
+    echo -e "${CYAN}$(date '+%F %X') Setup dev started at $(date '+%F %X')${NC}"
+    
+    "$dir"/run setup
+    
+    "$dir"/run dev-cmd ./run run --tags "main,other,local"
+
+    echo -e "${CYAN}$(date '+%F %X') Setup dev finished at $(date '+%F %X')${NC}"
 elif [ "$command" = "reset" ]; then
     rm -rf "$dir/env"
 elif [ "$command" = "main" ] || [ "$command" = "dev" ] || [ "$command" = "dev-cmd" ]; then
@@ -63,6 +71,10 @@ elif [ "$command" = "main" ] || [ "$command" = "dev" ] || [ "$command" = "dev-cm
     fi
 
     if [ ! -z "$service" ]; then
+	echo "dir=$dir"
+	echo "service=$service"
+	echo "cmd=$cmd"
+
         cd "$dir"
         sudo docker-compose up -d "$service"
         sudo docker-compose exec "$service" $cmd
