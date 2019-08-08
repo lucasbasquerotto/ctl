@@ -17,11 +17,12 @@ playbook="{{ repo.type }}.yml"
   | ternary(
   '-e local_pod_dir_rel="' + (repo.local_pod_dir | default('')) + '" ' +
   '-e local_pod_dir="' + repo_base_dir_pod + '/' + (repo.local_pod_dir | default('')) + '"'
-  , '""') 
-  | default('""') 
+  , '') 
+  | default('') 
 -%}
 
 env_local_pod_dir='{{ env_local_pod_dir }}'
+env_local_app_dir_list=''
 
 {% set env_local_app_dir_list = '' -%}
 
