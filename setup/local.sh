@@ -8,19 +8,19 @@ NC='\033[0m' # No Color
 if (docker --version &> /dev/null) && (which docker-compose &> /dev/null); then 
     echo -e "${CYAN}$(date '+%F %T') Docker and Docker Compose already installed${NC}"
 else
-    if (docker --version &> /dev/null); then
-        echo -e "${CYAN}$(date '+%F %T') Installing Docker and Docker Compose...${NC}"
+    # if (docker --version &> /dev/null); then
+    #     echo -e "${CYAN}$(date '+%F %T') Installing Docker and Docker Compose...${NC}"
 
-        sudo apt install -y apt-transport-https ca-certificates curl software-properties-common
-        curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
-        sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu bionic stable" -y
-        sudo apt update
-        sudo apt install -y docker-ce
+    #     sudo apt install -y apt-transport-https ca-certificates curl software-properties-common
+    #     curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+    #     sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu bionic stable" -y
+    #     sudo apt update
+    #     sudo apt install -y docker-ce
 
-        echo -e "${CYAN}$(date '+%F %T') Docker installed${NC}"
-    else
-        echo -e "${CYAN}$(date '+%F %T') Docker already installed${NC}"
-    fi
+    #     echo -e "${CYAN}$(date '+%F %T') Docker installed${NC}"
+    # else
+    #     echo -e "${CYAN}$(date '+%F %T') Docker already installed${NC}"
+    # fi
 
     echo -e "${CYAN}$(date '+%F %T') Installing docker compose (container)...${NC}"
 
