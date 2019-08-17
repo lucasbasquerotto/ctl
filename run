@@ -36,7 +36,7 @@ if [ "$command" = "setup" ]; then
 
     echo -e "${CYAN}$(date '+%F %X') Main git environment repository: $git_repo at $dir/env${NC}"
 
-    # "$dir"/setup/local.sh
+    "$dir"/setup/local.sh
 
     echo -e "${CYAN}$(date '+%F %X') Building the docker images...${NC}"
 
