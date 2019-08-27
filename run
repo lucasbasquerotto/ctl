@@ -4,7 +4,7 @@ set -eou pipefail
 command="${1:-}"
 set -- "${@:2}" #removed the 1st parameter
 
-commands="setup, reset, main, dev, run, stop"
+commands="setup, setup-dev, reset, main, main-cmd, dev, dev-cmd, run, stop"
 dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 CYAN='\033[0;36m'
@@ -13,25 +13,26 @@ RED='\033[0;31m'
 NC='\033[0m' # No Color
 
 if [ -z "$command" ]; then
-    echo -e "${RED}No command passed (valid commands: $commands)${NC}"
-    exit 1
+  echo -e "${RED}No command passed (valid commands: $commands)${NC}"
+  exit 1
 fi
 
-if [ "$command" = "setup" ]; then
+case "$command" in
+  "setup"|"s")
     echo -e "${CYAN}$(date '+%F %X') Setup started at $(date '+%F %X')${NC}"
 
     git_repo=''
 
     if [ -d "$dir/env" ]; then
-        git_repo=$(git --git-dir="$dir/env/.git" remote get-url origin || :);
+      git_repo=$(git --git-dir="$dir/env/.git" remote get-url origin || :);
     fi
 
     if [ -z "$git_repo" ]; then
-        rm -rf "$dir/env"
-        read -e -p "Enter the main (global) git environment repository: " \
-            -i "https://lucasbasquerotto@bitbucket.org/lucasbasquerotto/ansible-main-env-demo.git" git_repo
-        git config --global credential.helper store
-        git clone "$git_repo" "$dir/env"
+      rm -rf "$dir/env"
+      read -e -p "Enter the main (global) git environment repository: " \
+        -i "https://lucasbasquerotto@bitbucket.org/lucasbasquerotto/ansible-main-env-demo.git" git_repo
+      git config --global credential.helper store
+      git clone "$git_repo" "$dir/env"
     fi
 
     echo -e "${CYAN}$(date '+%F %X') Main git environment repository: $git_repo at $dir/env${NC}"
@@ -46,7 +47,8 @@ if [ "$command" = "setup" ]; then
     echo -e "${CYAN}$(date '+%F %X') Docker images created${NC}"
 
     echo -e "${CYAN}$(date '+%F %X') Setup finished at $(date '+%F %X')${NC}"
-elif [ "$command" = "setup-dev" ]; then
+    ;;
+  "setup-dev")
     echo -e "${CYAN}$(date '+%F %X') Setup dev started at $(date '+%F %X')${NC}"
     
     "$dir"/run setup
@@ -54,59 +56,65 @@ elif [ "$command" = "setup-dev" ]; then
     "$dir"/run dev-cmd ./run run --tags "main,other,local"
 
     echo -e "${CYAN}$(date '+%F %X') Setup dev finished at $(date '+%F %X')${NC}"
-elif [ "$command" = "reset" ]; then
+    ;;
+  "reset")
     rm -rf "$dir/env"
-elif [ "$command" = "main" ] || [ "$command" = "dev" ] || [ "$command" = "dev-cmd" ]; then
+    ;;
+  "main"|"main-cmd"|"dev"|"dev-cmd")
     service=''
     cmd='/bin/bash'
 
-    if [ "$command" = "main" ]; then
-        service='ctl'
+    if [ "$command" = "main" ] || [ "$command" = "main-cmd" ]; then
+      service='ctl'
     elif [ "$command" = "dev" ] || [ "$command" = "dev-cmd" ]; then
-        service='ctl-dev'
+      service='ctl-dev'
     fi
 
-    if [ "$command" = "dev-cmd" ]; then
-        cmd="${@}"
+    if [ "$command" = "main-cmd" ] || [ "$command" = "dev-cmd" ]; then
+      cmd="${@}"
     fi
 
     if [ ! -z "$service" ]; then
-        cd "$dir"
-        sudo docker-compose up -d "$service"
-        sudo docker-compose exec "$service" $cmd
+      cd "$dir"
+      sudo docker-compose up -d "$service"
+      sudo docker-compose exec "$service" $cmd
     fi
-elif [ "$command" = "run" ]; then
+    ;;
+  "run")
     cd "$dir"
     hostname=''
     dev="${DEV:-}"
     
     if [ ! -z "$dev" ]; then
-        if [ "$dev" = "1" ]; then
-            hostname='ctl-dev'
-        else
-            hostname='ctl'
-        fi
+      if [ "$dev" = "1" ]; then
+        hostname='ctl-dev'
+      else
+        hostname='ctl'
+      fi
     fi
 
     if [ "$hostname" != "$HOSTNAME" ]; then
-        echo -e "${RED}Run the main or dev command before to enter a container${NC}"
-        exit 1
+      echo -e "${RED}Run the main or dev command before to enter a container${NC}"
+      exit 1
     fi
 
     mkdir -p /root/vars
 
     if [ ! -f /root/vars/main ]; then
-        echo -n "Enter the main vault pass (to decrypt the ssh keys of the environment repositories): "
-        read -s vault_pass
-        echo
-        echo "$vault_pass" > /root/vars/main
+      echo -n "Enter the main vault pass (to decrypt the ssh keys of the environment repositories): "
+      read -s vault_pass
+      echo
+      echo "$vault_pass" > /root/vars/main
     fi
 
     ansible-playbook --vault-id ~/vars/main main.yml ${@}
-elif [ "$command" = "stop" ]; then
+    ;;
+  "stop")
     cd "$dir"
     sudo docker-compose stop
-else
+    ;;
+  *)
     echo -e "${RED}Invalid command: $command (valid commands: $commands)${NC}"
     exit 1
-fi
+    ;;
+esac
