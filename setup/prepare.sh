@@ -55,6 +55,10 @@ else
     echo -e "${CYAN}$(date '+%F %X') updating the environment repositories files${NC}"
     ./ctl/run main-cmd /root/ctl/run run -e env_name="$pod_local_name"
     echo -e "${CYAN}$(date '+%F %X') environment repositories files updated${NC}"
+
+    echo -e "${CYAN}$(date '+%F %X') updating the environment repositories files${NC}"
+    ./ctl/run main-cmd "/root/r/w/$pod_local_name/upgrade"
+    echo -e "${CYAN}$(date '+%F %X') environment repositories files updated${NC}"
 fi
 
 end="$(date '+%F %X')"
