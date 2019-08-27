@@ -25,11 +25,16 @@ fi
 
 read -e -p "Enter the directory path: " -i "$default_dir_path" dir_path
 mkdir -p "$dir_path"
-
 cd "$dir_path/"
 
-read -e -p "Enter the pod directory name to run at the end of the setup: " \
-    -i "$default_pod_dir_name" pod_dir_name
+msg="Enter the specific pod local name to create files from the templates"
+msg="$msg (leave empty to create the files for all environment repos): "
+read -e -p "$msg" -i "" pod_local_name
+    
+if [ "$dev" = true ]; then
+    read -e -p "Enter the pod directory name to run at the end of the setup: " \
+        -i "$default_pod_dir_name" pod_dir_name
+fi
 
 read -e -p "Enter the controller git repository: " \-i "$default_git_repo_ctl" git_repo_ctl
 git clone "$git_repo_ctl" ctl
@@ -48,7 +53,7 @@ else
     echo -e "${CYAN}$(date '+%F %X') setup ended${NC}"
 
     echo -e "${CYAN}$(date '+%F %X') updating the environment repositories files${NC}"
-    ./ctl/run main-cmd /root/ctl/run run -e env_pod_name="$pod_dir_name"
+    ./ctl/run main-cmd /root/ctl/run run -e env_name="$pod_local_name"
     echo -e "${CYAN}$(date '+%F %X') environment repositories files updated${NC}"
 fi
 
