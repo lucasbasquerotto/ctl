@@ -17,10 +17,10 @@ read -e -p "Is this a development environment? [Y/n] " yn
 dev=""
 
 if [[ $yn == "y" || $yn == "Y" ]]; then
-    dev=true
-    echo "development"
+  dev=true
+  echo "development"
 else
-    echo "non-development"
+  echo "non-development"
 fi
 
 read -e -p "Enter the directory path: " -i "$default_dir_path" dir_path
@@ -32,33 +32,35 @@ msg="$msg (leave empty to create the files for all environment repos): "
 read -e -p "$msg" -i "" pod_local_name
     
 if [ "$dev" = true ]; then
-    read -e -p "Enter the pod directory name to run at the end of the setup: " \
-        -i "$default_pod_dir_name" pod_dir_name
+  read -e -p "Enter the pod directory name to run at the end of the setup: " \
+    -i "$default_pod_dir_name" pod_dir_name
 fi
 
 read -e -p "Enter the controller git repository: " \-i "$default_git_repo_ctl" git_repo_ctl
 git clone "$git_repo_ctl" ctl
 
 if [ "$dev" = true ]; then
-    echo -e "${CYAN}$(date '+%F %X') setup (dev) started${NC}"
-    ./ctl/run setup-dev
-    echo -e "${CYAN}$(date '+%F %X') setup (dev) ended${NC}"
+  echo -e "${CYAN}$(date '+%F %X') setup (dev) started${NC}"
+  ./ctl/run setup-dev
+  echo -e "${CYAN}$(date '+%F %X') setup (dev) ended${NC}"
 
-    echo -e "${CYAN}$(date '+%F %X') pod migration started${NC}"
-    ./pod/"$pod_dir_name"/run migrate
-    echo -e "${CYAN}$(date '+%F %X') pod migration ended${NC}"
+  echo -e "${CYAN}$(date '+%F %X') pod migration started${NC}"
+  ./pod/"$pod_dir_name"/run migrate
+  echo -e "${CYAN}$(date '+%F %X') pod migration ended${NC}"
 else
-    echo -e "${CYAN}$(date '+%F %X') setup started${NC}"
-    ./ctl/run setup
-    echo -e "${CYAN}$(date '+%F %X') setup ended${NC}"
+  echo -e "${CYAN}$(date '+%F %X') setup started${NC}"
+  ./ctl/run setup
+  echo -e "${CYAN}$(date '+%F %X') setup ended${NC}"
 
-    echo -e "${CYAN}$(date '+%F %X') updating the environment repositories files${NC}"
-    ./ctl/run main-cmd /root/ctl/run run -e env_name="$pod_local_name"
-    echo -e "${CYAN}$(date '+%F %X') environment repositories files updated${NC}"
+  echo -e "${CYAN}$(date '+%F %X') updating the environment repositories files${NC}"
+  ./ctl/run main-cmd /root/ctl/run run -e env_name="$pod_local_name"
+  echo -e "${CYAN}$(date '+%F %X') environment repositories files updated${NC}"
 
-    echo -e "${CYAN}$(date '+%F %X') updating the environment repositories files${NC}"
+  if [ ! -z "$pod_local_name" ]; then
+    echo -e "${CYAN}$(date '+%F %X') run the upgrade script ($pod_local_name)${NC}"
     ./ctl/run main-cmd "/root/r/w/$pod_local_name/upgrade"
-    echo -e "${CYAN}$(date '+%F %X') environment repositories files updated${NC}"
+    echo -e "${CYAN}$(date '+%F %X') upgrade script ($pod_local_name) executed${NC}"
+  fi
 fi
 
 end="$(date '+%F %X')"
