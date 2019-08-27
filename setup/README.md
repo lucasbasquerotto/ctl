@@ -3,7 +3,7 @@
 Execute the following to download the preparation script and run it:
 
 ```bash
-curl -O ~/setup https://github.com/lucasbasquerotto/ansible-manager/blob/master/setup/prepare.sh
+curl -o ~/setup https://raw.githubusercontent.com/lucasbasquerotto/ansible-manager/master/setup/prepare.sh
 chmod +x ~/setup
 ~/setup
 ```
