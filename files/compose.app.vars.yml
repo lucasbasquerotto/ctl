@@ -1,0 +1,8 @@
+templates:
+
+- src: "compose/wordpress/app.env"
+  dest: ".env"
+  root: true
+  params: 
+    ansible_image: "{{ params.ansible.image }}"
+    ansible_version: "{{ params.ansible.version }}"

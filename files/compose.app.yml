@@ -1,0 +1,7 @@
+params:
+- name: "compose.app.vars"
+  params: 
+    dev: "{{ params.dev }}"
+    dir_path: "/var/main/{{ params_aux.ctx_name }}"
+    env_repo: "{{ params.env_repo }}"
+    env_repo_version: "{{ params.env_repo }}"

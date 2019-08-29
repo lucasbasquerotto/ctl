@@ -1,4 +1,7 @@
-FROM lucasbasquerotto/ansible:0.0.2
+ARG CTL_IMAGE
+ARG CTL_VERSION
+
+FROM $CTL_IMAGE:$CTL_VERSION
 
 WORKDIR /root/ctl
 
