@@ -1,6 +1,6 @@
 params:
 - name: "compose.app.vars"
   params: 
-    ansible:
-     image: "{{ params.ansible.image }}"
-     version: "{{ params.ansible.version }}"
+    ctl:
+     image: "{{ params.ctl.image }}"
+     version: "{{ params.ctl.version }}"

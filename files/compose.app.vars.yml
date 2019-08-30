@@ -4,5 +4,5 @@ templates:
   dest: ".env"
   root: true
   params: 
-    ansible_image: "{{ params.ansible.image }}"
-    ansible_version: "{{ params.ansible.version }}"
+    ctl_image: "{{ params.ctl.image }}"
+    ctl_version: "{{ params.ctl.version }}"
