@@ -1,6 +1,6 @@
 templates:
 
-- src: "compose/wordpress/app.env"
+- src: "app.env"
   dest: ".env"
   root: true
   params: 
