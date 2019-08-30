@@ -98,7 +98,15 @@
   set_fact:
     repo_specific: >-
       {{
-      ((repo_env.cloud.repo is defined) and (repo_env.cloud.repo != env.cloud_repo))
+      (
+      (repo_env.cloud.repo is defined) 
+      and 
+      (repo_env.cloud.repo != env.cloud_repo)
+      and 
+      ((repo_env.cloud.repo + '.git') != env.cloud_repo)
+      and 
+      (repo_env.cloud.repo != (env.cloud_repo + '.git'))
+      )
       or
       (
       (repo_env.cloud.repo_version is defined) 
