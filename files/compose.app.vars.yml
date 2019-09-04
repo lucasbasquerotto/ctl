@@ -6,3 +6,10 @@ templates:
   params: 
     ctl_image: "{{ params.ctl.image }}"
     ctl_version: "{{ params.ctl.version }}"
+
+- src: "remote.tpl.sh"
+  dest: "remote.sh"
+  root: true
+  mode: '0755'
+  params: 
+    main_dir: "{{ params.run.main_dir }}"

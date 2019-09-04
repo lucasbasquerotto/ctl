@@ -49,7 +49,7 @@ if [ "$run" -eq 1 ]; then
   cd "$cloud_repo"
   ansible-playbook $vault "$playbook" -i "$hosts" \
     -e "env_file=$env_file" -e "env_dir=$env_dir" -e "env_tmp_dir=$tmp_dir" \
-    -e env_local_repo="$env_local_repo" $env_local_pod_dir $env_local_app_dir_list "$@"    
+    -e env_local_repo="$env_local_repo" $env_local_pod_dir $env_local_app_dir_list ${@}    
   cp "$env_file" "$env_file_tmp"
 else
   echo 'Already up to date'
