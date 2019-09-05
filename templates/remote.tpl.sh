@@ -1,7 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 
-main_dir="{{ main_dir }}"
+main_dir="{{ params.main_dir }}"
 pod_local_name="$1"
 
 shift;

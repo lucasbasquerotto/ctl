@@ -109,6 +109,14 @@ case "$command" in
 
     ansible-playbook --vault-id ~/vars/main main.yml ${@}
     ;;
+  "deploy")
+    "$dir"/run main-cmd ./run run -e env_pod="main"
+    "$dir"/run main-cmd /root/r/w/main/run -e env_cmd="${@}"
+    ;;
+  "deploy-dev"|"d")
+    "$dir"/run dev-cmd ./run run -e env_pod="main"
+    "$dir"/run dev-cmd /root/r/w/main/run -e env_cmd="${@}"
+    ;;
   "stop")
     cd "$dir"
     sudo docker-compose stop
