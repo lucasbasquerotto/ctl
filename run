@@ -62,7 +62,7 @@ case "$command" in
     ;;
   "main"|"main-cmd"|"dev"|"dev-cmd")
     service=''
-    cmd='/bin/bash'
+    cmd=( '/bin/bash' )
 
     if [ "$command" = "main" ] || [ "$command" = "main-cmd" ]; then
       service='ctl'
@@ -71,13 +71,16 @@ case "$command" in
     fi
 
     if [ "$command" = "main-cmd" ] || [ "$command" = "dev-cmd" ]; then
-      cmd="${@}"
+      cmd=( "${@}" )
+      echo "cmd=${cmd[@]}"
+      printf 'Arg: %s\n' "1" "2" "${cmd[@]}" "4"
+      printf 'Arg: %s\n' sudo docker-compose exec "$service" "${cmd[@]}"
     fi
 
     if [ ! -z "$service" ]; then
       cd "$dir"
       sudo docker-compose up -d "$service"
-      sudo docker-compose exec "$service" $cmd
+      sudo docker-compose exec "$service" "${cmd[@]}"
     fi
     ;;
   "run")
@@ -111,11 +114,11 @@ case "$command" in
     ;;
   "deploy")
     "$dir"/run main-cmd ./run run -e env_pod="main"
-    "$dir"/run main-cmd /root/r/w/main/run -e env_cmd="${@}"
+    "$dir"/run main-cmd /root/r/w/main/run -e "env_cmd='./remote.sh ${@}'"
     ;;
   "deploy-dev"|"d")
     "$dir"/run dev-cmd ./run run -e env_pod="main"
-    "$dir"/run dev-cmd /root/r/w/main/run -e env_cmd="${@}"
+    "$dir"/run dev-cmd /root/r/w/main/run -e "env_cmd='./remote.sh ${@}'"
     ;;
   "stop")
     cd "$dir"
