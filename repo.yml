@@ -162,6 +162,15 @@
     or 
     ((repo.env_dev_dir | default('')) != '')
   tags: ["other"]
+
+- name: "{{ repo.name }} - copy the vault file"
+  copy:
+    src: "env/{{ env_repo.vault_file }}"
+    dest: "{{ repo_dest }}/var/vault"
+    decrypt: yes
+    mode: 0600
+  when: (env_repo.vault_file | default('')) != ''
+  tags: ["other"]
   
 - name: "{{ repo.name }} - execute the commands of the local repositories (dev)"
   command: "{{ env.repo_base_dest_workspace }}/{{ repo.local_repo }}/dev"

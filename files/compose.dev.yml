@@ -1,0 +1,15 @@
+params:
+
+- name: "compose.app.vars"
+  params: 
+    ctl:
+      image: "{{ params.ctl.image }}"
+      version: "{{ params.ctl.version }}"
+    run:
+      main_dir: "{{ params_aux.repo_location }}"
+
+- name: "compose.dev.vars"
+  params: 
+    vault:
+      value: "{{ params.vault.encrypted_value }}"
+      

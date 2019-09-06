@@ -3,14 +3,20 @@ set -euo pipefail
 
 force="{{ repo_run_force }}"
 cloud_repo="{{ repo_cloud_repo_dest }}"
-hosts="{{ repo_dest }}/var/hosts"
+repo="{{ repo_dest }}"
+hosts="$repo/var/hosts"
 env_local_repo="{{ repo.local_repo }}"
 env_dir="{{ repo_env_dir }}"
 env_file="{{ repo_env_dir }}/{{ repo.env_file }}"
-env_file_tmp="{{ repo_dest }}/var/{{ repo.env_file }}"
-tmp_dir="{{ repo_dest }}/tmp"
+env_file_tmp="$repo/var/{{ repo.env_file }}"
+tmp_dir="$repo/tmp"
 vault="{{ repo_use_vault | ternary('--vault-id workspace@prompt', '') }}"
+vault_file="$repo/var/vault"
 playbook="{{ repo.type }}.yml"
+
+if [ ! -z "$vault" ] && [ -f "$vault_file" ]; then
+  vault="--vault-id $vault_file"
+fi
 
 {% set env_local_pod_dir = 
   (repo.local_pod_dir is defined) 

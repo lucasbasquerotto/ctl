@@ -1,0 +1,7 @@
+templates:
+
+- src: "vault.tpl"
+  dest: "vault"
+  root: true
+  params: 
+    vault: "{{ params.vault.value }}"

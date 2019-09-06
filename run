@@ -101,16 +101,20 @@ case "$command" in
       exit 1
     fi
 
-    mkdir -p /root/vars
+    mkdir -p /root/var
 
-    if [ ! -f /root/vars/main ]; then
-      echo -n "Enter the main vault pass (to decrypt the ssh keys of the environment repositories): "
-      read -s vault_pass
-      echo
-      echo "$vault_pass" > /root/vars/main
+    if [ ! -f /root/var/vault ]; then
+      if [ -f /root/ctl/vault ]; then
+        cp /root/ctl/vault /root/var/vault
+      else
+        echo -n "Enter the main vault pass (to decrypt the ssh keys of the environment repositories): "
+        read -s vault_pass
+        echo
+        echo "$vault_pass" > /root/var/vault
+      fi
     fi
 
-    ansible-playbook --vault-id ~/vars/main main.yml ${@}
+    ansible-playbook --vault-id /root/var/vault main.yml ${@}
     ;;
   "deploy")
     "$dir"/run main-cmd ./run run -e env_pod="main"
