@@ -4,7 +4,8 @@ set -eou pipefail
 command="${1:-}"
 set -- "${@:2}" #removed the 1st parameter
 
-commands="setup, setup-dev, reset, main, main-cmd, dev, dev-cmd, run, stop"
+commands="setup, setup-dev, reset, main, main-cmd, dev, dev-cmd, run"
+commands="$commands, fast-deploy, deploy, deploy-pod, stop"
 dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 CYAN='\033[0;36m'
@@ -119,6 +120,9 @@ case "$command" in
 
     ansible-playbook --vault-id /root/var/vault main.yml ${@}
     ;;
+  "fast-deploy"|"f")
+    "$dir"/run main-cmd /root/r/w/main/run -e "env_cmd='./remote.sh ${@}'"
+    ;;
   "deploy")
     "$dir"/run main-cmd ./run run -e env_pod="main"
     "$dir"/run main-cmd /root/r/w/main/run -e "env_cmd='./remote.sh ${@}'"
@@ -126,6 +130,12 @@ case "$command" in
   "deploy-dev"|"d")
     "$dir"/run dev-cmd ./run run -e env_pod="main"
     "$dir"/run dev-cmd /root/r/w/main/run -e "env_cmd='./remote.sh ${@}'"
+    ;;
+  "deploy-pod")
+    pod_name="${1:-}"
+    set -- "${@:2}"
+    "$dir"/run main-cmd ./run run -e env_pod="$pod_name"
+    "$dir"/run main-cmd "/root/r/w/$pod_name/run" -e "env_cmd='./remote.sh ${@}'"
     ;;
   "stop")
     cd "$dir"
