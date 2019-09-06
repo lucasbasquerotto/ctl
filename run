@@ -77,14 +77,13 @@ case "$command" in
       interactive="-T"
       cmd=( "${@}" )
       echo "cmd=${cmd[@]}"
-      printf 'Arg: %s\n' "1" "2" "${cmd[@]}" "4"
       printf 'Arg: %s\n' sudo docker-compose exec $interactive "$service" "${cmd[@]}"
     fi
 
     if [ ! -z "$service" ]; then
       cd "$dir"
       sudo docker-compose up -d "$service"
-      sudo docker-compose exec "$service" "${cmd[@]}"
+      sudo docker-compose exec $interactive "$service" "${cmd[@]}"
     fi
     ;;
   "run")
