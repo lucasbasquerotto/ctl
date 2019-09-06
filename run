@@ -18,6 +18,8 @@ if [ -z "$command" ]; then
   exit 1
 fi
 
+function join_by { local IFS="$1"; shift; echo "$*"; }
+
 case "$command" in
   "setup"|"s")
     echo -e "${CYAN}$(date '+%F %X') Setup started at $(date '+%F %X')${NC}"
@@ -120,21 +122,22 @@ case "$command" in
     ansible-playbook --vault-id /root/var/vault main.yml ${@}
     ;;
   "fast-deploy"|"f")
-    "$dir"/run dev-cmd /root/r/w/main/run -e "env_cmd='./run deploy-pod ${@}'"
+    args=$(join_by ' ' ${@})
+    printf 'args - Arg: %s\n' args
+    printf 'cmd - Arg: %s\n' "$dir"/run dev-cmd /root/r/w/main/run -e "env_cmd='./run deploy $args'"
+    "$dir"/run dev-cmd /root/r/w/main/run -e "env_cmd='./run deploy $args'"
     ;;
   "deploy")
-    "$dir"/run main-cmd ./run run -e env_pod="main"
-    "$dir"/run main-cmd /root/r/w/main/run -e "env_cmd='./run deploy-pod ${@}'"
-    ;;
-  "deploy-dev"|"d")
-    "$dir"/run dev-cmd ./run run -e env_pod="main"
-    "$dir"/run dev-cmd /root/r/w/main/run -e "env_cmd='./run deploy-pod ${@}'"
-    ;;
-  "deploy-pod")
     pod_name="${1:-}"
+
+    if [ -z "$pod_name" ]; then
+      echo "Nothing to run..."
+      exit 0
+    fi
+
     set -- "${@:2}"
     "$dir"/run main-cmd ./run run -e env_pod="$pod_name"
-    "$dir"/run main-cmd "/root/r/w/$pod_name/run" -e "env_cmd='./run deploy-pod ${@}'"
+    "$dir"/run main-cmd "/root/r/w/$pod_name/run" "${@}"
     ;;
   "stop")
     cd "$dir"
