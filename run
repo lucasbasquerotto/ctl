@@ -120,21 +120,21 @@ case "$command" in
     ansible-playbook --vault-id /root/var/vault main.yml ${@}
     ;;
   "fast-deploy"|"f")
-    "$dir"/run dev-cmd /root/r/w/main/run -e "env_cmd='./remote.sh ${@}'"
+    "$dir"/run dev-cmd /root/r/w/main/run -e "env_cmd='./run deploy-pod ${@}'"
     ;;
   "deploy")
     "$dir"/run main-cmd ./run run -e env_pod="main"
-    "$dir"/run main-cmd /root/r/w/main/run -e "env_cmd='./remote.sh ${@}'"
+    "$dir"/run main-cmd /root/r/w/main/run -e "env_cmd='./run deploy-pod ${@}'"
     ;;
   "deploy-dev"|"d")
     "$dir"/run dev-cmd ./run run -e env_pod="main"
-    "$dir"/run dev-cmd /root/r/w/main/run -e "env_cmd='./remote.sh ${@}'"
+    "$dir"/run dev-cmd /root/r/w/main/run -e "env_cmd='./run deploy-pod ${@}'"
     ;;
   "deploy-pod")
     pod_name="${1:-}"
     set -- "${@:2}"
     "$dir"/run main-cmd ./run run -e env_pod="$pod_name"
-    "$dir"/run main-cmd "/root/r/w/$pod_name/run" -e "env_cmd='./remote.sh ${@}'"
+    "$dir"/run main-cmd "/root/r/w/$pod_name/run" -e "env_cmd='./run deploy-pod ${@}'"
     ;;
   "stop")
     cd "$dir"
