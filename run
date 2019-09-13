@@ -14,139 +14,139 @@ RED='\033[0;31m'
 NC='\033[0m' # No Color
 
 if [ -z "$command" ]; then
-  echo -e "${RED}No command passed (valid commands: $commands)${NC}"
-  exit 1
+	echo -e "${RED}No command passed (valid commands: $commands)${NC}"
+	exit 1
 fi
 
 function join_by { local IFS="$1"; shift; echo "$*"; }
 
 case "$command" in
-  "setup"|"s")
-    echo -e "${CYAN}$(date '+%F %X') Setup started at $(date '+%F %X')${NC}"
+	"setup"|"s")
+		echo -e "${CYAN}$(date '+%F %X') Setup started at $(date '+%F %X')${NC}"
 
-    git_repo=''
+		git_repo=''
 
-    if [ -d "$dir/env" ]; then
-      git_repo=$(git --git-dir="$dir/env/.git" remote get-url origin || :);
-    fi
+		if [ -d "$dir/env" ]; then
+			git_repo=$(git --git-dir="$dir/env/.git" remote get-url origin || :);
+		fi
 
-    if [ -z "$git_repo" ]; then
-      rm -rf "$dir/env"
-      read -e -p "Enter the main (global) git environment repository: " \
-        -i "https://lucasbasquerotto@bitbucket.org/lucasbasquerotto/ansible-main-env-demo.git" git_repo
-      git config --global credential.helper store
-      git clone "$git_repo" "$dir/env"
-    fi
+		if [ -z "$git_repo" ]; then
+			rm -rf "$dir/env"
+			read -e -p "Enter the main (global) git environment repository: " \
+				-i "https://lucasbasquerotto@bitbucket.org/lucasbasquerotto/ansible-main-env-demo.git" git_repo
+			git config --global credential.helper store
+			git clone "$git_repo" "$dir/env"
+		fi
 
-    echo -e "${CYAN}$(date '+%F %X') Main git environment repository: $git_repo at $dir/env${NC}"
+		echo -e "${CYAN}$(date '+%F %X') Main git environment repository: $git_repo at $dir/env${NC}"
 
-    "$dir"/setup/local.sh
+		"$dir"/setup/local.sh
 
-    echo -e "${CYAN}$(date '+%F %X') Building the docker images...${NC}"
+		echo -e "${CYAN}$(date '+%F %X') Building the docker images...${NC}"
 
-    cd "$dir"
-    sudo docker-compose build
+		cd "$dir"
+		sudo docker-compose build
 
-    echo -e "${CYAN}$(date '+%F %X') Docker images created${NC}"
+		echo -e "${CYAN}$(date '+%F %X') Docker images created${NC}"
 
-    echo -e "${CYAN}$(date '+%F %X') Setup finished at $(date '+%F %X')${NC}"
-    ;;
-  "setup-dev")
-    echo -e "${CYAN}$(date '+%F %X') Setup dev started at $(date '+%F %X')${NC}"
-    
-    "$dir"/run setup
-    
-    "$dir"/run dev-cmd ./run run --tags "main,other,local"
+		echo -e "${CYAN}$(date '+%F %X') Setup finished at $(date '+%F %X')${NC}"
+		;;
+	"setup-dev")
+		echo -e "${CYAN}$(date '+%F %X') Setup dev started at $(date '+%F %X')${NC}"
+		
+		"$dir"/run setup
+		
+		"$dir"/run dev-cmd ./run run --tags "main,other,local"
 
-    echo -e "${CYAN}$(date '+%F %X') Setup dev finished at $(date '+%F %X')${NC}"
-    ;;
-  "reset")
-    rm -rf "$dir/env"
-    ;;
-  "main"|"main-cmd"|"dev"|"dev-cmd")
-    service=''
-    cmd=( '/bin/bash' )
+		echo -e "${CYAN}$(date '+%F %X') Setup dev finished at $(date '+%F %X')${NC}"
+		;;
+	"reset")
+		rm -rf "$dir/env"
+		;;
+	"main"|"main-cmd"|"dev"|"dev-cmd")
+		service=''
+		cmd=( '/bin/bash' )
 
-    if [ "$command" = "main" ] || [ "$command" = "main-cmd" ]; then
-      service='ctl'
-    elif [ "$command" = "dev" ] || [ "$command" = "dev-cmd" ]; then
-      service='ctl-dev'
-    fi
+		if [ "$command" = "main" ] || [ "$command" = "main-cmd" ]; then
+			service='ctl'
+		elif [ "$command" = "dev" ] || [ "$command" = "dev-cmd" ]; then
+			service='ctl-dev'
+		fi
 
-    interactive=""
+		interactive="-it"
 
-    if [ "$command" = "main-cmd" ] || [ "$command" = "dev-cmd" ]; then
-      interactive="-T"
-      cmd=( "${@}" )
-      echo "cmd=${cmd[@]}"
-      printf 'Arg: %s\n' sudo docker-compose exec $interactive "$service" "${cmd[@]}"
-    fi
+		if [ "$command" = "main-cmd" ] || [ "$command" = "dev-cmd" ]; then
+			interactive="-i"
+			cmd=( "${@}" )
+			echo "cmd=${cmd[@]}"
+			printf 'Arg: %s\n' sudo docker exec $interactive $(sudo docker-compose ps -q "$service") "${cmd[@]}"
+		fi
+	
+		if [ ! -z "$service" ]; then
+			cd "$dir"
+			sudo docker-compose up -d "$service"
+			sudo docker exec $interactive $(sudo docker-compose ps -q "$service") "${cmd[@]}"
+		fi
+		;;
+	"run")
+		cd "$dir"
+		hostname=''
+		dev="${DEV:-}"
+		
+		if [ ! -z "$dev" ]; then
+			if [ "$dev" = "1" ]; then
+				hostname='ctl-dev'
+			else
+				hostname='ctl'
+			fi
+		fi
 
-    if [ ! -z "$service" ]; then
-      cd "$dir"
-      sudo docker-compose up -d "$service"
-      sudo docker-compose exec $interactive "$service" "${cmd[@]}"
-    fi
-    ;;
-  "run")
-    cd "$dir"
-    hostname=''
-    dev="${DEV:-}"
-    
-    if [ ! -z "$dev" ]; then
-      if [ "$dev" = "1" ]; then
-        hostname='ctl-dev'
-      else
-        hostname='ctl'
-      fi
-    fi
+		if [ "$hostname" != "$HOSTNAME" ]; then
+			echo -e "${RED}Run the main or dev command before to enter a container${NC}"
+			exit 1
+		fi
 
-    if [ "$hostname" != "$HOSTNAME" ]; then
-      echo -e "${RED}Run the main or dev command before to enter a container${NC}"
-      exit 1
-    fi
+		mkdir -p /root/var
 
-    mkdir -p /root/var
+		if [ ! -f /root/var/vault ]; then
+			if [ -f /root/ctl/vault ]; then
+				cp /root/ctl/vault /root/var/vault
+			else
+				echo -n "Enter the main vault pass (to decrypt the ssh keys of the environment repositories): "
+				read -s vault_pass
+				echo
+				echo "$vault_pass" > /root/var/vault
+			fi
+		fi
 
-    if [ ! -f /root/var/vault ]; then
-      if [ -f /root/ctl/vault ]; then
-        cp /root/ctl/vault /root/var/vault
-      else
-        echo -n "Enter the main vault pass (to decrypt the ssh keys of the environment repositories): "
-        read -s vault_pass
-        echo
-        echo "$vault_pass" > /root/var/vault
-      fi
-    fi
+		ansible-playbook --vault-id /root/var/vault main.yml ${@}
+		;;
+	"fast-deploy"|"f")
+		args=$(join_by ' ' ${@})
+		"$dir"/run dev-cmd /root/r/w/main/run -e "env_cmd='./run deploy $args'"
+		;;
+	"destroy")
+		pod_name="${1:-}"
+		"$dir"/run dev-cmd "/root/r/w/$pod_name/run" --tags destroy
+		;;
+	"deploy")
+		pod_name="${1:-}"
 
-    ansible-playbook --vault-id /root/var/vault main.yml ${@}
-    ;;
-  "fast-deploy"|"f")
-    args=$(join_by ' ' ${@})
-    "$dir"/run dev-cmd /root/r/w/main/run -e "env_cmd='./run deploy $args'"
-    ;;
-  "destroy")
-    pod_name="${1:-}"
-    "$dir"/run dev-cmd "/root/r/w/$pod_name/run" --tags destroy
-    ;;
-  "deploy")
-    pod_name="${1:-}"
+		if [ -z "$pod_name" ]; then
+			echo "Nothing to run..."
+			exit 0
+		fi
 
-    if [ -z "$pod_name" ]; then
-      echo "Nothing to run..."
-      exit 0
-    fi
-
-    set -- "${@:2}"
-    "$dir"/run main-cmd ./run run -e env_pod="$pod_name"
-    "$dir"/run main-cmd "/root/r/w/$pod_name/run" "${@}"
-    ;;
-  "stop")
-    cd "$dir"
-    sudo docker-compose stop
-    ;;
-  *)
-    echo -e "${RED}Invalid command: $command (valid commands: $commands)${NC}"
-    exit 1
-    ;;
+		set -- "${@:2}"
+		"$dir"/run main-cmd ./run run -e env_pod="$pod_name"
+		"$dir"/run main-cmd "/root/r/w/$pod_name/run" "${@}"
+		;;
+	"stop")
+		cd "$dir"
+		sudo docker-compose stop
+		;;
+	*)
+		echo -e "${RED}Invalid command: $command (valid commands: $commands)${NC}"
+		exit 1
+		;;
 esac
