@@ -78,8 +78,8 @@ case "$command" in
 		if [ "$command" = "main-cmd" ] || [ "$command" = "dev-cmd" ]; then
 			interactive="-i"
 			cmd=( "${@}" )
-			echo "cmd=${cmd[@]}"
-			printf 'Arg: %s\n' sudo docker exec $interactive $(sudo docker-compose ps -q "$service") "${cmd[@]}"
+			# echo "cmd=${cmd[@]}"
+			# printf 'Arg: %s\n' sudo docker exec $interactive $(sudo docker-compose ps -q "$service") "${cmd[@]}"
 		fi
 	
 		if [ ! -z "$service" ]; then
