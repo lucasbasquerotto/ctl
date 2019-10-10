@@ -63,24 +63,36 @@ case "$command" in
 	"reset")
 		rm -rf "$dir/env"
 		;;
-	"main"|"main-cmd"|"dev"|"dev-cmd")
+	"main"|"main-cmd"|"main-cmd-nontty"|"dev"|"dev-cmd"|"dev-cmd-nontty")
 		service=''
 		cmd=( '/bin/bash' )
 
-		if [ "$command" = "main" ] || [ "$command" = "main-cmd" ]; then
-			service='ctl'
-		elif [ "$command" = "dev" ] || [ "$command" = "dev-cmd" ]; then
-			service='ctl-dev'
-		fi
+		case "$command" in
+			"main"|"main-cmd"|"main-cmd-nontty")
+				service='ctl'
+				;;
+			"dev"|"dev-cmd"|"dev-cmd-nontty")
+				service='ctl-dev'
+				;;
+			*)
+				echo -e "${RED}Unexpected invalid command: $command${NC}"
+				exit 1
+				;;
+		esac
+
+		case "$command" in
+			"main-cmd"|"main-cmd-nontty"|"dev-cmd"|"dev-cmd-nontty")
+				cmd=( "${@}" )
+				;;
+		esac
 
 		interactive="-it"
 
-		if [ "$command" = "main-cmd" ] || [ "$command" = "dev-cmd" ]; then
-			interactive="-i"
-			cmd=( "${@}" )
-			# echo "cmd=${cmd[@]}"
-			# printf 'Arg: %s\n' sudo docker exec $interactive $(sudo docker-compose ps -q "$service") "${cmd[@]}"
-		fi
+		case "$command" in
+			"main-cmd-nontty"|"dev-cmd-nontty")
+				interactive="-i"
+				;;
+		esac
 	
 		if [ ! -z "$service" ]; then
 			cd "$dir"
@@ -112,6 +124,7 @@ case "$command" in
 			if [ -f /root/ctl/vault ]; then
 				cp /root/ctl/vault /root/var/vault
 			else
+				#TODO ask pass
 				echo -n "Enter the main vault pass (to decrypt the ssh keys of the environment repositories): "
 				read -s vault_pass
 				echo
@@ -123,13 +136,13 @@ case "$command" in
 		;;
 	"fast-deploy"|"f")
 		args=$(join_by ' ' ${@})
-		"$dir"/run dev-cmd /root/r/w/main/run -e "env_cmd='./run deploy $args'"
+		"$dir"/run dev-cmd /root/r/w/main/run -e "env_cmd='./run deploy-nontty $args'"
 		;;
 	"destroy")
 		pod_name="${1:-}"
 		"$dir"/run dev-cmd "/root/r/w/$pod_name/run" --tags destroy
 		;;
-	"deploy")
+	"deploy"|"deploy-nontty")
 		pod_name="${1:-}"
 
 		if [ -z "$pod_name" ]; then
@@ -137,9 +150,15 @@ case "$command" in
 			exit 0
 		fi
 
+		new_cmd="main-cmd"
+
+		if [ "$command" = "deploy-nontty" ]; then
+			new_cmd="main-cmd-nontty"
+		fi
+
 		set -- "${@:2}"
-		"$dir"/run main-cmd ./run run -e env_pod="$pod_name"
-		"$dir"/run main-cmd "/root/r/w/$pod_name/run" "${@}"
+		"$dir"/run "$new_cmd" ./run run -e env_pod="$pod_name"
+		"$dir"/run "$new_cmd" "/root/r/w/$pod_name/run" "${@}"
 		;;
 	"stop")
 		cd "$dir"
