@@ -10,11 +10,11 @@ env_dir="{{ repo_env_dir }}"
 env_file="{{ repo_env_dir }}/{{ repo.env_file }}"
 env_file_tmp="$repo/var/{{ repo.env_file }}"
 tmp_dir="$repo/tmp"
-vault="{{ repo_use_vault | ternary('--vault-id workspace@prompt', '') }}"
+vault="{{ repo_force_vault | ternary('--vault-id workspace@prompt', '') }}"
 vault_file="$repo/var/vault"
 playbook="{{ repo.type }}.yml"
 
-if [ ! -z "$vault" ] && [ -f "$vault_file" ]; then
+if [ -f "$vault_file" ]; then
   vault="--vault-id $vault_file"
 fi
 
