@@ -54,11 +54,6 @@ fi
 if [ "$run" -eq 1 ]; then
   cd "$cloud_repo"
 
-  printf 'Arg: %s\n' ansible-playbook $vault "$playbook" -i "$hosts" \
-    -e "env_file=$env_file" -e "env_dir=$env_dir" -e "env_tmp_dir=$tmp_dir" \
-    -e env_local_repo="$env_local_repo" $env_local_pod_dir $env_local_app_dir_list "${@}"    
-
-
   ansible-playbook $vault "$playbook" -i "$hosts" \
     -e "env_file=$env_file" -e "env_dir=$env_dir" -e "env_tmp_dir=$tmp_dir" \
     -e env_local_repo="$env_local_repo" $env_local_pod_dir $env_local_app_dir_list "${@}"    
