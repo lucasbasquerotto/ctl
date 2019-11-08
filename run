@@ -134,15 +134,21 @@ case "$command" in
 
 		ansible-playbook --vault-id /root/var/vault main.yml ${@}
 		;;
-	"fast-deploy"|"f")
+	"main-deploy"|"m"|"main-fast-deploy")
 		args=$(join_by ' ' ${@})
-		"$dir"/run dev-cmd /root/r/w/main/run -e "env_cmd='./run deploy-nontty $args'"
+		new_cmd="deploy-nontty"
+
+		if [ "$command" = "main-fast-deploy" ]; then
+			new_cmd="fast-deploy-nontty"
+		fi
+
+		"$dir"/run dev-cmd /root/r/w/main/run -e "env_cmd='./run $new_cmd $args'"
 		;;
 	"destroy")
 		pod_name="${1:-}"
 		"$dir"/run dev-cmd "/root/r/w/$pod_name/run" --tags destroy
 		;;
-	"deploy"|"deploy-nontty")
+	"deploy"|"deploy-nontty"|"fast-deploy"|"f"|"fast-deploy-nontty")
 		pod_name="${1:-}"
 
 		if [ -z "$pod_name" ]; then
@@ -152,12 +158,20 @@ case "$command" in
 
 		new_cmd="main-cmd"
 
-		if [ "$command" = "deploy-nontty" ]; then
-			new_cmd="main-cmd-nontty"
-		fi
+		case "$command" in
+			"deploy-nontty"|"fast-deploy-nontty")
+				new_cmd="main-cmd-nontty"
+				;;
+		esac
 
 		set -- "${@:2}"
-		"$dir"/run "$new_cmd" ./run run -e env_pod="$pod_name"
+
+		case "$command" in
+			"deploy"|"deploy-nontty")
+				"$dir"/run "$new_cmd" ./run run -e env_pod="$pod_name"
+				;;
+		esac
+		
 		"$dir"/run "$new_cmd" "/root/r/w/$pod_name/run" "${@}"
 		;;
 	"stop")
