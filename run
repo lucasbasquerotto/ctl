@@ -2,7 +2,7 @@
 set -eou pipefail
 
 command="${1:-}"
-set -- "${@:2}" #removed the 1st parameter
+set -- "${@:2}"
 
 commands="setup, setup-dev, reset, main, main-cmd, dev, dev-cmd, run"
 commands="$commands, fast-deploy, deploy, deploy-pod, stop"
