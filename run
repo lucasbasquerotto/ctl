@@ -18,7 +18,7 @@ if [ -z "$command" ]; then
 	exit 1
 fi
 
-function join_by { local IFS="$1"; shift; echo "$*"; }
+function join_by { local IFS="$1"; shift; echo "$@"; }
 
 case "$command" in
 	"setup"|"s")
@@ -124,7 +124,6 @@ case "$command" in
 			if [ -f /root/ctl/vault ]; then
 				cp /root/ctl/vault /root/var/vault
 			else
-				#TODO ask pass
 				echo -n "Enter the main vault pass (to decrypt the ssh keys of the environment repositories): "
 				read -s vault_pass
 				echo
@@ -135,14 +134,19 @@ case "$command" in
 		ansible-playbook --vault-id /root/var/vault main.yml ${@}
 		;;
 	"main-deploy"|"m"|"main-fast-deploy")
-		args=$(join_by ' ' ${@})
+		args="$@"
+		tags=""
+		new_cmd_name="env_cmd"
 		new_cmd="deploy-nontty"
 
 		if [ "$command" = "main-fast-deploy" ]; then
+			tags="--tags=exec"
+			new_cmd_name="env_exec_cmd"
 			new_cmd="fast-deploy-nontty"
 		fi
 
-		"$dir"/run dev-cmd /root/r/w/main/run -e "env_cmd='./run $new_cmd $args'"
+		cmd_value=$(echo "./run $new_cmd $args" | base64 -w 0)
+		"$dir"/run dev-cmd /root/r/w/main/run $tags -e "$new_cmd_name"="$cmd_value"
 		;;
 	"destroy")
 		pod_name="${1:-}"
