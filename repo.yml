@@ -31,7 +31,7 @@
   file:
     path: "{{ repo_item }}"
     state: directory
-    mode: 0700
+    mode: 0751
   loop: 
   - "{{ env.repo_base_dest }}/var"
   - "{{ repo_dest }}/env"
