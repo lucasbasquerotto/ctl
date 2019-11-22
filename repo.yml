@@ -22,7 +22,7 @@
     repo_key_file: >-
       {{ 
       (repo_private | bool) | 
-      ternary(env.repo_base_dest + '/var/key_file', None) | 
+      ternary(repo_dest + '/var/repo.key_file', None) | 
       default(omit) 
       }}
   tags: ["other"]
