@@ -182,6 +182,25 @@ case "$command" in
 		cd "$dir"
 		sudo docker-compose stop
 		;;
+	"ssh")
+		repo_name="${1:-}"
+		instance_type="${2:-}"
+		index="${3:-1}"
+
+		if [ -z "$repo_name" ]; then
+			msg="Define the repo_name parameter (as defined in env/vars.yml)"
+			echo -e "${RED}${msg}${NC}"
+			exit 1
+		fi
+
+		if [ -z "$instance_type" ]; then
+			msg="Define the instance_type parameter (as defined in env/vars.yml -> contexts -> group)"
+			echo -e "${RED}${msg}${NC}"
+			exit 1
+		fi
+
+		"$dir"/run dev-cmd /root/ctl/env/scripts/ssh "$repo_name" "$instance_type" "$index"
+		;;
 	*)
 		echo -e "${RED}Invalid command: $command (valid commands: $commands)${NC}"
 		exit 1
