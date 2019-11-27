@@ -133,11 +133,18 @@ case "$command" in
 
 		ansible-playbook --vault-id /root/var/vault main.yml ${@}
 		;;
-	"main-deploy"|"m"|"main-fast-deploy")
+	"main-deploy"|"m"|"main-dev-deploy"|"main-fast-deploy"|"main-dev-fast-deploy")
 		args="$@"
 		tags=""
+		cmd_file="run"
 		new_cmd_name="env_cmd"
 		new_cmd="deploy-nontty"
+
+		case "$command" in
+			"main-dev-deploy"|"main-dev-fast-deploy")
+				cmd_file="dev"
+				;;
+		esac
 
 		if [ "$command" = "main-fast-deploy" ]; then
 			tags="--tags=exec"
@@ -146,7 +153,7 @@ case "$command" in
 		fi
 
 		cmd_value=$(echo "./run $new_cmd $args" | base64 -w 0)
-		"$dir"/run dev-cmd /root/r/w/main/run $tags -e "$new_cmd_name"="$cmd_value"
+		"$dir"/run dev-cmd "/root/r/w/main/$cmd_file" $tags -e "$new_cmd_name"="$cmd_value"
 		;;
 	"destroy")
 		pod_name="${1:-}"
