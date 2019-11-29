@@ -167,11 +167,11 @@ case "$command" in
 			exit 0
 		fi
 
-		new_cmd="main-cmd"
+		new_cmd="dev-cmd"
 
 		case "$command" in
 			"deploy-nontty"|"fast-deploy-nontty")
-				new_cmd="main-cmd-nontty"
+				new_cmd="dev-cmd-nontty"
 				;;
 		esac
 
