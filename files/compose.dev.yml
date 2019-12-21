@@ -1,6 +1,6 @@
 params:
 
-- name: "compose.app.vars"
+- name: "files/compose.app.vars"
   params: 
     ctl:
       image: "{{ params.ctl.image }}"
@@ -8,7 +8,7 @@ params:
     run:
       main_dir: "{{ params_aux.repo_location }}"
 
-- name: "compose.dev.vars"
+- name: "files/compose.dev.vars"
   params: 
     vault:
       value: "{{ params.vault.encrypted_value }}"
