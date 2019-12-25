@@ -27,7 +27,7 @@
     loop_control:
       loop_var: repo
       label: "{{ repo.name }}"
-    when: (env_name is not defined) or (env_name == repo.local_repo)
+    when: ((env_repo_name | default('')) == '') or (env_repo_name == repo.local_repo)
     tags: ["env", "other"]
 
   - name: "executable files"
@@ -37,7 +37,7 @@
     loop_control:
       loop_var: repo
       label: "{{ repo.name }}"
-    when: (env_pod_name is not defined) or (env_pod_name == repo.local_repo)
+    when: ((env_repo_name | default('')) == '') or (env_repo_name == repo.local_repo)
     tags: ["other", "print_action"]
   
   - name: "update the repositories and directories permissions (dev)"
