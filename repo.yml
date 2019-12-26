@@ -7,14 +7,25 @@
     repo_env_dev_dir_base: "/main/env"
   tags: ["other"]
 
-- name: "{{ repo.name }} - set_fact"
+- name: "{{ repo.name }} - set_fact - main dir"
   set_fact: 
     repo_private: "{{ env_repo.private | default(false) }}"
-    repo_env_dir: >-
+    repo_env_main_dir: "{{ repo_dest + '/env' }}"
+  tags: ["other"]
+
+- name: "{{ repo.name }} - set_fact - dev dir"
+  set_fact: 
+    repo_env_dev_dir: >-
       {{ 
-      ((lookup('env', 'DEV') == '1') and ((repo.env_dev_dir | default('')) != ''))
-      | ternary(repo_env_dev_dir_base +'/' + (repo.env_dev_dir | default('')), repo_dest + '/env')
+      ((repo.env_dev_dir | default('')) != '') | ternary(
+      repo_env_dev_dir_base + '/' + (repo.env_dev_dir | default('')), 
+      '')
       }}
+  tags: ["other"]
+
+- name: "{{ repo.name }} - set_fact - repo"
+  set_fact: 
+    repo_private: "{{ env_repo.private | default(false) }}"
   tags: ["other"]
 
 - name: "{{ repo.name }} - set_fact"
@@ -62,7 +73,7 @@
   git:
     repo: "{{ env_repo.source }}"
     version: "{{ env_repo.version }}"
-    dest: "{{ repo_dest }}/env"
+    dest: "{{ repo_env_main_dir }}"
     key_file: "{{ repo_key_file }}"
     accept_hostkey: yes
     update: yes
@@ -73,11 +84,11 @@
   git:
     repo: "{{ env_repo.source }}"
     version: "{{ env_repo.version }}"
-    dest: "{{ repo_env_dir }}"
+    dest: "{{ repo_env_dev_dir }}"
     key_file: "{{ repo_key_file }}"
     accept_hostkey: yes
     update: no
-  when: (lookup('env', 'DEV') == '1') and ((repo.env_dev_dir | default('')) != '')
+  when: (repo_env_dev_dir | default('')) != ''
   tags: ["other"]
 
 - name: "{{ repo.name }} - copy the temporary hosts file to verify changes"
@@ -90,7 +101,7 @@
 
 - name: load environment vars
   include_vars:
-    file: "{{ repo_env_dir }}/{{ repo.env_file }}"
+    file: "{{ repo_env_main_dir }}/{{ repo.env_file }}"
     name: repo_env
   tags: ["other"]
 
@@ -99,19 +110,19 @@
     repo_specific: >-
       {{
       (
-      (repo_env.cloud.repo is defined) 
+      (repo_env.main.repo is defined) 
       and 
-      (repo_env.cloud.repo != env.cloud_repo)
+      (repo_env.main.repo != env.cloud_repo)
       and 
-      ((repo_env.cloud.repo + '.git') != env.cloud_repo)
+      ((repo_env.main.repo + '.git') != env.cloud_repo)
       and 
-      (repo_env.cloud.repo != (env.cloud_repo + '.git'))
+      (repo_env.main.repo != (env.cloud_repo + '.git'))
       )
       or
       (
-      (repo_env.cloud.repo_version is defined) 
+      (repo_env.main.repo_version is defined) 
       and 
-      (repo_env.cloud.repo_version != env.cloud_repo_version)
+      (repo_env.main.repo_version != env.cloud_repo_version)
       )
       }}
   tags: ["other"]
@@ -127,8 +138,8 @@
 
 - name: "{{ repo.name }} - update specific cloud repo if there is one specified"
   git:
-    repo: "{{ repo_env.cloud.repo | default(env.cloud_repo) }}"
-    version: "{{ repo_env.cloud.repo_version | default(env.cloud_repo_version) }}"
+    repo: "{{ repo_env.main.repo | default(env.cloud_repo) }}"
+    version: "{{ repo_env.main.repo_version | default(env.cloud_repo_version) }}"
     dest: "{{ repo_dest }}/cloud"
     update: yes
     force: no
@@ -151,6 +162,11 @@
   vars:
     repo_run_force: "{{ repo_item.force }}"
     repo_force_vault: "{{ env_repo.force_vault and not (repo_item.dev | default(false) | bool) }}"
+    repo_env_dir: >-
+      {{ (repo_item.dev | default(false) | bool) | 
+      ternary(repo_env_dev_dir, '') |
+      default(repo_env_main_dir, true)
+      }}
   loop:
   - { name: "run", force: "true" }
   - { name: "upgrade", force: "false" }
