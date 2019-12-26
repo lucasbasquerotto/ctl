@@ -151,7 +151,7 @@
     src: "{{ env.cloud_repo_dest }}/hosts"
     dest: "{{ repo_dest }}/var/hosts"
     mode: 0600
-  when: diff_hosts.changed
+    force: "{{ diff_hosts.changed }}"
   tags: ["other"]
 
 - name: "{{ repo.name }} - copy the executable files"
