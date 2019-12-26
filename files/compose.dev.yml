@@ -11,5 +11,5 @@ params:
 - name: "files/compose.dev.vars"
   params: 
     vault:
-      value: "{{ params.vault.encrypted_value }}"
+      value: "{{ credentials.vault.encrypted_value }}"
       
