@@ -159,6 +159,10 @@ case "$command" in
 		repo_name="${1:-}"
 		"$dir"/run dev-cmd "/root/r/w/$repo_name/run" --tags destroy
 		;;
+	"prepare")
+		repo_name="${1:-}"		
+		"$dir"/run main-cmd ./run run -e env_repo_name="$repo_name"				
+		;;
 	"deploy"|"deploy-nontty"|"fast-deploy"|"f"|"fast-deploy-nontty"|"dev-deploy")
 		repo_name="${1:-}"
 
