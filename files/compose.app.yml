@@ -1,5 +1,5 @@
 params:
-- name: "files/compose.app.vars"
+- name: "files/compose.app.vars.yml"
   params: 
     ctl:
       image: "{{ params.ctl.image }}"
