@@ -142,7 +142,7 @@
   set_fact: 
     repo_hosts_file_src: >-
       {{ 
-      repo_env.main.hosts_file 
+      repo_env.main.hosts_file | default('')
       | ternary(repo_env_main_dir + '/' + (repo_env.main.hosts_file | default('')), '')
       }}
     repo_hosts_content: "{{ repo_env.main.hosts_content | default('') }}"
@@ -150,7 +150,7 @@
 
 - name: "{{ repo.name }} - ensure that there is a hosts file or content"
   fail:
-    msg: "Inform a value for hosts_file or hosts_content"
+    msg: "Enter a value for hosts_file or hosts_content"
   when: >-
     ((repo_hosts_file_src | default('')) == '') 
     and 
@@ -159,7 +159,7 @@
 
 - name: "{{ repo.name }} - ensure that there isn't a hosts file and a hosts content at once"
   fail:
-    msg: "Inform a value for only one of hosts_file or hosts_content"
+    msg: "Enter a value for only one of hosts_file or hosts_content"
   when: >-
     ((repo_hosts_file_src | default('')) != '') 
     and 
