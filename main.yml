@@ -18,7 +18,7 @@
       version: "{{ env.cloud_repo_version }}"
       dest: "{{ (lookup('env', 'DEV') == '1') | ternary('/main/cloud', env.cloud_repo_dest) }}"
       update: "{{ (lookup('env', 'DEV') == '1') | ternary('no', 'yes') }}"
-      force: "{{ (lookup('env', 'DEV') == '1') | ternary('no', 'yes') }}"
+      force: no
     tags: ["main", "print_action"]
 
   - name: "update workspace repos"

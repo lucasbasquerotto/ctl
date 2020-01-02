@@ -166,7 +166,7 @@
     ((repo_hosts_content | default('')) != '')
   tags: ["other"]
 
-- name: "{{ repo.name }} - copy the temporary hosts file to verify changes"
+- name: "{{ repo.name }} - copy the hosts file temporarily to verify changes"
   copy:
     src: "{{ repo_hosts_file_src }}"
     dest: "{{ repo_dest }}/var/hosts.tmp"
@@ -175,7 +175,7 @@
   when: (repo_hosts_file_src | default('')) != ''
   tags: ["other"]
 
-- name: "{{ repo.name }} - copy the temporary hosts file to verify changes"
+- name: "{{ repo.name }} - copy the hosts content temporarily to verify changes"
   copy:
     content: "{{ repo_hosts_content }}"
     dest: "{{ repo_dest }}/var/hosts.tmp"
