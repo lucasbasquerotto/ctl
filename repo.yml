@@ -91,15 +91,7 @@
   when: (repo_env_dev_dir | default('')) != ''
   tags: ["other"]
 
-- name: "{{ repo.name }} - copy the temporary hosts file to verify changes"
-  copy:
-    src: "{{ env.cloud_repo_dest }}/hosts"
-    dest: "{{ repo_dest }}/var/hosts.tmp"
-    mode: 0600
-  register: diff_hosts
-  tags: ["other"]
-
-- name: load environment vars
+- name: "{{ repo.name }} - load environment vars"
   include_vars:
     file: "{{ repo_env_main_dir }}/{{ repo.env_file }}"
     name: repo_env
@@ -146,12 +138,58 @@
   when: repo_specific | bool
   tags: ["other"]
 
+- name: "{{ repo.name }} - set_fact - hosts"
+  set_fact: 
+    repo_hosts_file_src: >-
+      {{ 
+      repo_env.main.hosts_file 
+      | ternary(repo_env_main_dir + '/' + (repo_env.main.hosts_file | default('')), '')
+      }}
+    repo_hosts_content: "{{ repo_env.main.hosts_content | default('') }}"
+  tags: ["other"]
+
+- name: "{{ repo.name }} - ensure that there is a hosts file or content"
+  fail:
+    msg: "Inform a value for hosts_file or hosts_content"
+  when: >-
+    ((repo_hosts_file_src | default('')) == '') 
+    and 
+    ((repo_hosts_content | default('')) == '')
+  tags: ["other"]
+
+- name: "{{ repo.name }} - ensure that there isn't a hosts file and a hosts content at once"
+  fail:
+    msg: "Inform a value for only one of hosts_file or hosts_content"
+  when: >-
+    ((repo_hosts_file_src | default('')) != '') 
+    and 
+    ((repo_hosts_content | default('')) != '')
+  tags: ["other"]
+
+- name: "{{ repo.name }} - copy the temporary hosts file to verify changes"
+  copy:
+    src: "{{ repo_hosts_file_src }}"
+    dest: "{{ repo_dest }}/var/hosts.tmp"
+    mode: 0600
+  register: diff_hosts_file
+  when: (repo_hosts_file_src | default('')) != ''
+  tags: ["other"]
+
+- name: "{{ repo.name }} - copy the temporary hosts file to verify changes"
+  copy:
+    content: "{{ repo_hosts_content }}"
+    dest: "{{ repo_dest }}/var/hosts.tmp"
+    mode: 0600
+  register: diff_hosts_content
+  when: (repo_hosts_content | default('')) != ''
+  tags: ["other"]
+
 - name: "{{ repo.name }} - copy the hosts file when changed"
   copy:
-    src: "{{ env.cloud_repo_dest }}/hosts"
+    src: "{{ repo_dest }}/var/hosts.tmp"
     dest: "{{ repo_dest }}/var/hosts"
     mode: 0600
-    force: "{{ diff_hosts.changed }}"
+    force: "{{ diff_hosts_file.changed or diff_hosts_content.changed }}"
   tags: ["other"]
 
 - name: "{{ repo.name }} - copy the executable files"
