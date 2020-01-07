@@ -1,41 +1,9 @@
 - name: "{{ repo.name }} - set_fact"
   set_fact: 
     repo_dest: "{{ env.repo_base_dest_workspace }}/{{ repo.local_repo }}"
-    env_repo: "{{ (repo.global_env_repo | default(false)) | ternary(env.env_repo, repo.env_repo) }}"
-    repo_base_dir_pod: "/main/pod"
-    repo_base_dir_app: "/main/app"
-    repo_env_dev_dir_base: "/main/env"
-  tags: ["other"]
-
-- name: "{{ repo.name }} - set_fact - main dir"
-  set_fact: 
-    repo_private: "{{ env_repo.private | default(false) }}"
-    repo_env_main_dir: "{{ repo_dest + '/env' }}"
-  tags: ["other"]
-
-- name: "{{ repo.name }} - set_fact - dev dir"
-  set_fact: 
-    repo_env_dev_dir: >-
-      {{ 
-      ((repo.env_dev_dir | default('')) != '') | ternary(
-      repo_env_dev_dir_base + '/' + (repo.env_dev_dir | default('')), 
-      '')
-      }}
-  tags: ["other"]
-
-- name: "{{ repo.name }} - set_fact - repo"
-  set_fact: 
-    repo_private: "{{ env_repo.private | default(false) }}"
-  tags: ["other"]
-
-- name: "{{ repo.name }} - set_fact"
-  set_fact: 
-    repo_key_file: >-
-      {{ 
-      (repo_private | bool) | 
-      ternary(repo_dest + '/var/repo.key_file', None) | 
-      default(omit) 
-      }}
+    repo_env_repo: "{{ (repo.global_env_repo | default(false)) | ternary(env.env_repo, repo.env_repo) }}"
+    repo_base_dir_pod: "/main/pods"
+    repo_base_dir_app: "/main/apps"
   tags: ["other"]
 
 - name: "{{ repo.name }} - create the directories in {{ repo_dest }}"
@@ -52,14 +20,7 @@
     loop_var: repo_item
   tags: ["other"]
 
-- name: "{{ repo.name }} - copy encrypted file to set location"
-  copy:
-    src: "env/{{ env_repo.key_file_encrypted }}"
-    dest: "{{ repo_key_file }}"
-    decrypt: yes
-    mode: 0600
-  when: (repo_private | bool)
-  tags: ["other"]
+# env repository
   
 - name: "{{ repo.name }} - create file to verify idempotence (if there is still no file)"
   copy: 
@@ -68,82 +29,139 @@
     dest: "{{ repo_dest }}/var/{{ repo.env_file }}"
     mode: 0600
   tags: ["other"]
-  
-- name: "{{ repo.name }} - download the workspace environment repo"
-  git:
-    repo: "{{ env_repo.source }}"
-    version: "{{ env_repo.version }}"
-    dest: "{{ repo_env_main_dir }}"
-    key_file: "{{ repo_key_file }}"
-    accept_hostkey: yes
-    update: yes
-    force: yes
-  tags: ["other", "print_action"]
-  
-- name: "{{ repo.name }} - download the workspace environment repo for real-time development (1st time)"
-  git:
-    repo: "{{ env_repo.source }}"
-    version: "{{ env_repo.version }}"
-    dest: "{{ repo_env_dev_dir }}"
-    key_file: "{{ repo_key_file }}"
-    accept_hostkey: yes
-    update: no
-  when: (repo_env_dev_dir | default('')) != ''
+
+- name: "{{ repo.name }} - set_fact - repo_env_dest"
+  set_fact:
+    repo_env_dest: >-
+      {{ 
+      (repo.env_repo is defined) |
+      ternary(
+      (main_dev | bool) | 
+      ternary(
+      repo.env_repo.local_dir | default('') | 
+      ternary(main_env_repo_dest_base + '/' + (repo.env_repo.local_dir | default('')), ''), 
+      repo_dest + '/env'
+      ),
+      repo.global_env_repo | default(false) | bool | ternary(main_env_repo_dest, ''),  
+      )
+      }}
   tags: ["other"]
+
+- name: "{{ repo.name }} - fail - repo_env_dest"
+  fail:
+    msg: >-
+      repo_env (specific or global) is not correctly defined for the
+      repository [{{ repo.name }}]
+  when: (repo_env_dest | default('')) == ''
+
+- block:
+
+  - name: "{{ repo.name }} - set_fact"
+    set_fact: 
+      repo_env_private: "{{ repo.env_repo.private | default(false) }}"
+    tags: ["other"]
+
+  - name: "{{ repo.name }} - set_fact"
+    set_fact: 
+      repo_env_key_file: >-
+        {{ 
+        (repo_env_private | bool) | 
+        ternary(repo_dest + '/var/repo.env.key_file', '')
+        }}
+    tags: ["other"]
+
+  - name: "{{ repo.name }} - copy encrypted file to set location"
+    copy:
+      src: "env/{{ repo.env_repo.key_file_encrypted }}"
+      dest: "{{ repo_env_key_file }}"
+      decrypt: yes
+      mode: 0600
+    when: (repo_env_private | bool)
+    tags: ["other"]
+
+  - name: "{{ repo.name }} - update specific env repo"
+    git:
+      repo: "{{ repo.env_repo.src }}"
+      version: "{{ repo.env_repo.version }}"
+      key_file: "{{ repo_env_key_file | default(omit, true) }}"
+      accept_hostkey: yes
+      dest: "{{ repo_env_dest }}"
+      update: "{{ (main_dev | bool) | ternary('no', 'yes') }}"
+      force: no
+    tags: ["other", "print_action"]
+
+  when: repo.env_repo is defined
+
+# env vars
 
 - name: "{{ repo.name }} - load environment vars"
   include_vars:
-    file: "{{ repo_env_main_dir }}/{{ repo.env_file }}"
+    file: "{{ repo_env_dest }}/{{ repo.env_file }}"
     name: repo_env
   tags: ["other"]
 
-- name: "{{ repo.name }} - verify if it will create a specific main repository"
-  set_fact:
-    repo_specific: >-
-      {{
-      (
-      (repo_env.main.repo is defined) 
-      and 
-      (repo_env.main.repo != env.cloud_repo)
-      and 
-      ((repo_env.main.repo + '.git') != env.cloud_repo)
-      and 
-      (repo_env.main.repo != (env.cloud_repo + '.git'))
-      )
-      or
-      (
-      (repo_env.main.repo_version is defined) 
-      and 
-      (repo_env.main.repo_version != env.cloud_repo_version)
-      )
-      }}
+# cloud repository
+
+- name: "{{ repo.name }} - set_fact"
+  set_fact: 
+    repo_cloud_private: "{{ repo_env.main.repo_private | default(false) }}"
   tags: ["other"]
 
-- name: "{{ repo.name }} - set_fact - repo_cloud_repo_dest"
-  set_fact:
-    repo_cloud_repo_dest: >-
+- name: "{{ repo.name }} - set_fact"
+  set_fact: 
+    repo_cloud_key_file: >-
       {{ 
-      repo_specific | 
-      ternary(repo_dest + '/cloud', env.cloud_repo_dest) 
+      (repo_cloud_private | bool) | 
+      ternary(repo_dest + '/var/repo.cloud.key_file', '')
       }}
   tags: ["other"]
 
-- name: "{{ repo.name }} - update specific cloud repo if there is one specified"
-  git:
-    repo: "{{ repo_env.main.repo | default(env.cloud_repo) }}"
-    version: "{{ repo_env.main.repo_version | default(env.cloud_repo_version) }}"
-    dest: "{{ repo_dest }}/cloud"
-    update: yes
-    force: no
-  when: repo_specific | bool
+- name: "{{ repo.name }} - copy encrypted file to set location"
+  copy:
+    src: "env/{{ repo_env.main.repo_key_file_encrypted }}"
+    dest: "{{ repo_cloud_key_file }}"
+    decrypt: yes
+    mode: 0600
+  when: (repo_cloud_key_file | bool)
   tags: ["other"]
+
+- name: "{{ repo.name }} - set_fact - repo_cloud_dest"
+  set_fact:
+    repo_cloud_dest: >-
+      {{ 
+      (main_dev | bool) | 
+      ternary(
+      repo.local_cloud_dir | default('') | 
+      ternary(main_cloud_repo_dest_base + '/' + (repo.local_cloud_dir | default('')), ''), 
+      repo_dest + '/cloud'
+      )
+      }}
+  tags: ["other"]
+
+- name: "{{ repo.name }} - fail - repo_cloud_dest"
+  fail:
+    msg: "local_cloud_dir is not defined for the repository [{{ repo.name }}]"
+  when: (repo_cloud_dest | default('')) == ''
+
+- name: "{{ repo.name }} - update specific cloud repo"
+  git:
+    repo: "{{ repo_env.main.repo }}"
+    version: "{{ repo_env.main.repo_version }}"
+    key_file: "{{ repo_cloud_key_file | default(omit, true) }}"
+    accept_hostkey: yes
+    dest: "{{ repo_cloud_dest }}"
+    update: "{{ (main_dev | bool) | ternary('no', 'yes') }}"
+    force: no
+  tags: ["other", "print_action"]
+
+# hosts file (inventory)
 
 - name: "{{ repo.name }} - set_fact - hosts"
   set_fact: 
     repo_hosts_file_src: >-
       {{ 
       repo_env.main.hosts_file | default('')
-      | ternary(repo_env_main_dir + '/' + (repo_env.main.hosts_file | default('')), '')
+      | ternary(repo_env_dest + '/' + (repo_env.main.hosts_file | default('')), '')
       }}
     repo_hosts_content: "{{ repo_env.main.hosts_content | default('') }}"
   tags: ["other"]
@@ -192,6 +210,8 @@
     force: "{{ diff_hosts_file.changed or diff_hosts_content.changed }}"
   tags: ["other"]
 
+# executable files
+
 - name: "{{ repo.name }} - copy the executable files"
   template:
     src: "templates/run.tpl.sh"
@@ -199,37 +219,27 @@
     mode: 0700
   vars:
     repo_run_force: "{{ repo_item.force }}"
-    repo_force_vault: "{{ env_repo.force_vault and not (repo_item.dev | default(false) | bool) }}"
-    repo_env_dir: >-
-      {{ (repo_item.dev | default(false) | bool) | 
-      ternary(repo_env_dev_dir, '') |
-      default(repo_env_main_dir, true)
-      }}
+    repo_force_vault: "{{ repo_env_repo.force_vault and not (repo_item.dev | default(false) | bool) }}"
+    repo_env_dir: "{{ repo_env_dest }}"
+    repo_cloud_repo_dest: "{{ repo_cloud_dest }}"
   loop:
   - { name: "run", force: "true" }
   - { name: "upgrade", force: "false" }
   - { name: "dev", force: "true", dev: true }
   loop_control:
     loop_var: repo_item
-  when: >-
-    (not (repo_item.dev | default(false) | bool)) 
-    or 
-    ((repo.env_dev_dir | default('')) != '')
   tags: ["other"]
 
 - name: "{{ repo.name }} - copy the vault file"
   copy:
-    src: "env/{{ env_repo.vault_file }}"
+    src: "env/{{ repo_env_repo.vault_file }}"
     dest: "{{ repo_dest }}/var/vault"
     decrypt: yes
     mode: 0600
-  when: (env_repo.vault_file | default('')) != ''
+  when: (repo_env_repo.vault_file | default('')) != ''
   tags: ["other"]
   
 - name: "{{ repo.name }} - execute the commands of the local repositories (dev)"
   command: "{{ env.repo_base_dest_workspace }}/{{ repo.local_repo }}/dev"
-  when: >-
-    ((repo.type | default('')) == 'local')
-    and
-    (lookup('env', 'DEV') == '1') and ((repo.env_dev_dir | default('')) != '')
+  when: repo.local | default(false) | bool
   tags: ["never", "local"]

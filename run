@@ -40,7 +40,7 @@ case "$command" in
 
 		echo -e "${CYAN}$(date '+%F %X') Main git environment repository: $git_repo at $dir/env${NC}"
 
-		"$dir"/setup/local.sh
+		cp "$dir"/env/.env "$dir"/
 
 		echo -e "${CYAN}$(date '+%F %X') Building the docker images...${NC}"
 
@@ -188,7 +188,7 @@ case "$command" in
 		set -- "${@:2}"
 
 		case "$command" in
-			"deploy"|"deploy-nontty")
+			"deploy"|"deploy-nontty"|"dev-deploy")
 				"$dir"/run "$new_cmd" ./run run -e env_repo_name="$repo_name"
 				;;
 		esac

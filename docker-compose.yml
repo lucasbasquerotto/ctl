@@ -13,8 +13,8 @@ services:
     build: 
       context: ./
       args:
-        CTL_IMAGE: ${CTL_IMAGE:-lucasbasquerotto/ansible}
-        CTL_VERSION: ${CTL_VERSION:-0.0.2}
+        CTL_IMAGE: $CTL_IMAGE
+        CTL_VERSION: $CTL_VERSION
     environment:
     - DEV=0
     volumes:
@@ -30,19 +30,20 @@ services:
     build: 
       context: ./
       args:
-        CTL_IMAGE: ${CTL_IMAGE:-lucasbasquerotto/ansible}
-        CTL_VERSION: ${CTL_VERSION:-0.0.2}
+        CTL_IMAGE: $CTL_IMAGE
+        CTL_VERSION: $CTL_VERSION
     environment:
     - DEV=1
     volumes:
     - .:/root/ctl:ro
     - ../var:/root/var:rw
     - ../r:/root/r:rw
-    - ../cloud:/root/r/cloud:ro
-    - ../env:/main/env:rw
-    - ../cloud:/main/cloud:rw
-    - ../pod:/main/pod:rw
-    - ../app:/main/app:rw
+    - ../envs:/root/r/envs:ro
+    - ../clouds:/root/r/clouds:ro
+    - ../envs:/main/envs:rw
+    - ../clouds:/main/clouds:rw
+    - ../pods:/main/pods:rw
+    - ../apps:/main/apps:rw
     - ../data:/main/data:rw
     - ../data:/data:rw
     logging: *logging 

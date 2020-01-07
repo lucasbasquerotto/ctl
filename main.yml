@@ -2,26 +2,74 @@
   hosts: main
   gather_facts: no  
   tasks:  
-  - name: Gathering facts
+  - name: "gathering facts"
     setup: 
     tags: ["main", "other"]
 
-  - name: load environment vars
+  - name: "load environment vars"
     include_vars:
       file: "env/vars.yml"
       name: env
     tags: ["main", "other"]
-      
-  - name: "update main repo (cloud)"
-    git:
-      repo: "{{ env.cloud_repo }}"
-      version: "{{ env.cloud_repo_version }}"
-      dest: "{{ (lookup('env', 'DEV') == '1') | ternary('/main/cloud', env.cloud_repo_dest) }}"
-      update: "{{ (lookup('env', 'DEV') == '1') | ternary('no', 'yes') }}"
-      force: no
-    tags: ["main", "print_action"]
 
-  - name: "update workspace repos"
+  - name: "set_fact - main_dev"
+    set_fact:
+      main_dev: "{{ lookup('env', 'DEV') == '1' }}"
+    tags: ["main", "other"]
+
+  - name: "set_fact"
+    set_fact:
+      main_var_dest_base: "/root/var"
+      main_env_repo_dest_base: >-
+        {{ ((main_dev | bool) | ternary('/main', env.repo_base_dest)) + '/envs' }}
+      main_cloud_repo_dest_base: >-
+        {{ ((main_dev | bool) | ternary('/main', env.repo_base_dest)) + '/clouds' }}
+    tags: ["main", "other"]
+
+  - block:
+
+    - name: "set_fact"
+      set_fact:
+        main_env_repo_dest: "{{ main_env_repo_dest_base + '/' + env.env_repo.local_dir }}"
+      tags: ["main", "other"]
+
+    - name: "set_fact - repo"
+      set_fact: 
+        main_repo_env_private: "{{ env.env_repo.private | default(false) }}"
+      tags: ["main", "other"]
+
+    - name: "set_fact"
+      set_fact: 
+        main_repo_env_key_file: >-
+          {{ 
+          (main_repo_env_private | bool) | 
+          ternary(main_var_dest_base + '/repo.env.key_file', '')
+          }}
+      tags: ["main", "other"]
+
+    - name: "copy encrypted file to set location"
+      copy:
+        src: "env/{{ env.env_repo.key_file_encrypted }}"
+        dest: "{{ main_repo_env_key_file }}"
+        decrypt: yes
+        mode: 0600
+      when: (main_repo_env_private | bool)
+      tags: ["main", "other"]
+          
+    - name: "update main repo - env"
+      git:
+        repo: "{{ env.env_repo.src }}"
+        version: "{{ env.env_repo.version }}"
+        key_file: "{{ main_repo_env_key_file | default(omit, true) }}"
+        accept_hostkey: yes
+        dest: "{{ main_env_repo_dest }}"
+        update: "{{ (main_dev | bool) | ternary('no', 'yes') }}"
+        force: no
+      tags: ["main", "other", "print_action"]
+
+    when: env.env_repo is defined
+
+  - name: "update the workspace repos"
     include_tasks: "repo.yml"
     loop: "{{ env.repos }}"  
     loop_control:
@@ -44,5 +92,5 @@
     command: "chown -R --reference=/root/ctl/ /main/"
     args:
       warn: false
-    when: (lookup('env', 'DEV') == '1')
+    when: main_dev | bool
     tags: ["never", "local", "print_action"]
