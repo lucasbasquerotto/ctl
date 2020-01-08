@@ -163,7 +163,7 @@ case "$command" in
 		repo_name="${1:-}"		
 		"$dir"/run main-cmd ./run run -e env_repo_name="$repo_name"				
 		;;
-	"deploy"|"deploy-nontty"|"fast-deploy"|"f"|"fast-deploy-nontty"|"dev-deploy")
+	"deploy"|"deploy-nontty"|"fast-deploy"|"f"|"fast-deploy-nontty"|"dev-deploy"|"dev-fast-deploy")
 		repo_name="${1:-}"
 
 		if [ -z "$repo_name" ]; then
@@ -177,7 +177,7 @@ case "$command" in
 			"deploy-nontty")
 				new_cmd="main-cmd-nontty"
 				;;
-			"fast-deploy"|"dev-deploy")
+			"fast-deploy"|"dev-deploy"|"dev-fast-deploy")
 				new_cmd="dev-cmd"
 				;;
 			"fast-deploy-nontty")
@@ -195,9 +195,12 @@ case "$command" in
 
 		final_cmd="run"
 
-		if [ "$command" = "dev-deploy" ]; then
-			final_cmd="dev"
-		fi
+
+		case "$command" in
+			"dev-deploy"|"dev-fast-deploy")
+				final_cmd="dev"
+				;;
+		esac
 
 		"$dir"/run "$new_cmd" "/root/r/w/$repo_name/$final_cmd" "${@}"
 		;;

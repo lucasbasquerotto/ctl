@@ -104,7 +104,12 @@
 
 - name: "{{ repo.name }} - set_fact"
   set_fact: 
-    repo_cloud_private: "{{ repo_env.main.repo_private | default(false) }}"
+    repo_cloud: "{{ repo_env.repos[repo_env.main.repo] }}"
+  tags: ["other"]
+
+- name: "{{ repo.name }} - set_fact"
+  set_fact: 
+    repo_cloud_private: "{{ repo_cloud.private | default(false) }}"
   tags: ["other"]
 
 - name: "{{ repo.name }} - set_fact"
@@ -118,7 +123,7 @@
 
 - name: "{{ repo.name }} - copy encrypted file to set location"
   copy:
-    src: "env/{{ repo_env.main.repo_key_file_encrypted }}"
+    src: "{{ repo_env_dest }}/{{ repo_cloud.key_file_encrypted }}"
     dest: "{{ repo_cloud_key_file }}"
     decrypt: yes
     mode: 0600
@@ -145,8 +150,8 @@
 
 - name: "{{ repo.name }} - update specific cloud repo"
   git:
-    repo: "{{ repo_env.main.repo }}"
-    version: "{{ repo_env.main.repo_version }}"
+    repo: "{{ repo_cloud.src }}"
+    version: "{{ repo_cloud.version }}"
     key_file: "{{ repo_cloud_key_file | default(omit, true) }}"
     accept_hostkey: yes
     dest: "{{ repo_cloud_dest }}"
