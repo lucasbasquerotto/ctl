@@ -2,11 +2,11 @@
   hosts: main
   gather_facts: no  
   tasks:  
-  - name: "gathering facts"
+  - name: "main - gathering facts"
     setup: 
     tags: ["main", "other"]
 
-  - name: "load environment vars"
+  - name: "main - load environment vars"
     include_vars:
       file: "env/vars.yml"
       name: env
@@ -42,7 +42,7 @@
           }}
       tags: ["main", "other", "no_print"]
 
-    - name: "copy encrypted file to set location"
+    - name: "main - copy encrypted file to set location"
       copy:
         src: "env/{{ env.env_repo.key_file_encrypted }}"
         dest: "{{ main_repo_env_key_file }}"
@@ -51,7 +51,7 @@
       when: (main_repo_env_private | bool)
       tags: ["main", "other"]
           
-    - name: "update main repo - env"
+    - name: "main - update main repo - env"
       git:
         repo: "{{ env.env_repo.src }}"
         version: "{{ env.env_repo.version }}"
@@ -64,7 +64,7 @@
 
     when: env.env_repo is defined
 
-  - name: "update the workspace repos"
+  - name: "main - update the workspace repos"
     include_tasks: "repo.yml"
     loop: "{{ env.repos }}"  
     loop_control:
@@ -73,7 +73,7 @@
     when: ((env_repo_name | default('')) == '') or (env_repo_name == repo.local_repo)
     tags: ["env", "other"]
 
-  - name: "executable files"
+  - name: "main - executable files"
     debug: 
       msg: "{{ env.repo_base_dest_workspace }}/{{ repo.local_repo }}/upgrade"
     loop: "{{ env.repos }}"  
@@ -83,7 +83,7 @@
     when: ((env_repo_name | default('')) == '') or (env_repo_name == repo.local_repo)
     tags: ["other", "print_action"]
   
-  - name: "update the repositories and directories permissions (dev)"
+  - name: "main - update the repositories and directories permissions (dev)"
     command: "chown -R --reference=/root/ctl/ /main/"
     args:
       warn: false
