@@ -5,13 +5,14 @@ files:
   dest: ".env"
   root: true
 
-templates:
-
 {% if (credentials.vault.encrypted_value | default('')) != '' 
-%}- dir_base: "templates"
+%}templates:
+
+- dir_base: "templates"
   src: "vault.tpl"
   dest: "vault"
   root: true
   params: 
     vault: "{{ credentials.vault.encrypted_value }}"
+    
 {% endif %}
