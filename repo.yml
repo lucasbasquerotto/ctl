@@ -1,12 +1,11 @@
-- name: "{{ repo.name }} - set_fact"
-  set_fact: 
+- set_fact: 
     repo_dest: "{{ env.repo_base_dest_workspace }}/{{ repo.local_repo }}"
     repo_env_repo: "{{ (repo.global_env_repo | default(false)) | ternary(env.env_repo, repo.env_repo) }}"
     repo_base_dir_pod: "/main/pods"
     repo_base_dir_app: "/main/apps"
-  tags: ["other"]
+  tags: ["other", "no_print"]
 
-- name: "{{ repo.name }} - create the directories in {{ repo_dest }}"
+- name: "[{{ repo.name }}] create the directories in {{ repo_dest }}"
   file:
     path: "{{ repo_item }}"
     state: directory
@@ -22,7 +21,7 @@
 
 # env repository
   
-- name: "{{ repo.name }} - create file to verify idempotence (if there is still no file)"
+- name: "[{{ repo.name }}] create file to verify idempotence (if there is still no file)"
   copy: 
     force: no
     content: ""
@@ -30,8 +29,7 @@
     mode: 0600
   tags: ["other"]
 
-- name: "{{ repo.name }} - set_fact - repo_env_dest"
-  set_fact:
+- set_fact:
     repo_env_dest: >-
       {{ 
       (repo.env_repo is defined) |
@@ -45,9 +43,9 @@
       repo.global_env_repo | default(false) | bool | ternary(main_env_repo_dest, ''),  
       )
       }}
-  tags: ["other"]
+  tags: ["other", "no_print"]
 
-- name: "{{ repo.name }} - fail - repo_env_dest"
+- name: "[{{ repo.name }}] fail - repo_env_dest"
   fail:
     msg: >-
       repo_env (specific or global) is not correctly defined for the
@@ -56,21 +54,19 @@
 
 - block:
 
-  - name: "{{ repo.name }} - set_fact"
-    set_fact: 
+  - set_fact: 
       repo_env_private: "{{ repo.env_repo.private | default(false) }}"
-    tags: ["other"]
+    tags: ["other", "no_print"]
 
-  - name: "{{ repo.name }} - set_fact"
-    set_fact: 
+  - set_fact: 
       repo_env_key_file: >-
         {{ 
         (repo_env_private | bool) | 
         ternary(repo_dest + '/var/repo.env.key_file', '')
         }}
-    tags: ["other"]
+    tags: ["other", "no_print"]
 
-  - name: "{{ repo.name }} - copy encrypted file to set location"
+  - name: "[{{ repo.name }}] copy encrypted file to set location"
     copy:
       src: "env/{{ repo.env_repo.key_file_encrypted }}"
       dest: "{{ repo_env_key_file }}"
@@ -79,7 +75,7 @@
     when: (repo_env_private | bool)
     tags: ["other"]
 
-  - name: "{{ repo.name }} - update specific env repo"
+  - name: "[{{ repo.name }}] update specific env repo"
     git:
       repo: "{{ repo.env_repo.src }}"
       version: "{{ repo.env_repo.version }}"
@@ -94,7 +90,7 @@
 
 # env vars
 
-- name: "{{ repo.name }} - load environment vars"
+- name: "[{{ repo.name }}] load environment vars"
   include_vars:
     file: "{{ repo_env_dest }}/{{ repo.env_file }}"
     name: repo_env
@@ -102,26 +98,23 @@
 
 # cloud repository
 
-- name: "{{ repo.name }} - set_fact"
-  set_fact: 
+- set_fact: 
     repo_cloud: "{{ repo_env.repos[repo_env.main.repo] }}"
-  tags: ["other"]
+  tags: ["other", "no_print"]
 
-- name: "{{ repo.name }} - set_fact"
-  set_fact: 
+- set_fact: 
     repo_cloud_private: "{{ repo_cloud.private | default(false) }}"
-  tags: ["other"]
+  tags: ["other", "no_print"]
 
-- name: "{{ repo.name }} - set_fact"
-  set_fact: 
+- set_fact: 
     repo_cloud_key_file: >-
       {{ 
       (repo_cloud_private | bool) | 
       ternary(repo_dest + '/var/repo.cloud.key_file', '')
       }}
-  tags: ["other"]
+  tags: ["other", "no_print"]
 
-- name: "{{ repo.name }} - copy encrypted file to set location"
+- name: "[{{ repo.name }}] copy encrypted file to set location"
   copy:
     src: "{{ repo_env_dest }}/{{ repo_cloud.key_file_encrypted }}"
     dest: "{{ repo_cloud_key_file }}"
@@ -130,8 +123,7 @@
   when: (repo_cloud_key_file | bool)
   tags: ["other"]
 
-- name: "{{ repo.name }} - set_fact - repo_cloud_dest"
-  set_fact:
+- set_fact:
     repo_cloud_dest: >-
       {{ 
       (main_dev | bool) | 
@@ -141,14 +133,14 @@
       repo_dest + '/cloud'
       )
       }}
-  tags: ["other"]
+  tags: ["other", "no_print"]
 
-- name: "{{ repo.name }} - fail - repo_cloud_dest"
+- name: "[{{ repo.name }}] fail - repo_cloud_dest"
   fail:
     msg: "local_cloud_dir is not defined for the repository [{{ repo.name }}]"
   when: (repo_cloud_dest | default('')) == ''
 
-- name: "{{ repo.name }} - update specific cloud repo"
+- name: "[{{ repo.name }}] update specific cloud repo"
   git:
     repo: "{{ repo_cloud.src }}"
     version: "{{ repo_cloud.version }}"
@@ -161,17 +153,16 @@
 
 # hosts file (inventory)
 
-- name: "{{ repo.name }} - set_fact - hosts"
-  set_fact: 
+- set_fact: 
     repo_hosts_file_src: >-
       {{ 
       repo_env.main.hosts_file | default('')
       | ternary(repo_env_dest + '/' + (repo_env.main.hosts_file | default('')), '')
       }}
     repo_hosts_content: "{{ repo_env.main.hosts_content | default('') }}"
-  tags: ["other"]
+  tags: ["other", "no_print"]
 
-- name: "{{ repo.name }} - ensure that there is a hosts file or content"
+- name: "[{{ repo.name }}] ensure that there is a hosts file or content"
   fail:
     msg: "Enter a value for hosts_file or hosts_content"
   when: >-
@@ -180,7 +171,7 @@
     ((repo_hosts_content | default('')) == '')
   tags: ["other"]
 
-- name: "{{ repo.name }} - ensure that there isn't a hosts file and a hosts content at once"
+- name: "[{{ repo.name }}] ensure that there isn't a hosts file and a hosts content at once"
   fail:
     msg: "Enter a value for only one of hosts_file or hosts_content"
   when: >-
@@ -189,7 +180,7 @@
     ((repo_hosts_content | default('')) != '')
   tags: ["other"]
 
-- name: "{{ repo.name }} - copy the hosts file temporarily to verify changes"
+- name: "[{{ repo.name }}] copy the hosts file temporarily to verify changes"
   copy:
     src: "{{ repo_hosts_file_src }}"
     dest: "{{ repo_dest }}/var/hosts.tmp"
@@ -198,7 +189,7 @@
   when: (repo_hosts_file_src | default('')) != ''
   tags: ["other"]
 
-- name: "{{ repo.name }} - copy the hosts content temporarily to verify changes"
+- name: "[{{ repo.name }}] copy the hosts content temporarily to verify changes"
   copy:
     content: "{{ repo_hosts_content }}"
     dest: "{{ repo_dest }}/var/hosts.tmp"
@@ -207,7 +198,7 @@
   when: (repo_hosts_content | default('')) != ''
   tags: ["other"]
 
-- name: "{{ repo.name }} - copy the hosts file when changed"
+- name: "[{{ repo.name }}] copy the hosts file when changed"
   copy:
     src: "{{ repo_dest }}/var/hosts.tmp"
     dest: "{{ repo_dest }}/var/hosts"
@@ -217,7 +208,7 @@
 
 # executable files
 
-- name: "{{ repo.name }} - copy the executable files"
+- name: "[{{ repo.name }}] copy the executable files"
   template:
     src: "templates/run.tpl.sh"
     dest: "{{ repo_dest }}/{{ repo_item.name }}"
@@ -235,7 +226,7 @@
     loop_var: repo_item
   tags: ["other"]
 
-- name: "{{ repo.name }} - copy the vault file"
+- name: "[{{ repo.name }}] copy the vault file"
   copy:
     src: "env/{{ repo_env_repo.vault_file }}"
     dest: "{{ repo_dest }}/var/vault"
@@ -244,7 +235,7 @@
   when: (repo_env_repo.vault_file | default('')) != ''
   tags: ["other"]
   
-- name: "{{ repo.name }} - execute the commands of the local repositories (dev)"
+- name: "[{{ repo.name }}] execute the commands of the local repositories (dev)"
   command: "{{ env.repo_base_dest_workspace }}/{{ repo.local_repo }}/dev"
   when: repo.local | default(false) | bool
   tags: ["never", "local"]
