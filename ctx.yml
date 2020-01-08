@@ -5,7 +5,7 @@ files:
   dest: ".env"
   root: true
 
-{% if (credentials.vault.encrypted_value | default('')) != '' 
+{% if (params.credentials.vault.encrypted_value | default('')) != '' 
 %}templates:
 
 - dir_base: "templates"
@@ -13,6 +13,6 @@ files:
   dest: "vault"
   root: true
   params: 
-    vault: "{{ credentials.vault.encrypted_value }}"
-    
+    vault: "{{ params.credentials.vault.encrypted_value }}"
+
 {% endif %}
