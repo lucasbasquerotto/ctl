@@ -1,20 +1,15 @@
 files:
 
-- src: "env/.env"
+- dir_base: "env"
+  src: ".env"
   dest: ".env"
   root: true
 
 templates:
 
-- src: "app.env"
-  dest: ".env"
-  root: true
-  params: 
-    ctl_image: "{{ params.main.ctl.image }}"
-    ctl_version: "{{ params.main.ctl.version }}"
-
 {% if (credentials.vault.encrypted_value | default('')) != '' 
-%}- src: "vault.tpl"
+%}- dir_base: "templates"
+  src: "vault.tpl"
   dest: "vault"
   root: true
   params: 
