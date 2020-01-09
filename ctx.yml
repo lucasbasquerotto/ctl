@@ -13,10 +13,12 @@ files:
   params: 
     vault: "{{ params.credentials.vault.encrypted_value }}"
 
-- src: "env/test/tpl.yml"
-  dest: "dir/test.yml"
+{% if params.main.test is defined
+%}- src: "env/test/tpl.yml"
+  dest: "env-test/test.yml"
   root: true
   params: 
-    vault: "{{ params.main }}"
+    test: {{ params.main | to_json }}
+{% endif %}
 
 {% endif %}
