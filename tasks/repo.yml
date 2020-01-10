@@ -51,9 +51,11 @@
       repo_env (specific or global) is not correctly defined for the
       repository [{{ repo.name }}]
   when: (repo_env_dest | default('')) == ''
+  tags: ["other"]
 
 - include_tasks: "tasks/git.yml"
   vars:
+    git_title: "[{{ repo.name }}] - git env"
     git_repo_private: "{{ repo.env_repo.private | default(false) }}"
     git_repo_key_file_encrypted: "env/{{ repo.env_repo.key_file_encrypted }}"
     git_repo_src: "{{ repo.env_repo.src }}"
@@ -76,22 +78,37 @@
 
 # base environment directory
 
-# - block:
+- block:
 
-# - include_tasks: "tasks/git.yml"
-#   vars:
-#     git_repo_private: "{{ repo_cloud.private | default(false) }}"
-#     git_repo_key_file_encrypted: "{{ repo_env_dest }}/{{ repo_cloud.key_file_encrypted }}"
-#     git_repo_src: "{{ repo_cloud.src }}"
-#     git_repo_version: "{{ repo_cloud.version }}"
-#     git_repo_key_file: "{{ repo_cloud_key_file | default(omit, true) }}"
-#     git_repo_accept_hostkey: yes
-#     git_repo_dest: "{{ repo_cloud_dest }}"
-#     git_repo_update: "{{ (main_dev | bool) | ternary('no', 'yes') }}"
-#     git_repo_force: no
-#     git_task_tags: ["other"]
+  - include_tasks: "tasks/git.yml"
+    vars:
+      git_title: "[{{ repo.name }}] - git env base"
+      git_repo_private: "{{ repo_env.env.repo.private | default(false) }}"
+      git_repo_key_file_encrypted: "env/{{ repo_env.env.repo.key_file_encrypted }}"
+      git_repo_src: "{{ repo_env.env.repo.src }}"
+      git_repo_version: "{{ repo_env.env.repo.version }}"
+      git_repo_key_file: "{{ repo_dest }}/var/repo.env_base.key_file"
+      git_repo_accept_hostkey: yes
+      git_repo_dest: "{{ repo_env_dest }}/{{ repo_env.env.dest }}"
+      git_repo_update: "{{ (main_dev | bool) | ternary('no', 'yes') }}"
+      git_repo_force: no
+      git_task_tags: ["other"]
 
-#   when: repo_env.envs
+  - name: "[{{ repo.name }}] load base environment vars"
+    include_vars:
+      file: "{{ repo_env_dest }}/{{ repo_env.env.dest }}/{{ repo_env.env.file }}"
+      name: repo_env_base
+    tags: ["other"]
+      
+  - set_fact:
+      repo_env_aux: "{{ repo_env }}"
+    tags: ["other", "no_print"]
+      
+  - set_fact:
+      repo_env: "{{ (repo_env_base | default({})) | combine(repo_env_aux) }}"
+    tags: ["other", "no_print"]
+
+  when: repo_env.env is defined
 
 # cloud repository
 
@@ -119,11 +136,12 @@
 
 - include_tasks: "tasks/git.yml"
   vars:
+    git_title: "[{{ repo.name }}] - git cloud ({{ repo_env.init.repo }})"
     git_repo_private: "{{ repo_cloud.private | default(false) }}"
     git_repo_key_file_encrypted: "{{ repo_env_dest }}/{{ repo_cloud.key_file_encrypted }}"
     git_repo_src: "{{ repo_cloud.src }}"
     git_repo_version: "{{ repo_cloud.version }}"
-    git_repo_key_file: "{{ repo_cloud_key_file | default(omit, true) }}"
+    git_repo_key_file: "{{ repo_dest }}/var/repo.cloud.key_file"
     git_repo_accept_hostkey: yes
     git_repo_dest: "{{ repo_cloud_dest }}"
     git_repo_update: "{{ (main_dev | bool) | ternary('no', 'yes') }}"

@@ -30,6 +30,7 @@
     
   - include_tasks: "tasks/git.yml"
     vars:
+      git_title: "main - git main env"
       git_repo_private: "{{ env.env_repo.private | default(false) }}"
       git_repo_key_file_encrypted: "env/{{ env.env_repo.key_file_encrypted }}"
       git_repo_src: "{{ env.env_repo.src }}"
