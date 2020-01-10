@@ -1,18 +1,24 @@
 files:
 
-- dir_base: "env"
-  src: ".env"
+- src: "env/.env"
   dest: ".env"
   root: true
 
 {% if (params.credentials.vault.encrypted_value | default('')) != '' 
 %}templates:
 
-- dir_base: "templates"
-  src: "vault.tpl"
+- src: "templates/vault.tpl"
   dest: "vault"
   root: true
   params: 
     vault: "{{ params.credentials.vault.encrypted_value }}"
+
+{% if params.main.test is defined
+%}- src: "env/test/tpl.yml"
+  dest: "env-test/test.yml"
+  root: true
+  params: 
+    test: {{ params.main | to_json }}
+{% endif %}
 
 {% endif %}
