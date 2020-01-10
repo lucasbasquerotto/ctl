@@ -1,8 +1,0 @@
-templates:
-
-- src: "app.env"
-  dest: ".env"
-  root: true
-  params: 
-    ctl_image: "{{ params.ctl.image }}"
-    ctl_version: "{{ params.ctl.version }}"
