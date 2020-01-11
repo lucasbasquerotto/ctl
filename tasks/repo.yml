@@ -94,18 +94,17 @@
       git_repo_force: no
       git_task_tags: ["other"]
 
-  - name: "[{{ repo.name }}] load base environment vars"
+  - name: >-
+      [{{ repo.name }}] load base environment vars
+      ({{ repo_env_dest }}/{{ repo_env.env.dest }}/{{ repo_env.env.file }})"
     include_vars:
       file: "{{ repo_env_dest }}/{{ repo_env.env.dest }}/{{ repo_env.env.file }}"
       name: repo_env_base
     tags: ["other"]
       
   - set_fact:
-      repo_env_aux: "{{ repo_env }}"
-    tags: ["other", "no_print"]
-      
-  - set_fact:
-      repo_env: "{{ (repo_env_base | default({})) | combine(repo_env_aux) }}"
+      repo_env: "{{ repo_env_base }}"
+    when: repo_env.init is not defined
     tags: ["other", "no_print"]
 
   when: repo_env.env is defined

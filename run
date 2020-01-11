@@ -63,6 +63,17 @@ case "$command" in
 	"reset")
 		rm -rf "$dir/env"
 		;;
+	"prepare"|"dev-prep")
+		repo_name="${1:-}"
+		shift;
+		new_cmd="main-cmd"
+
+		if [ "$command" = "prep-dev" ]; then
+			new_cmd="dev-cmd"
+		fi
+
+		"$dir"/run "$new_cmd" ./run run -e env_repo_name="$repo_name"	"$@"		
+		;;
 	"main"|"main-cmd"|"main-cmd-nontty"|"dev"|"dev-cmd"|"dev-cmd-nontty")
 		service=''
 		cmd=( '/bin/bash' )
@@ -158,10 +169,6 @@ case "$command" in
 	"destroy")
 		repo_name="${1:-}"
 		"$dir"/run dev-cmd "/root/r/w/$repo_name/run" --tags destroy
-		;;
-	"prepare")
-		repo_name="${1:-}"		
-		"$dir"/run main-cmd ./run run -e env_repo_name="$repo_name"				
 		;;
 	"deploy"|"deploy-nontty"|"fast-deploy"|"f"|"fast-deploy-nontty"|"dev-deploy"|"dev-fast-deploy")
 		repo_name="${1:-}"
