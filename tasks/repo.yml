@@ -60,7 +60,7 @@
     git_repo_key_file_encrypted: "env/{{ repo.env_repo.key_file_encrypted }}"
     git_repo_src: "{{ repo.env_repo.src }}"
     git_repo_version: "{{ repo.env_repo.version }}"
-    git_repo_key_file: "{{ repo_dest }}/var/{{ repo.env.key_file }}"
+    git_repo_key_file: "{{ repo_dest }}/var/repo.env.key_file"
     git_repo_accept_hostkey: yes
     git_repo_dest: "{{ repo_env_dest }}"
     git_repo_update: "{{ (main_dev | bool) | ternary('no', 'yes') }}"
