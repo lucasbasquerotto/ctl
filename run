@@ -177,7 +177,7 @@ case "$command" in
 			"deploy-nontty")
 				new_cmd="main-cmd-nontty"
 				;;
-			"fast-deploy"|"dev-deploy"|"dev-fast-deploy")
+			"dev-deploy"|"dev-fast-deploy")
 				new_cmd="dev-cmd"
 				;;
 			"fast-deploy-nontty")
