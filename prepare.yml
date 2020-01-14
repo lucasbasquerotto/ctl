@@ -10,7 +10,7 @@
       repo: "{{ env.repos | selectattr('local_repo', 'equalto', env_local_repo) | first | default({}) }}"
     tags: ["other", "no_print"]
 
-  - name: "prepare - [{{ env_local_repo }}] fail - repo not found"
+  - name: "[prepare] - [{{ env_local_repo }}] fail - repo not found"
     fail:
       msg: "the repository was not found [{{ repo.name }}]"
     when: (repo.local_repo | default('')) == ''
@@ -152,7 +152,7 @@
     when: (repo_hosts_content | default('')) != ''
     tags: ["other"]
 
-  - name: "[{{ repo.name }}] copy the hosts file when changed"
+  - name: "[prepare] [{{ repo.name }}] copy the hosts file when changed"
     copy:
       src: "{{ repo_dest }}/var/hosts.tmp"
       dest: "{{ repo_dest }}/var/hosts"

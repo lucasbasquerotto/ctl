@@ -34,13 +34,21 @@
     when: ((env_repo_name | default('')) == '') or (env_repo_name == repo.local_repo)
     tags: ["env", "other"]
 
-  - name: "[main] preparation files"
+  - name: "[main] run files of all repositories"
     template: 
-      src: "templates/prepare-all.tpl.sh"
-      dest: "/root/var/prepare-all.sh"
+      src: "{{ main_item.src }}"
+      dest: "{{ main_item.dest }}"
       mode: 0755
     vars:
       repos: "{{ env.repos }}"
+    loop: 
+    - src: "templates/prepare-all.tpl.sh"
+      dest: "/root/run/prepare-all.sh"
+    - src: "templates/deploy-all.tpl.sh"
+      dest: "/root/run/deploy-all.sh"
+    loop_control:
+      loop_var: main_item
+      label: "{{ main_item.dest }}"
     when: (env_repo_name | default('')) == ''
     tags: ["other", "print_action"]
   
