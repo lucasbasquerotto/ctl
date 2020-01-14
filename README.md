@@ -66,6 +66,14 @@ ansible-vault encrypt_string --vault-id workspace@prompt --stdin-name 'VAR_NAME'
 [enter the value to be encripted and press Ctrl+d twice]
 ```
 
+## 3. Encrypt files to put in the environment repositories
+
+```bash
+ansible-vault encrypt --vault-id workspace@prompt `/path/to/file`
+[enter the vault password twice]
+[enter the value to be encripted and press Ctrl+d twice]
+```
+
 ```
 #TODO: Generate base image of discourse
 #TODO: Add current controller ip to firewall

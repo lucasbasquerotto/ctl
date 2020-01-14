@@ -1,0 +1,21 @@
+- name: "[main] load environment vars"
+  include_vars:
+    file: "env/vars.yml"
+    name: env
+  tags: ["main", "other"]
+
+- set_fact:
+    main_dev: "{{ lookup('env', 'DEV') == '1' }}"
+  tags: ["main", "other", "no_print"]
+
+- set_fact:
+    main_var_dest_base: "/root/var"
+    main_env_repo_dest_base: >-
+      {{ ((main_dev | bool) | ternary('/main', env.repo_base_dest)) + '/envs' }}
+    main_cloud_repo_dest_base: >-
+      {{ ((main_dev | bool) | ternary('/main', env.repo_base_dest)) + '/clouds' }}
+  tags: ["main", "other", "no_print"]
+
+- set_fact:
+    main_env_repo_dest: "{{ main_env_repo_dest_base + '/' + env.env_repo.local_dir }}"
+  tags: ["main", "other", "no_print"]

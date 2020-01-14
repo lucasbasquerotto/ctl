@@ -1,36 +1,17 @@
 - name: Play 01 - Create and update the main and the environment repositories
   hosts: main
   gather_facts: no  
-  tasks:  
-  - name: "main - gathering facts"
+  tasks: 
+  - name: "[main] gathering facts"
     setup: 
     tags: ["main", "other"]
 
-  - name: "main - load environment vars"
-    include_vars:
-      file: "env/vars.yml"
-      name: env
+  - include_tasks: "tasks/main_vars.yml"
     tags: ["main", "other"]
-
-  - set_fact:
-      main_dev: "{{ lookup('env', 'DEV') == '1' }}"
-    tags: ["main", "other", "no_print"]
-
-  - set_fact:
-      main_var_dest_base: "/root/var"
-      main_env_repo_dest_base: >-
-        {{ ((main_dev | bool) | ternary('/main', env.repo_base_dest)) + '/envs' }}
-      main_cloud_repo_dest_base: >-
-        {{ ((main_dev | bool) | ternary('/main', env.repo_base_dest)) + '/clouds' }}
-    tags: ["main", "other", "no_print"]
-
-  - set_fact:
-      main_env_repo_dest: "{{ main_env_repo_dest_base + '/' + env.env_repo.local_dir }}"
-    tags: ["main", "other", "no_print"]
     
   - include_tasks: "tasks/git.yml"
     vars:
-      git_title: "main - git main env"
+      git_title: "[main] git main env"
       git_repo_private: "{{ env.env_repo.private | default(false) }}"
       git_repo_key_file_encrypted: "env/{{ env.env_repo.key_file_encrypted }}"
       git_repo_src: "{{ env.env_repo.src }}"
@@ -42,8 +23,9 @@
       git_repo_force: no
       git_task_tags: ["main", "other"]
     when: env.env_repo is defined
+    tags: ["main", "other"]
 
-  - name: "main - update the workspace repos"
+  - name: "[main] update the workspace repos"
     include_tasks: "tasks/repo.yml"
     loop: "{{ env.repos }}"  
     loop_control:
@@ -52,17 +34,17 @@
     when: ((env_repo_name | default('')) == '') or (env_repo_name == repo.local_repo)
     tags: ["env", "other"]
 
-  - name: "main - executable files"
-    debug: 
-      msg: "{{ env.repo_base_dest_workspace }}/{{ repo.local_repo }}/upgrade"
-    loop: "{{ env.repos }}"  
-    loop_control:
-      loop_var: repo
-      label: "{{ repo.name }}"
-    when: ((env_repo_name | default('')) == '') or (env_repo_name == repo.local_repo)
+  - name: "[main] preparation files"
+    template: 
+      src: "templates/prepare-all.tpl.sh"
+      dest: "/root/var/prepare-all.sh"
+      mode: 0755
+    vars:
+      repos: "{{ env.repos }}"
+    when: (env_repo_name | default('')) == ''
     tags: ["other", "print_action"]
   
-  - name: "main - update the repositories and directories permissions (dev)"
+  - name: "[main] update the repositories and directories permissions (dev)"
     command: "chown -R --reference=/root/ctl/ /main/"
     args:
       warn: false

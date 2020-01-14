@@ -1,0 +1,187 @@
+- name: Play 01 - Prepare [{{ env_local_repo }}]
+  hosts: main
+  gather_facts: no  
+  tasks:  
+
+  - include_tasks: "tasks/main_vars.yml"
+    tags: ["other"]
+
+  - set_fact: 
+      repo: "{{ env.repos | selectattr('local_repo', 'equalto', env_local_repo) | first | default({}) }}"
+    tags: ["other", "no_print"]
+
+  - name: "prepare - [{{ env_local_repo }}] fail - repo not found"
+    fail:
+      msg: "the repository was not found [{{ repo.name }}]"
+    when: (repo.local_repo | default('')) == ''
+    tags: ["other"]
+
+  - include_tasks: "tasks/repo_vars.yml"
+    tags: ["other"]
+
+  # repo env vars
+
+  - name: "[prepare] [{{ repo.name }}] load environment vars"
+    include_vars:
+      file: "{{ repo_env_dest }}/{{ repo.env_file }}"
+      name: repo_env
+    tags: ["other"]
+
+  # repo base environment directory
+
+  - block:
+
+    - include_tasks: "tasks/git.yml"
+      vars:
+        git_title: "[prepare] [{{ repo.name }}] - git env base"
+        git_repo_private: "{{ repo_env.env.repo.private | default(false) }}"
+        git_repo_key_file_encrypted: >-
+          {{ repo_env_dest }}/{{ repo_env.env.repo.key_file_encrypted }}
+        git_repo_src: "{{ repo_env.env.repo.src }}"
+        git_repo_version: "{{ repo_env.env.repo.version }}"
+        git_repo_key_file: "{{ repo_dest }}/var/repo.env_base.key_file"
+        git_repo_accept_hostkey: yes
+        git_repo_dest: "{{ repo_env_dest }}/{{ repo_env.env.dest }}"
+        git_repo_update: "{{ (main_dev | bool) | ternary('no', 'yes') }}"
+        git_repo_force: no
+        git_task_tags: ["other"]
+      tags: ["other"]
+
+    - name: >-
+        prepare [{{ repo.name }}] load base environment vars
+        ({{ repo_env_dest }}/{{ repo_env.env.dest }}/{{ repo_env.env.file }})"
+      include_vars:
+        file: "{{ repo_env_dest }}/{{ repo_env.env.dest }}/{{ repo_env.env.file }}"
+        name: repo_env_base
+      tags: ["other"]
+
+    - set_fact: 
+        repo_env_aux: "{{ repo_env }}"
+      tags: ["other", "no_print"]
+
+    - set_fact: 
+        repo_env: "{{ (repo_env_base | default({})) | combine(repo_env) }}"
+      tags: ["other", "no_print"]
+
+    when: repo_env.env is defined
+    tags: ["other"]
+
+  # repo cloud repository
+
+  - set_fact:
+      repo_cloud_dest: >-
+        {{ 
+        (main_dev | bool) | 
+        ternary(
+        repo.local_cloud_dir | default('') | 
+        ternary(main_cloud_repo_dest_base + '/' + (repo.local_cloud_dir | default('')), ''), 
+        repo_dest + '/cloud'
+        )
+        }}
+    tags: ["other", "no_print"]
+
+  - name: "[prepare] [{{ repo.name }}] fail - repo_cloud_dest"
+    fail:
+      msg: "local_cloud_dir is not defined for the repository [{{ repo.name }}]"
+    when: (repo_cloud_dest | default('')) == ''
+    tags: ["other"]
+
+  - set_fact: 
+      repo_cloud: "{{ repo_env.repos[repo_env.init.repo] }}"
+    tags: ["other", "no_print"]
+
+  - include_tasks: "tasks/git.yml"
+    vars:
+      git_title: "[prepare] [{{ repo.name }}] - git cloud ({{ repo_env.init.repo }})"
+      git_repo_private: "{{ repo_cloud.private | default(false) }}"
+      git_repo_key_file_encrypted: "{{ repo_env_dest }}/{{ repo_cloud.key_file_encrypted }}"
+      git_repo_src: "{{ repo_cloud.src }}"
+      git_repo_version: "{{ repo_cloud.version }}"
+      git_repo_key_file: "{{ repo_dest }}/var/repo.cloud.key_file"
+      git_repo_accept_hostkey: yes
+      git_repo_dest: "{{ repo_cloud_dest }}"
+      git_repo_update: "{{ (main_dev | bool) | ternary('no', 'yes') }}"
+      git_repo_force: no
+      git_task_tags: ["other"]
+    tags: ["other"]
+
+  # repo hosts file (inventory)
+
+  - set_fact: 
+      repo_hosts_file_src: >-
+        {{ 
+        repo_env.init.hosts_file | default('')
+        | ternary(repo_env_dest + '/' + (repo_env.init.hosts_file | default('')), '')
+        }}
+      repo_hosts_content: "{{ repo_env.init.hosts_content | default('') }}"
+    tags: ["other", "no_print"]
+
+  - name: "[prepare] [{{ repo.name }}] ensure that there is a hosts file or content"
+    fail:
+      msg: "Enter a value for hosts_file or hosts_content"
+    when: >-
+      ((repo_hosts_file_src | default('')) == '') 
+      and 
+      ((repo_hosts_content | default('')) == '')
+    tags: ["other"]
+
+  - name: "[prepare] [{{ repo.name }}] ensure that there isn't a hosts file and a hosts content at once"
+    fail:
+      msg: "Enter a value for only one of hosts_file or hosts_content"
+    when: >-
+      ((repo_hosts_file_src | default('')) != '') 
+      and 
+      ((repo_hosts_content | default('')) != '')
+    tags: ["other"]
+
+  - name: "[prepare] [{{ repo.name }}] copy the hosts file temporarily to verify changes"
+    copy:
+      src: "{{ repo_hosts_file_src }}"
+      dest: "{{ repo_dest }}/var/hosts.tmp"
+      mode: 0600
+    register: diff_hosts_file
+    when: (repo_hosts_file_src | default('')) != ''
+    tags: ["other"]
+
+  - name: "[prepare] [{{ repo.name }}] copy the hosts content temporarily to verify changes"
+    copy:
+      content: "{{ repo_hosts_content }}"
+      dest: "{{ repo_dest }}/var/hosts.tmp"
+      mode: 0600
+    register: diff_hosts_content
+    when: (repo_hosts_content | default('')) != ''
+    tags: ["other"]
+
+  - name: "[{{ repo.name }}] copy the hosts file when changed"
+    copy:
+      src: "{{ repo_dest }}/var/hosts.tmp"
+      dest: "{{ repo_dest }}/var/hosts"
+      mode: 0600
+      force: "{{ diff_hosts_file.changed or diff_hosts_content.changed }}"
+    tags: ["other"]
+
+  # repo executable files
+
+  - name: "[prepare] [{{ repo.name }}] copy the executable files"
+    template:
+      src: "templates/run.tpl.sh"
+      dest: "{{ repo_dest }}/{{ repo_item.name }}"
+      mode: 0700
+    vars:
+      repo_run_force: "{{ repo_item.force }}"
+      repo_force_vault: "{{ repo_env_repo.force_vault and not (repo_item.dev | default(false) | bool) }}"
+      repo_env_dir: "{{ repo_env_dest }}"
+      repo_cloud_repo_dest: "{{ repo_cloud_dest }}"
+    loop:
+    - { name: "run", force: "true" }
+    - { name: "upgrade", force: "false" }
+    - { name: "dev", force: "true", dev: true }
+    loop_control:
+      loop_var: repo_item
+    tags: ["other"]
+    
+  - name: "[prepare] [{{ repo.name }}] execute the commands of the local repositories (dev)"
+    command: "{{ env.repo_base_dest_workspace }}/{{ repo.local_repo }}/dev"
+    when: repo.local | default(false) | bool
+    tags: ["never", "local"]
+

@@ -1,0 +1,22 @@
+- set_fact: 
+    repo_dest: "{{ env.repo_base_dest_workspace }}/{{ repo.local_repo }}"
+    repo_env_repo: "{{ (repo.global_env_repo | default(false)) | ternary(env.env_repo, repo.env_repo) }}"
+    repo_base_dir_pod: "/main/pods"
+    repo_base_dir_app: "/main/apps"
+  tags: ["other", "no_print"]
+
+- set_fact:
+    repo_env_dest: >-
+      {{ 
+      (repo.env_repo is defined) |
+      ternary(
+      (main_dev | bool) | 
+      ternary(
+      repo.env_repo.local_dir | default('') | 
+      ternary(main_env_repo_dest_base + '/' + (repo.env_repo.local_dir | default('')), ''), 
+      repo_dest + '/env'
+      ),
+      repo.global_env_repo | default(false) | bool | ternary(main_env_repo_dest, ''),  
+      )
+      }}
+  tags: ["other", "no_print"]
