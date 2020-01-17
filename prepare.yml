@@ -30,6 +30,23 @@
   # repo base environment directory
 
   - block:
+    
+    - fail:
+        msg: "[prepare] [{{ repo.name }}] - git env base destination not defined"
+      when: >-
+        (not (main_dev | bool)) 
+        and 
+        (not (repo.local | bool))
+        and
+        ((repo_env.env.repo_dir | default('')) == '')
+
+    - set_fact: 
+        repo_env_base_dest: >-
+          {{ 
+          repo_env_dest + 
+          (repo_env.env.repo_dir | ternary('/' + repo_env.env.repo_dir, ''))
+          }}
+      tags: ["other", "no_print"]
 
     - include_tasks: "tasks/git.yml"
       vars:
@@ -41,26 +58,25 @@
         git_repo_version: "{{ repo_env.env.repo.version }}"
         git_repo_key_file: "{{ repo_dest }}/var/repo.env_base.key_file"
         git_repo_accept_hostkey: yes
-        git_repo_dest: "{{ repo_env_dest }}/{{ repo_env.env.dest }}"
+        git_repo_dest: "{{ repo_env_base_dest }}"
         git_repo_update: "{{ (main_dev | bool) | ternary('no', 'yes') }}"
         git_repo_force: no
         git_task_tags: ["other"]
+      when: (repo_env.env.repo_dir | default('')) != ''
       tags: ["other"]
 
     - name: >-
         prepare [{{ repo.name }}] load base environment vars
-        ({{ repo_env_dest }}/{{ repo_env.env.dest }}/{{ repo_env.env.file }})"
+        ({{ repo_env_base_dest }}/{{ repo_env.env.file }})
       include_vars:
-        file: "{{ repo_env_dest }}/{{ repo_env.env.dest }}/{{ repo_env.env.file }}"
+        file: "{{ repo_env_base_dest }}/{{ repo_env.env.file }}"
         name: repo_env_base
       tags: ["other"]
 
     - set_fact: 
-        repo_env_aux: "{{ repo_env }}"
-      tags: ["other", "no_print"]
-
-    - set_fact: 
-        repo_env: "{{ (repo_env_base | default({})) | combine(repo_env) }}"
+        repo_env: "{{ repo_env_base }}"
+      vars:
+        params: "{{ repo_env }}"
       tags: ["other", "no_print"]
 
     when: repo_env.env is defined
