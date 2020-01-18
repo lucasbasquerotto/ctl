@@ -36,7 +36,7 @@
       when: >-
         (not (main_dev | bool)) 
         and 
-        (not (repo.local | bool))
+        (not (repo.local | default(false) | bool))
         and
         ((repo_env.env.repo_dir | default('')) == '')
 
