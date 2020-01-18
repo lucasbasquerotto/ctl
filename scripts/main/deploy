@@ -1,0 +1,9 @@
+#!/bin/bash
+set -eou pipefail
+
+run_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ctl_dir="$(dirname "$(dirname "$run_dir")")"
+
+local_repo_name="$1"
+
+"$ctl_dir/run" main-deploy "$local_repo_name"

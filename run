@@ -269,7 +269,7 @@ case "$command" in
 			exit 1
 		fi
 
-		"$dir"/env/scripts/ssh "$repo_name" "$instance_type" "$index"
+		"$dir"/scripts/ssh "$repo_name" "$instance_type" "$index"
 		;;
 	*)
 		echo -e "${RED}Invalid command: $command (valid commands: $commands)${NC}"
