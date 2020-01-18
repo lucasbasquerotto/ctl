@@ -20,7 +20,7 @@ line=$(cat "$hosts_file" | grep "instance_type=$instance_type" \
 
 if [ -z "$line" ]; then
     msg="No line in the hosts file ($hosts_file)"
-    msg="$msg of the type '$instance_type' in the index $index (starting in 1)."
+    msg="$msg of the type '$instance_type' in the index $instance_index (starting in 1)."
     echo -e "${RED}${msg}${NC}"
     exit 1
 fi
