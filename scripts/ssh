@@ -16,7 +16,7 @@ repo_dir="$base_dir/r/w/$repo_name"
 hosts_file="$repo_dir/var/hosts"
 
 line=$(cat "$hosts_file" | grep "instance_type=$instance_type" \
-| grep "instance_index=$instance_index" | head -n "$index" | tail -n 1 || :)
+| grep "instance_index=$instance_index" | tail -n 1 || :)
 
 if [ -z "$line" ]; then
     msg="No line in the hosts file ($hosts_file)"
