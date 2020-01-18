@@ -1,11 +1,13 @@
-- set_fact: 
+- name: "[repo] (vars)"
+  set_fact: 
     repo_dest: "{{ env.repo_base_dest_workspace }}/{{ repo.local_repo }}"
     repo_env_repo: "{{ (repo.global_env_repo | default(false)) | ternary(env.env_repo, repo.env_repo) }}"
     repo_base_dir_pod: "/main/pods"
     repo_base_dir_app: "/main/apps"
   tags: ["other", "no_print"]
 
-- set_fact:
+- name: "[repo] (vars)"
+  set_fact:
     repo_env_dest: >-
       {{ 
       (repo.env_repo is defined) |

@@ -6,7 +6,8 @@
   - include_tasks: "tasks/main_vars.yml"
     tags: ["other"]
 
-  - set_fact: 
+  - name: "[prepare] [{{ repo.name }}]"
+    set_fact: 
       repo: "{{ env.repos | selectattr('local_repo', 'equalto', env_local_repo) | first | default({}) }}"
     tags: ["other", "no_print"]
 
@@ -31,7 +32,8 @@
 
   - block:
     
-    - fail:
+    - name: "[prepare] [{{ repo.name }}]"
+      fail:
         msg: "[prepare] [{{ repo.name }}] - git env base destination not defined"
       when: >-
         (not (main_dev | bool)) 
@@ -40,7 +42,8 @@
         and
         ((repo_env.env.repo_dir | default('')) == '')
 
-    - set_fact: 
+    - name: "[prepare] [{{ repo.name }}]"
+      set_fact: 
         repo_env_base_dest: >-
           {{ 
           repo_env_dest + 
@@ -73,7 +76,8 @@
         name: repo_env_base
       tags: ["other"]
 
-    - set_fact: 
+    - name: "[prepare] [{{ repo.name }}]"
+      set_fact: 
         repo_env: "{{ repo_env_base }}"
       vars:
         params: "{{ repo_env }}"
@@ -84,7 +88,8 @@
 
   # repo cloud repository
 
-  - set_fact:
+  - name: "[prepare] [{{ repo.name }}]"
+    set_fact:
       repo_cloud_dest: >-
         {{ 
         (main_dev | bool) | 
@@ -102,7 +107,8 @@
     when: (repo_cloud_dest | default('')) == ''
     tags: ["other"]
 
-  - set_fact: 
+  - name: "[prepare] [{{ repo.name }}]"
+    set_fact: 
       repo_cloud: "{{ repo_env.repos[repo_env.init.repo] }}"
     tags: ["other", "no_print"]
 
@@ -123,7 +129,8 @@
 
   # repo hosts file (inventory)
 
-  - set_fact: 
+  - name: "[prepare] [{{ repo.name }}]"
+    set_fact: 
       repo_hosts_file_src: >-
         {{ 
         repo_env.init.hosts_file | default('')

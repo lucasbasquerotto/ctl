@@ -1,4 +1,5 @@
-- set_fact: 
+- name: "{{ git_title }}"
+  set_fact: 
     git_repo_key_file_aux: >-
       {{ 
       (git_repo_private | bool) | 

@@ -110,7 +110,7 @@ case "$command" in
 			echo -e "${CYAN}$(date '+%F %X') prepare [$repo_name] - end${NC}"
 		else
 			echo -e "${CYAN}$(date '+%F %X') prepare all - start${NC}"
-			/root/var/prepare-all.sh ${@}
+			/root/run/prepare-all.sh ${@}
 		echo -e "${CYAN}$(date '+%F %X') prepare all - end${NC}"
 		fi
 		;;
