@@ -41,7 +41,7 @@ env_local_pod_dir_list=''
   + '-e local_pod_dir_' + local_pod_dir.name 
   + '="' + repo_base_dir_pod + '/' + local_pod_dir.dir + '" ' 
 -%}
-env_local_pod_dir_list='{{ env_local_pod_dir_list }}'
+env_local_pod_dir_list="$env_local_pod_dir_list {{ env_local_pod_dir_list }}"
 {% endfor %}
 {% endif %}
 
@@ -62,7 +62,7 @@ env_local_app_dir_list=''
   + '-e local_app_dir_' + local_app_dir.name 
   + '="' + repo_base_dir_app + '/' + local_app_dir.dir + '" ' 
 -%}
-env_local_app_dir_list='{{ env_local_app_dir_list }}'
+env_local_app_dir_list="$env_local_app_dir_list {{ env_local_app_dir_list }}"
 {% endfor %}
 {% endif %}
 
