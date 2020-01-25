@@ -90,6 +90,7 @@
 
   - name: "[prepare] [{{ repo.name }}]"
     set_fact:
+      repo_env_init: "{{ repo_env.init[repo_env.ctx] }}"
       repo_cloud_dest: >-
         {{ 
         (main_dev | bool) | 
@@ -109,12 +110,12 @@
 
   - name: "[prepare] [{{ repo.name }}]"
     set_fact: 
-      repo_cloud: "{{ repo_env.repos[repo_env.init.repo] }}"
+      repo_cloud: "{{ repo_env.repos[repo_env_init.repo] }}"
     tags: ["other", "no_print"]
 
   - include_tasks: "tasks/git.yml"
     vars:
-      git_title: "[prepare] [{{ repo.name }}] - git cloud ({{ repo_env.init.repo }})"
+      git_title: "[prepare] [{{ repo.name }}] - git cloud ({{ repo_env_init.repo }})"
       git_repo_private: "{{ repo_cloud.private | default(false) }}"
       git_repo_key_file_encrypted: "{{ repo_env_dest }}/{{ repo_cloud.key_file_encrypted }}"
       git_repo_src: "{{ repo_cloud.src }}"
@@ -133,10 +134,10 @@
     set_fact: 
       repo_hosts_file_src: >-
         {{ 
-        repo_env.init.hosts_file | default('')
-        | ternary(repo_env_dest + '/' + (repo_env.init.hosts_file | default('')), '')
+        repo_env_init.hosts_file | default('')
+        | ternary(repo_env_dest + '/' + (repo_env_init.hosts_file | default('')), '')
         }}
-      repo_hosts_content: "{{ repo_env.init.hosts_content | default('') }}"
+      repo_hosts_content: "{{ repo_env_init.hosts_content | default('') }}"
     tags: ["other", "no_print"]
 
   - name: "[prepare] [{{ repo.name }}] ensure that there is a hosts file or content"
