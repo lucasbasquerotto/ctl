@@ -1,7 +1,8 @@
-- include_tasks: "tasks/repo_vars.yml"
+- name: "[ctl] [repo]"
+  include_tasks: "tasks/repo_vars.yml"
   tags: ["other"]
 
-- name: "[repo] [{{ repo.name }}] create the directories in {{ repo_dest }}"
+- name: "[ctl] [repo] [{{ repo.name }}] create the directories in {{ repo_dest }}"
   file:
     path: "{{ repo_item }}"
     state: directory
@@ -17,7 +18,7 @@
 
 # env repository
   
-- name: "[repo] [{{ repo.name }}] create file to verify idempotence (if there is still no file)"
+- name: "[ctl] [repo] [{{ repo.name }}] create file to verify idempotence (if there is still no file)"
   copy: 
     force: no
     content: ""
@@ -25,7 +26,7 @@
     mode: 0600
   tags: ["other"]
 
-- name: "[repo] [{{ repo.name }}] fail - repo_env_dest"
+- name: "[ctl] [repo] [{{ repo.name }}] fail - repo_env_dest"
   fail:
     msg: >-
       repo_env (specific or global) is not correctly defined for the
@@ -33,9 +34,10 @@
   when: (repo_env_dest | default('')) == ''
   tags: ["other"]
 
-- include_tasks: "tasks/git.yml"
+- name: "[ctl] [repo] [{{ repo.name }}]"
+  include_tasks: "tasks/git.yml"
   vars:
-    git_title: "[repo] [{{ repo.name }}] - git env"
+    git_title: "[ctl] [repo] [{{ repo.name }}] - git env"
     git_repo_private: "{{ repo.env_repo.private | default(false) }}"
     git_repo_key_file_encrypted: "env/{{ repo.env_repo.key_file_encrypted }}"
     git_repo_src: "{{ repo.env_repo.src }}"
@@ -51,7 +53,7 @@
 
 # preparation file
 
-- name: "[repo] [{{ repo.name }}] copy the preparation file ({{ repo_dest }}/prepare)"
+- name: "[ctl] [repo] [{{ repo.name }}] copy the preparation file ({{ repo_dest }}/prepare)"
   template:
     src: "templates/prepare.tpl.sh"
     dest: "{{ repo_dest }}/prepare"
@@ -65,7 +67,7 @@
 
 # vault file
 
-- name: "[repo] [{{ repo.name }}] copy the vault file"
+- name: "[ctl] [repo] [{{ repo.name }}] copy the vault file"
   copy:
     src: "env/{{ repo_env_repo.vault_file }}"
     dest: "{{ repo_dest }}/var/vault"

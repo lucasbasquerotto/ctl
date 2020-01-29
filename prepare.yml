@@ -3,26 +3,28 @@
   gather_facts: no  
   tasks:  
 
-  - include_tasks: "tasks/main_vars.yml"
+  - name: "[ctl] [prepare]"
+    include_tasks: "tasks/main_vars.yml"
     tags: ["other"]
 
-  - name: "[prepare] [{{ repo.name }}]"
+  - name: "[ctl] [prepare] [{{ repo.name }}]"
     set_fact: 
       repo: "{{ env.repos | selectattr('local_repo', 'equalto', env_local_repo) | first | default({}) }}"
     tags: ["other", "no_print"]
 
-  - name: "[prepare] - [{{ env_local_repo }}] fail - repo not found"
+  - name: "[ctl] [prepare] - [{{ env_local_repo }}] fail - repo not found"
     fail:
       msg: "the repository was not found [{{ repo.name }}]"
     when: (repo.local_repo | default('')) == ''
     tags: ["other"]
 
-  - include_tasks: "tasks/repo_vars.yml"
+  - name: "[ctl] [prepare] [{{ repo.name }}]"
+    include_tasks: "tasks/repo_vars.yml"
     tags: ["other"]
 
   # repo env vars
 
-  - name: "[prepare] [{{ repo.name }}] load environment vars"
+  - name: "[ctl] [prepare] [{{ repo.name }}] load environment vars"
     include_vars:
       file: "{{ repo_env_dest }}/{{ repo.env_file }}"
       name: repo_env
@@ -32,7 +34,7 @@
 
   - block:
     
-    - name: "[prepare] [{{ repo.name }}]"
+    - name: "[ctl] [prepare] [{{ repo.name }}]"
       fail:
         msg: "[prepare] [{{ repo.name }}] - git env base destination not defined"
       when: >-
@@ -42,7 +44,7 @@
         and
         ((repo_env.env.repo_dir | default('')) == '')
 
-    - name: "[prepare] [{{ repo.name }}]"
+    - name: "[ctl] [prepare] [{{ repo.name }}]"
       set_fact: 
         repo_env_base_dest: >-
           {{ 
@@ -51,7 +53,8 @@
           }}
       tags: ["other", "no_print"]
 
-    - include_tasks: "tasks/git.yml"
+    - name: "[ctl] [prepare] [{{ repo.name }}]"
+      include_tasks: "tasks/git.yml"
       vars:
         git_title: "[prepare] [{{ repo.name }}] - git env base"
         git_repo_private: "{{ repo_env.env.repo.private | default(false) }}"
@@ -69,14 +72,14 @@
       tags: ["other"]
 
     - name: >-
-        [prepare] [{{ repo.name }}] load base environment vars
+        [ctl] [prepare] [{{ repo.name }}] load base environment vars
         ({{ repo_env_base_dest }}/{{ repo_env.env.file }})
       include_vars:
         file: "{{ repo_env_base_dest }}/{{ repo_env.env.file }}"
         name: repo_env_base
       tags: ["other"]
 
-    - name: "[prepare] [{{ repo.name }}]"
+    - name: "[ctl] [prepare] [{{ repo.name }}]"
       set_fact: 
         repo_env: "{{ repo_env_base }}"
       vars:
@@ -88,7 +91,7 @@
 
   # repo cloud repository
 
-  - name: "[prepare] [{{ repo.name }}]"
+  - name: "[ctl] [prepare] [{{ repo.name }}]"
     set_fact:
       repo_env_init: "{{ repo_env.init[repo_env.ctx] }}"
       repo_cloud_dest: >-
@@ -102,20 +105,21 @@
         }}
     tags: ["other", "no_print"]
 
-  - name: "[prepare] [{{ repo.name }}] fail - repo_cloud_dest"
+  - name: "[ctl] [prepare] [{{ repo.name }}] fail - repo_cloud_dest"
     fail:
       msg: "local_cloud_dir is not defined for the repository [{{ repo.name }}]"
     when: (repo_cloud_dest | default('')) == ''
     tags: ["other"]
 
-  - name: "[prepare] [{{ repo.name }}]"
+  - name: "[ctl] [prepare] [{{ repo.name }}]"
     set_fact: 
       repo_cloud: "{{ repo_env.repos[repo_env_init.repo] }}"
     tags: ["other", "no_print"]
 
-  - include_tasks: "tasks/git.yml"
+  - name: "[ctl] [prepare] [{{ repo.name }}]"
+    include_tasks: "tasks/git.yml"
     vars:
-      git_title: "[prepare] [{{ repo.name }}] - git cloud ({{ repo_env_init.repo }})"
+      git_title: "[ctl] [prepare] [{{ repo.name }}] - git cloud ({{ repo_env_init.repo }})"
       git_repo_private: "{{ repo_cloud.private | default(false) }}"
       git_repo_key_file_encrypted: "{{ repo_env_dest }}/{{ repo_cloud.key_file_encrypted }}"
       git_repo_src: "{{ repo_cloud.src }}"
@@ -130,7 +134,7 @@
 
   # repo hosts file (inventory)
 
-  - name: "[prepare] [{{ repo.name }}]"
+  - name: "[ctl] [prepare] [{{ repo.name }}]"
     set_fact: 
       repo_hosts_file_src: >-
         {{ 
@@ -140,7 +144,7 @@
       repo_hosts_content: "{{ repo_env_init.hosts_content | default('') }}"
     tags: ["other", "no_print"]
 
-  - name: "[prepare] [{{ repo.name }}] ensure that there is a hosts file or content"
+  - name: "[ctl] [prepare] [{{ repo.name }}] ensure that there is a hosts file or content"
     fail:
       msg: "Enter a value for hosts_file or hosts_content"
     when: >-
@@ -149,7 +153,7 @@
       ((repo_hosts_content | default('')) == '')
     tags: ["other"]
 
-  - name: "[prepare] [{{ repo.name }}] ensure that there isn't a hosts file and a hosts content at once"
+  - name: "[ctl] [prepare] [{{ repo.name }}] ensure that there isn't a hosts file and a hosts content at once"
     fail:
       msg: "Enter a value for only one of hosts_file or hosts_content"
     when: >-
@@ -158,7 +162,7 @@
       ((repo_hosts_content | default('')) != '')
     tags: ["other"]
 
-  - name: "[prepare] [{{ repo.name }}] copy the hosts file temporarily to verify changes"
+  - name: "[ctl] [prepare] [{{ repo.name }}] copy the hosts file temporarily to verify changes"
     copy:
       src: "{{ repo_hosts_file_src }}"
       dest: "{{ repo_dest }}/var/hosts.tmp"
@@ -167,7 +171,7 @@
     when: (repo_hosts_file_src | default('')) != ''
     tags: ["other"]
 
-  - name: "[prepare] [{{ repo.name }}] copy the hosts content temporarily to verify changes"
+  - name: "[ctl] [prepare] [{{ repo.name }}] copy the hosts content temporarily to verify changes"
     copy:
       content: "{{ repo_hosts_content }}"
       dest: "{{ repo_dest }}/var/hosts.tmp"
@@ -176,7 +180,7 @@
     when: (repo_hosts_content | default('')) != ''
     tags: ["other"]
 
-  - name: "[prepare] [{{ repo.name }}] copy the hosts file when changed"
+  - name: "[ctl] [prepare] [{{ repo.name }}] copy the hosts file when changed"
     copy:
       src: "{{ repo_dest }}/var/hosts.tmp"
       dest: "{{ repo_dest }}/var/hosts"
@@ -186,7 +190,7 @@
 
   # repo executable files
 
-  - name: "[prepare] [{{ repo.name }}] copy the executable files"
+  - name: "[ctl] [prepare] [{{ repo.name }}] copy the executable files"
     template:
       src: "templates/run.tpl.sh"
       dest: "{{ repo_dest }}/{{ repo_item.name }}"
@@ -204,7 +208,7 @@
       loop_var: repo_item
     tags: ["other"]
     
-  - name: "[prepare] [{{ repo.name }}] execute the commands of the local repositories (dev)"
+  - name: "[ctl] [prepare] [{{ repo.name }}] execute the commands of the local repositories (dev)"
     command: "{{ env.repo_base_dest_workspace }}/{{ repo.local_repo }}/dev"
     when: repo.local | default(false) | bool
     tags: ["never", "local"]

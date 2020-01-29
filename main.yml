@@ -2,16 +2,18 @@
   hosts: main
   gather_facts: no  
   tasks: 
-  - name: "[main] gathering facts"
+  - name: "[ctl] [main] gathering facts"
     setup: 
     tags: ["main", "other"]
 
-  - include_tasks: "tasks/main_vars.yml"
+  - name: "[ctl] [main]"
+    include_tasks: "tasks/main_vars.yml"
     tags: ["main", "other"]
     
-  - include_tasks: "tasks/git.yml"
+  - name: "[ctl] [main]"
+    include_tasks: "tasks/git.yml"
     vars:
-      git_title: "[main] git main env"
+      git_title: "[ctl] [main] git main env"
       git_repo_private: "{{ env.env_repo.private | default(false) }}"
       git_repo_key_file_encrypted: "env/{{ env.env_repo.key_file_encrypted }}"
       git_repo_src: "{{ env.env_repo.src }}"
@@ -25,7 +27,7 @@
     when: env.env_repo is defined
     tags: ["main", "other"]
 
-  - name: "[main] update the workspace repos"
+  - name: "[ctl] [main] update the workspace repos"
     include_tasks: "tasks/repo.yml"
     loop: "{{ env.repos }}"  
     loop_control:
@@ -34,7 +36,7 @@
     when: ((env_repo_name | default('')) == '') or (env_repo_name == repo.local_repo)
     tags: ["env", "other"]
 
-  - name: "[main] run files of all repositories"
+  - name: "[ctl] [main] run files of all repositories"
     template: 
       src: "{{ main_item.src }}"
       dest: "{{ main_item.dest }}"
@@ -52,7 +54,7 @@
     when: (env_repo_name | default('')) == ''
     tags: ["other", "print_action"]
   
-  - name: "[main] update the repositories and directories permissions (dev)"
+  - name: "[ctl] [main] update the repositories and directories permissions (dev)"
     command: "chown -R --reference=/root/ctl/ /main/"
     args:
       warn: false
