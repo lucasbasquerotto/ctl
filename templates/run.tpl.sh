@@ -8,6 +8,7 @@ set -euo pipefail
 force="{{ repo_run_force }}"
 cloud_repo="{{ repo_cloud_repo_dest }}"
 repo="{{ repo_dest }}"
+env_ctx="{{ repo.ctx | default('') }}"
 hosts="$repo/var/hosts"
 env_local_repo="{{ repo.local_repo }}"
 env_dir="{{ repo_env_dir }}"
@@ -82,6 +83,7 @@ if [ "$run" -eq 1 ]; then
   ansible-playbook $vault "$playbook" -i "$hosts" \
     -e env_file="$env_file" \
     -e env_dir="$env_dir" \
+    -e env_ctx="$env_ctx" \
     -e env_tmp_dir="$tmp_dir" \
     -e env_local_repo="$env_local_repo" \
     -e env_local_data_dir="$env_local_data_dir" \
