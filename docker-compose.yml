@@ -21,7 +21,7 @@ services:
     - .:/root/ctl:ro
     - ./tmp/run:/root/run:rw
     - ../r:/root/r:rw
-    - ../r/ctl/var:/root/r:rw
+    - ../r/ctl/var:/root/var:rw
     logging: *logging 
     command: sleep infinity
   
@@ -37,8 +37,8 @@ services:
     - DEV=1
     volumes:
     - .:/root/ctl:ro
-    - ./tmp/var:/root/var:rw
     - ./tmp/run:/root/run:rw
+    - ../r/ctl/var:/root/var:rw
     - ../r:/root/r:rw
     - ../envs:/root/r/envs:ro
     - ../clouds:/root/r/clouds:ro
