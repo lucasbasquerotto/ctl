@@ -37,10 +37,10 @@ env_local_pod_dir_list=''
 {%- for local_pod_dir in repo.local_pod_dir_list %}
 {% set env_local_pod_dir_list = 
   env_local_pod_dir_list 
-  + '-e local_pod_dir_rel_' + local_pod_dir.name 
-  + '="' + local_pod_dir.dir + '" ' 
-  + '-e local_pod_dir_' + local_pod_dir.name 
-  + '="' + repo_base_dir_pod + '/' + local_pod_dir.dir + '" ' 
+  + "-e local_pod_dir_rel_" + local_pod_dir.name 
+  + "='" + local_pod_dir.dir + "' "
+  + "-e local_pod_dir_" + local_pod_dir.name 
+  + "='" + repo_base_dir_pod + "/" + local_pod_dir.dir + "' "
 -%}
 env_local_pod_dir_list="$env_local_pod_dir_list {{ env_local_pod_dir_list }}"
 {% endfor %}
@@ -58,10 +58,10 @@ env_local_app_dir_list=''
 {%- for local_app_dir in repo.local_app_dir_list %}
 {% set env_local_app_dir_list = 
   env_local_app_dir_list 
-  + '-e local_app_dir_rel_' + local_app_dir.name 
-  + '="' + local_app_dir.dir + '" ' 
-  + '-e local_app_dir_' + local_app_dir.name 
-  + '="' + repo_base_dir_app + '/' + local_app_dir.dir + '" ' 
+  + "-e local_app_dir_rel_" + local_app_dir.name 
+  + "='" + local_app_dir.dir + "' "
+  + "-e local_app_dir_" + local_app_dir.name 
+  + "='" + repo_base_dir_app + "/" + local_app_dir.dir + "' "
 -%}
 env_local_app_dir_list="$env_local_app_dir_list {{ env_local_app_dir_list }}"
 {% endfor %}
