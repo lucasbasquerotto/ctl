@@ -113,7 +113,7 @@ case "$command" in
 
 		if [ ! -z "$repo_name" ] && [ "$repo_name" != "all" ]; then
 			echo -e "${CYAN}$(date '+%F %X') prepare [$repo_name] - start${NC}"
-			/root/r/w/"$repo_name"/prepare ${@}
+			bash /root/r/w/"$repo_name"/prepare ${@}
 			echo -e "${CYAN}$(date '+%F %X') prepare [$repo_name] - end${NC}"
 		else
 			echo -e "${CYAN}$(date '+%F %X') prepare all - start${NC}"
@@ -209,11 +209,11 @@ case "$command" in
 		fi
 
 		cmd_value=$(echo "./run $new_cmd $args" | base64 -w 0)
-		"$dir"/run dev-cmd "/root/r/w/main/$cmd_file" $tags -e "$new_cmd_name"="$cmd_value"
+		"$dir"/run dev-cmd bash "/root/r/w/main/$cmd_file" $tags -e "$new_cmd_name"="$cmd_value"
 		;;
 	"destroy")
 		repo_name="${1:-}"
-		"$dir"/run dev-cmd "/root/r/w/$repo_name/run" --tags destroy
+		"$dir"/run dev-cmd bash "/root/r/w/$repo_name/run" --tags destroy
 		;;
 	"deploy"|"deploy-nontty"|"fast-deploy"|"f"|"fast-deploy-nontty"|"dev-deploy"|"dev-fast-deploy")
 		repo_name="${1:-}"
@@ -253,7 +253,7 @@ case "$command" in
 				;;
 		esac
 
-		"$dir"/run "$new_cmd" "/root/r/w/$repo_name/$final_cmd" "${@}"
+		"$dir"/run "$new_cmd" bash "/root/r/w/$repo_name/$final_cmd" "${@}"
 		;;
 	"stop")
 		cd "$dir"

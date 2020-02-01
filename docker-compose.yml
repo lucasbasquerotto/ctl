@@ -19,9 +19,9 @@ services:
     - DEV=0
     volumes:
     - .:/root/ctl:ro
-    - ./tmp/var:/root/var:rw
     - ./tmp/run:/root/run:rw
     - ../r:/root/r:rw
+    - ../r/ctl/var:/root/r:rw
     logging: *logging 
     command: sleep infinity
   
