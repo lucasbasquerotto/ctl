@@ -6,7 +6,7 @@ FROM $CTL_IMAGE:$CTL_VERSION
 WORKDIR /root/ctl
 
 COPY setup/image.sh /tmp/
-COPY env/ /tmp/env/
+COPY env-main/ /tmp/env/
 
 RUN chmod +x /tmp/image.sh \
  && /tmp/image.sh \

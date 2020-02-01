@@ -39,7 +39,7 @@
   vars:
     git_title: "[ctl] [repo] [{{ repo.name }}] - git env"
     git_repo_private: "{{ repo.env_repo.private | default(false) }}"
-    git_repo_key_file_encrypted: "env/{{ repo.env_repo.key_file_encrypted }}"
+    git_repo_key_file_encrypted: "env-main/{{ repo.env_repo.key_file_encrypted }}"
     git_repo_src: "{{ repo.env_repo.src }}"
     git_repo_version: "{{ repo.env_repo.version }}"
     git_repo_key_file: "{{ repo_dest }}/var/repo.env.key_file"
@@ -69,7 +69,7 @@
 
 - name: "[ctl] [repo] [{{ repo.name }}] copy the vault file"
   copy:
-    src: "env/{{ repo_env_repo.vault_file }}"
+    src: "env-main/{{ repo_env_repo.vault_file }}"
     dest: "{{ repo_dest }}/var/vault"
     decrypt: yes
     mode: 0600
