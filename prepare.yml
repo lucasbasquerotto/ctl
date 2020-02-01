@@ -229,7 +229,7 @@
     tags: ["other"]
     
   - name: "{{ repo_title }} - execute the commands of the local repositories (dev/local)"
-    command: "{{ env.repo_base_dest_workspace }}/{{ repo.local_repo }}/dev"
+    command: "bash {{ env.repo_base_dest_workspace }}/{{ repo.local_repo }}/dev"
     when: repo.local | default(false) | bool
     tags: ["never", "local"]
 
