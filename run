@@ -9,7 +9,6 @@ commands="$commands, deploy, fast-deploy, dev-deploy, stop"
 dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 CYAN='\033[0;36m'
-YELLOW='\033[0;33m'
 RED='\033[0;31m'
 NC='\033[0m' # No Color
 
@@ -56,7 +55,7 @@ case "$command" in
 	"dev-setup")
 		echo -e "${CYAN}$(date '+%F %X') Setup dev started at $(date '+%F %X')${NC}"
 		
-		"$dir"/run setup
+		"$dir"/run setup "$@"
 		
 		"$dir"/run dev-build all --tags "main,other,local"
 
