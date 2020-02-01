@@ -22,6 +22,8 @@ function join_by { local IFS="$1"; shift; echo "$@"; }
 
 case "$command" in
 	"setup"|"s")
+		env_repo_default=${1:-your-repo.git}
+		
 		echo -e "${CYAN}$(date '+%F %X') Setup started at $(date '+%F %X')${NC}"
 
 		git_repo=''
@@ -33,7 +35,7 @@ case "$command" in
 		if [ -z "$git_repo" ]; then
 			rm -rf "$dir/env"
 			read -e -p "Enter the main (global) git environment repository: " \
-				-i "https://lucasbasquerotto@bitbucket.org/lucasbasquerotto/ansible-main-env-demo.git" git_repo
+				-i "$env_repo_default" git_repo
 			git config --global credential.helper store
 			git clone "$git_repo" "$dir/env"
 		fi
