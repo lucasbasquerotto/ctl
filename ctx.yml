@@ -1,6 +1,6 @@
 files:
 
-- src: "env/.env"
+- src: "env-main/.env"
   dest: ".env"
   root: true
 
@@ -8,13 +8,13 @@ files:
 %}templates:
 
 - src: "templates/vault.tpl"
-  dest: "vault"
+  dest: "tmp/var/vault"
   root: true
   params: 
     vault: "{{ params.credentials.vault.encrypted_value }}"
 
 {% if params.main.test is defined
-%}- src: "env/test/tpl.yml"
+%}- src: "env-main/test/tpl.yml"
   dest: "env-test/test.yml"
   root: true
   params: 

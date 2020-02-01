@@ -8,6 +8,8 @@ commands="setup, dev-setup, reset, main, main-cmd, dev, dev-cmd, build, dev-buil
 commands="$commands, deploy, fast-deploy, dev-deploy, stop"
 dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
+main_env_dir="env-main"
+
 CYAN='\033[0;36m'
 RED='\033[0;31m'
 NC='\033[0m' # No Color
@@ -27,12 +29,12 @@ case "$command" in
 
 		git_repo=''
 
-		if [ -d "$dir/env" ]; then
-			git_repo=$(git --git-dir="$dir/env/.git" remote get-url origin || :);
+		if [ -d "$dir/$main_env_dir" ]; then
+			git_repo=$(git --git-dir="$dir/$main_env_dir/.git" remote get-url origin || :);
 		fi
 
 		if [ -z "$git_repo" ]; then
-			rm -rf "$dir/env"
+			rm -rf "$dir/$main_env_dir"
 
 			if [ -z "$env_repo_default" ]; then
 				read -e -p "Enter the main (global) git environment repository: " \
@@ -42,12 +44,12 @@ case "$command" in
 			fi
 
 			git config --global credential.helper store
-			git clone "$git_repo" "$dir/env"
+			git clone "$git_repo" "$dir/$main_env_dir"
 		fi
 
-		echo -e "${CYAN}$(date '+%F %X') Main git environment repository: $git_repo at $dir/env${NC}"
+		echo -e "${CYAN}$(date '+%F %X') Main git environment repository: $git_repo at $dir/$main_env_dir${NC}"
 
-		cp "$dir"/env/.env "$dir"/
+		cp "$dir/$main_env_dir"/.env "$dir"/
 
 		echo -e "${CYAN}$(date '+%F %X') Building the docker images...${NC}"
 
@@ -68,7 +70,7 @@ case "$command" in
 		echo -e "${CYAN}$(date '+%F %X') Setup dev finished at $(date '+%F %X')${NC}"
 		;;
 	"reset")
-		rm -rf "$dir/env"
+		rm -rf "$dir/$main_env_dir"
 		rm -rf "$dir/tmp"
 		;;
 	"build"|"dev-build")
@@ -179,8 +181,8 @@ case "$command" in
 		mkdir -p /root/var
 
 		if [ ! -f /root/var/vault ]; then
-			if [ -f /root/ctl/vault ]; then
-				cp /root/ctl/vault /root/var/vault
+			if [ -f /root/ctl/tmp/var/vault ]; then
+				cp /root/ctl/tmp/var/vault /root/var/vault
 			else
 				echo -n "Enter the main vault pass (to decrypt the ssh keys of the environment repositories): "
 				read -s vault_pass
@@ -265,13 +267,13 @@ case "$command" in
 		index="${3:-1}"
 
 		if [ -z "$repo_name" ]; then
-			msg="Define the repo_name parameter (as defined in env/vars.yml)"
+			msg="Define the repo_name parameter (as defined in $main_env_dir/vars.yml)"
 			echo -e "${RED}${msg}${NC}"
 			exit 1
 		fi
 
 		if [ -z "$instance_type" ]; then
-			msg="Define the instance_type parameter (as defined in env/vars.yml -> contexts -> group)"
+			msg="Define the instance_type parameter (as defined in $main_env_dir/vars.yml -> contexts -> group)"
 			echo -e "${RED}${msg}${NC}"
 			exit 1
 		fi

@@ -22,7 +22,7 @@
   copy: 
     force: no
     content: ""
-    dest: "{{ repo_dest }}/var/{{ repo.env_file }}"
+    dest: "{{ repo_dest }}/var/env.tmp"
     mode: 0600
   tags: ["other"]
 

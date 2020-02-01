@@ -1,6 +1,6 @@
 - name: "[ctl] [main] (vars) - load environment vars"
   include_vars:
-    file: "env/vars.yml"
+    file: "env-main/vars.yml"
     name: env
   tags: ["main", "other"]
 
