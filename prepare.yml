@@ -29,85 +29,17 @@
 
   # repo env vars
 
-  - name: "{{ repo_title }}"
-    include_vars:
-      file: "{{ repo_env_dest }}/{{ repo.env_file }}"
-      name: repo_env
-    tags: ["other"]
-    
-  - name: "{{ repo_title }}"
-    fail:
-      msg: >-
-        {{ repo_title }} - the context (ctx) parameter is defined in both
-        the main environment file ({{ repo.ctx }}) as well as in the repo
-        environment file ({{ repo_env.ctx }}) - it should be in only 1 of them, or none
-    when: ((repo_env.ctx | default('')) != '') and ((repo.ctx | default('')) != '')
-    tags: ["other"]
-
-  - name: "{{ repo_title }}"
-    set_fact: 
-      repo_env: "{{ repo_env | combine({ 'ctx': repo.ctx | default('') }) }}"
-    when: ((repo_env.ctx | default('')) == '') and ((repo.ctx | default('')) != '')
-    tags: ["other", "no_print"]
-
-  # repo base environment directory
-
-  - block:
-    
-    - name: "{{ repo_title }}"
-      fail:
-        msg: "[prepare] [{{ repo.name }}] - git env base destination not defined"
-      when: >-
-        (not (main_dev | bool)) 
-        and 
-        (not (repo.local | default(false) | bool))
-        and
-        ((repo_env.env.repo_dir | default('')) == '')
-
-    - name: "{{ repo_title }}"
-      set_fact: 
-        repo_env_base_dest: >-
-          {{ 
-          repo_env_dest + 
-          (repo_env.env.repo_dir | ternary('/' + repo_env.env.repo_dir, ''))
-          }}
-      tags: ["other", "no_print"]
-
-    - name: "{{ repo_title }}"
-      include_tasks: "tasks/git.yml"
-      vars:
-        git_title: "{{ repo_title }} - git env base"
-        git_repo_private: "{{ repo_env.env.repo.private | default(false) }}"
-        git_repo_key_file_encrypted: >-
-          {{ repo_env_dest }}/{{ repo_env.env.repo.key_file_encrypted }}
-        git_repo_src: "{{ repo_env.env.repo.src }}"
-        git_repo_version: "{{ repo_env.env.repo.version }}"
-        git_repo_key_file: "{{ repo_dest }}/var/repo.env_base.key_file"
-        git_repo_accept_hostkey: yes
-        git_repo_dest: "{{ repo_env_base_dest }}"
-        git_repo_update: "{{ (main_dev | bool) | ternary('no', 'yes') }}"
-        git_repo_force: no
-        git_task_tags: ["other"]
-      when: (repo_env.env.repo_dir | default('')) != ''
-      tags: ["other"]
-
-    - name: >-
-        {{ repo_title }} - load base environment vars
-        ({{ repo_env_base_dest }}/{{ repo_env.env.file }})
-      include_vars:
-        file: "{{ repo_env_base_dest }}/{{ repo_env.env.file }}"
-        name: repo_env_base
-      tags: ["other"]
-
-    - name: "{{ repo_title }}"
-      set_fact: 
-        repo_env: "{{ repo_env_base }}"
-      vars:
-        params: "{{ repo_env }}"
-      tags: ["other", "no_print"]
-
-    when: repo_env.env is defined
-    tags: ["other"]
+  - name: "{{ repo_title }} - env"
+    include_tasks: "tasks/env.yml"
+    vars:
+      repo_env_title: "{{ repo_title }} - env"
+      repo_env_file: "{{ repo_env_dest }}/{{ repo.env_file }}"
+      repo_env_ctx: "{{ repo.ctx | default('') }}"
+      repo_env_dir: "{{ repo_env_dest }}"
+      repo_env_ctl: true
+      repo_env_main_dev: "{{ main_dev }}"
+      repo_env_repo: "{{ repo }}"
+      repo_env_repo_dest: "{{ repo_dest }}"
 
   # repo cloud repository
 

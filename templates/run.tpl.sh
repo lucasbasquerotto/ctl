@@ -20,6 +20,7 @@ vault_file="$repo/var/vault"
 env_local_data_dir="/main/data"
 env_local_data_dir_rel="../../data"
 playbook="{{ repo.type }}.yml"
+env_task_file="/root/ctl/tasks/env.yml"
 
 if [ -f "$vault_file" ]; then
   vault="--vault-id $vault_file"
@@ -81,6 +82,7 @@ if [ "$run" -eq 1 ]; then
   cd "$cloud_repo"
 
   ansible-playbook $vault "$playbook" -i "$hosts" \
+    -e env_task_file="$env_task_file" \
     -e env_file="$env_file" \
     -e env_dir="$env_dir" \
     -e env_ctx="$env_ctx" \
