@@ -1,0 +1,57 @@
+- name: >-
+    {{ template_title }} - 
+    transfer the template to the specified tmp location
+    ({{ template_src }} to {{ template_tmp_dest }})
+  become: "{{ cloud_prepare_pod.root }}"
+  template: 
+    src: "{{ template_src }}"
+    dest: "{{ template_tmp_dest }}"
+    owner: "{{ template_owner | default('') }}"
+    group: "{{ template_group | default('') }}"
+    mode: >-
+      {{ 
+      template_mode | default(
+      ((template_local | default('')) == 'local') | ternary(0666, ''), true) 
+      }}
+  vars:
+    params: "{{ template_params }}"
+    meta: "{{ template_meta | default({}) }}"
+  changed_when: false
+  tags: "{{ template_task_tags }}"
+
+- name: "{{ template_title }}"
+  set_fact:
+    template_regex: >-
+      {{ 
+      template_meta.templates_no_empty_lines | default(false) 
+      | ternary('(^\\s*$)', '(^\\s*$)')
+      }}
+  tags: "{{ (template_task_tags | default([])) + ['no_print'] }}"
+
+- name: >-
+    {{ template_title }} -
+    remove excess of blank lines of the file created from the template
+    ({{ template_tmp_dest }})
+  replace:
+    path: "{{ template_tmp_dest }}"
+    regexp: "{{ template_regex }}"
+    replace: ""
+  changed_when: false
+  tags: "{{ template_task_tags }}"
+
+- name: >-
+    {{ template_title }} - 
+    copy the normalized files created from the templates
+    ({{ template_dest }})
+  become: "{{ cloud_prepare_pod.root }}"
+  copy:
+    remote_src: true
+    src: "{{ template_tmp_dest }}"
+    dest: "{{ template_dest }}"
+    owner: "{{ template_owner | default('') }}"
+    group: "{{ template_group | default('') }}"
+    mode: >-
+      {{ 
+      template_mode | default(template_local | default(false) | bool | ternary(0666, ''), true) 
+      }}
+  tags: "{{ template_task_tags }}"

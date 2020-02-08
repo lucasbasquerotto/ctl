@@ -9,7 +9,10 @@
 
   - name: "[ctl] [prepare] [{{ env_local_repo }}]"
     set_fact: 
-      repo: "{{ env.repos | selectattr('local_repo', 'equalto', env_local_repo) | first | default({}) }}"
+      repo: >-
+        {{ 
+        env.repos | selectattr('local_repo', 'equalto', env_local_repo) | first | default({}) 
+        }}
     tags: ["other", "no_print"]
 
   - name: "[ctl] [prepare] - [{{ env_local_repo }}] fail - repo not found"
@@ -40,12 +43,37 @@
       repo_env_main_dev: "{{ main_dev }}"
       repo_env_repo: "{{ repo }}"
       repo_env_repo_dest: "{{ repo_dest }}"
+    tags: ["other"]
+
+  # init params
+
+  - set_fact:
+      repo_env_init: "{{ repo_env.init[repo_env.ctx] }}"
+    tags: ["other", "no_print"]
+
+  - block:
+      
+    - include_role:
+        name: "params_mixer"
+      vars:
+        params_mixer_main_params: "{{ repo_env_init.params | default({}) }}"
+        params_mixer_other_params_names: "{{ repo_env_init.other_params | default({}) }}"
+        params_mixer_shared_params_name: "{{ repo_env_init.shared_params | default('') }}"
+        params_mixer_shared_params_names_dict: "{{ repo_env.init_shared_params | default({}) }}"
+        params_mixer_params_dict: "{{ repo_env.init_params | default({}) }}"
+      tags: ["other", "no_print"]
+
+    - set_fact:
+        repo_env_init: "{{ params_mixer_params }}"
+      tags: ["other", "no_print"]
+
+    when: repo_env_init.inner_params | default(false) | bool  
+    tags: ["other"]
 
   # repo cloud repository
 
   - name: "{{ repo_title }}"
     set_fact:
-      repo_env_init: "{{ repo_env.init[repo_env.ctx] }}"
       repo_cloud_dest: >-
         {{ 
         (main_dev | bool) | 
@@ -83,6 +111,36 @@
       git_repo_force: no
       git_task_tags: ["other"]
     tags: ["other"]
+
+  # repo cloud entrypoint
+      
+  - name: "{{ repo_title }}"
+    fail:
+      msg: >-
+        {{ repo_title }} - the environment file init parameter doesn't contain
+        the entrypoint property defined
+    when: (repo_env_init.entrypoint | default('')) == ''
+    tags: ["other"]
+
+  - name: "{{ repo_title }}"
+    include_tasks: "tasks/template.yml"
+    vars:
+      template_title: "{{ repo_title }} - entrypoint ({{ repo_env_init.entrypoint_template_src }})"
+      template_src: "{{ repo_cloud_dest }}/{{ repo_env_init.entrypoint_template_src }}"
+      template_tmp_dest: "{{ repo_dest }}/var/cloud.entrypoint.tmp"
+      template_dest: "{{ repo_cloud_dest }}/{{ repo_env_init.entrypoint }}"
+      template_local: true
+      template_params: "{{ repo_env_init }}"
+      template_meta: "{{ repo_env.meta_params[repo_env_init.meta] | default({}) }}"
+      template_task_tags: ["other"]
+    when: (repo_env_init.entrypoint_template_src | default('')) != ''
+    tags: ["other"]
+
+  - name: "{{ repo_title }}"
+    set_fact: 
+      repo_cloud_entrypoint_rel: "{{ repo_env_init.entrypoint }}"
+      repo_cloud_entrypoint: "{{ repo_cloud_dest }}/{{ repo_env_init.entrypoint }}"
+    tags: ["other", "no_print"]
 
   # repo hosts file (inventory)
 
@@ -152,6 +210,7 @@
       repo_force_vault: "{{ repo_env_repo.force_vault and not (repo_item.dev | default(false) | bool) }}"
       repo_env_dir: "{{ repo_env_dest }}"
       repo_cloud_repo_dest: "{{ repo_cloud_dest }}"
+      repo_cloud_entrypoint_rel: "{{ repo_cloud_entrypoint_rel }}"
     loop:
     - { name: "run", force: "true" }
     - { name: "upgrade", force: "false" }

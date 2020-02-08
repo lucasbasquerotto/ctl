@@ -19,7 +19,7 @@ vault="{{ repo_force_vault | ternary('--vault-id workspace@prompt', '') }}"
 vault_file="$repo/var/vault"
 env_local_data_dir="/main/data"
 env_local_data_dir_rel="../../data"
-playbook="{{ repo.type }}.yml"
+playbook="{{ repo_cloud_entrypoint_rel }}"
 env_task_file="/root/ctl/tasks/env.yml"
 
 if [ -f "$vault_file" ]; then
