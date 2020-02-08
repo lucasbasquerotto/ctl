@@ -32,10 +32,10 @@
       template_mode | default(
       ((template_local | default('')) == 'local') | ternary(0666, omit), true) 
       }}
-    block_end_string: "{{ template_meta.template_block_end_string | default(omit, true) }}"
-    block_start_string: "{{ template_meta.template_block_start_string | default(omit, true) }}"
-    variable_end_string: "{{ template_meta.template_variable_end_string | default(omit, true) }}"
-    variable_start_string: "{{ template_meta.template_variable_start_string | default(omit, true) }}"
+    block_end_string: "%>"
+    block_start_string: "<%"
+    variable_end_string: ">>"
+    variable_start_string: "<<"
   vars:
     params: "<< template_params_final >>"
     meta: "<< template_meta_final >>"
