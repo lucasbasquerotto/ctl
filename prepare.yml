@@ -127,11 +127,12 @@
     vars:
       template_title: "{{ repo_title }} - entrypoint ({{ repo_env_init.entrypoint_template_src }})"
       template_src: "{{ repo_cloud_dest }}/{{ repo_env_init.entrypoint_template_src }}"
-      template_tmp_dest: "{{ repo_dest }}/var/cloud.entrypoint.tmp"
+      template_tmp_dest: "{{ repo_dest }}/var/cloud-entrypoint/{{ repo_env_init.entrypoint }}"
       template_dest: "{{ repo_cloud_dest }}/{{ repo_env_init.entrypoint }}"
+      template_remote_src: false
       template_local: true
       template_params: "{{ repo_env_init }}"
-      template_meta: "{{ repo_env.meta_params[repo_env_init.meta] | default({}) }}"
+      template_meta: "{{ repo_env.meta_params[repo_env_init.meta | default('')] | default({}) }}"
       template_task_tags: ["other"]
     when: (repo_env_init.entrypoint_template_src | default('')) != ''
     tags: ["other"]

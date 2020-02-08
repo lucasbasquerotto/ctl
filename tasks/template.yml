@@ -1,21 +1,44 @@
+- name: "{{ template_title }} - create the template directories (tmp and final)"
+  become: "{{ template_become | default('no') }}"
+  file:
+    path: "{{ template_item }}"
+    state: directory
+    mode: 0755
+  loop: 
+  - "{{ template_tmp_dest | dirname }}"
+  - "{{ template_dest | dirname }}"
+  loop_control:
+    loop_var: template_item
+  tags: "{{ template_task_tags }}"
+
+- name: "{{ template_title }}"
+  set_fact:
+    template_params_final: "{{ template_params | default({}) | combine({}) }}"
+    template_meta_final: "{{ template_meta | default({}) | combine({}) }}"
+  tags: "{{ (template_task_tags | default([])) + ['no_print'] }}"
+
 - name: >-
     {{ template_title }} - 
     transfer the template to the specified tmp location
     ({{ template_src }} to {{ template_tmp_dest }})
-  become: "{{ cloud_prepare_pod.root }}"
+  become: "{{ template_become | default('no') }}"
   template: 
     src: "{{ template_src }}"
     dest: "{{ template_tmp_dest }}"
-    owner: "{{ template_owner | default('') }}"
-    group: "{{ template_group | default('') }}"
+    owner: "{{ template_owner | default(omit, true) }}"
+    group: "{{ template_group | default(omit, true) }}"
     mode: >-
       {{ 
       template_mode | default(
-      ((template_local | default('')) == 'local') | ternary(0666, ''), true) 
+      ((template_local | default('')) == 'local') | ternary(0666, omit), true) 
       }}
+    block_end_string: "{{ template_meta.template_block_end_string | default(omit, true) }}"
+    block_start_string: "{{ template_meta.template_block_start_string | default(omit, true) }}"
+    variable_end_string: "{{ template_meta.template_variable_end_string | default(omit, true) }}"
+    variable_start_string: "{{ template_meta.template_variable_start_string | default(omit, true) }}"
   vars:
-    params: "{{ template_params }}"
-    meta: "{{ template_meta | default({}) }}"
+    params: "<< template_params_final >>"
+    meta: "<< template_meta_final >>"
   changed_when: false
   tags: "{{ template_task_tags }}"
 
@@ -40,18 +63,18 @@
   tags: "{{ template_task_tags }}"
 
 - name: >-
-    {{ template_title }} - 
-    copy the normalized files created from the templates
+    {{ template_title }} -
+    copy the normalized file created from the template to the specified location
     ({{ template_dest }})
-  become: "{{ cloud_prepare_pod.root }}"
+  become: "{{ template_become | default('no') }}"
   copy:
-    remote_src: true
+    remote_src: "{{ template_remote_src | default('false') }}"
     src: "{{ template_tmp_dest }}"
     dest: "{{ template_dest }}"
-    owner: "{{ template_owner | default('') }}"
-    group: "{{ template_group | default('') }}"
+    owner: "{{ template_owner | default(omit) }}"
+    group: "{{ template_group | default(omit) }}"
     mode: >-
       {{ 
-      template_mode | default(template_local | default(false) | bool | ternary(0666, ''), true) 
+      template_mode | default(template_local | default(false) | bool | ternary(0666, omit), true) 
       }}
   tags: "{{ template_task_tags }}"
