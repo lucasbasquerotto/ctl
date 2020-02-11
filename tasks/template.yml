@@ -44,11 +44,13 @@
 
 - name: "{{ template_title }}"
   set_fact:
-    template_regex: >-
-      {{ 
-      template_meta.templates_no_empty_lines | default(false) 
-      | ternary('(^\\s*$)', '(^\\s*$)')
-      }}
+    template_regex: "^\\s*$"
+  tags: "{{ (template_task_tags | default([])) + ['no_print'] }}"
+
+- name: "{{ template_title }}"
+  set_fact:
+    template_regex: "\\n\\s*$"
+  when: template_meta.template_no_empty_lines | default(false) | bool
   tags: "{{ (template_task_tags | default([])) + ['no_print'] }}"
 
 - name: >-
@@ -57,7 +59,7 @@
     ({{ template_tmp_dest }})
   replace:
     path: "{{ template_tmp_dest }}"
-    regexp: "^\\s*$"
+    regexp: "{{ template_regex }}"
     replace: ""
   changed_when: false
   tags: "{{ template_task_tags }}"
