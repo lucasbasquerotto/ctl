@@ -57,7 +57,7 @@
     ({{ template_tmp_dest }})
   replace:
     path: "{{ template_tmp_dest }}"
-    regexp: "{{ template_regex }}"
+    regexp: "^\\s*$"
     replace: ""
   changed_when: false
   tags: "{{ template_task_tags }}"
