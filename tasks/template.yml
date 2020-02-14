@@ -15,6 +15,8 @@
   set_fact:
     template_params_final: "{{ template_params | default({}) | combine({}) }}"
     template_meta_final: "{{ template_meta | default({}) | combine({}) }}"
+    template_ctl_params_final: "{{ template_ctl_params | default({}) | combine({}) }}"
+    template_local_params_final: "{{ template_local_params | default({}) | combine({}) }}"
   tags: "{{ (template_task_tags | default([])) + ['no_print'] }}"
 
 - name: >-
@@ -38,7 +40,9 @@
     variable_start_string: "<<"
   vars:
     params: "<< template_params_final >>"
-    meta: "<< template_meta_final >>"
+    meta_params: "<< template_meta_final >>"
+    env_params: "<< template_ctl_params_final >>"
+    local_params: "<< template_local_params_final >>"
   changed_when: false
   tags: "{{ template_task_tags }}"
 

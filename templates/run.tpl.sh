@@ -34,14 +34,14 @@ env_local_pod_dir_list=''
 
 {% set env_local_pod_dir_list = '' -%}
 
-{%- if repo.local_pod_dir_list is defined %}
-{%- for local_pod_dir in repo.local_pod_dir_list %}
+{%- if (repo.local_pod_dir | default({}) | dict2items | length) > 0 %}
+{%- for local_pod_dir in repo.local_pod_dir | default({}) | dict2items | sort %}
 {% set env_local_pod_dir_list = 
   env_local_pod_dir_list 
-  + "-e local_pod_dir_rel_" + local_pod_dir.name 
-  + "='" + local_pod_dir.dir + "' "
-  + "-e local_pod_dir_" + local_pod_dir.name 
-  + "='" + repo_base_dir_pod + "/" + local_pod_dir.dir + "' "
+  + "-e local_pod_dir_rel_" + local_pod_dir.key 
+  + "='" + local_pod_dir.value + "' "
+  + "-e local_pod_dir_" + local_pod_dir.key 
+  + "='" + repo_base_dir_pod + "/" + local_pod_dir.value + "' "
 -%}
 env_local_pod_dir_list="$env_local_pod_dir_list {{ env_local_pod_dir_list }}"
 {% endfor %}
@@ -55,14 +55,14 @@ env_local_app_dir_list=''
 
 {% set env_local_app_dir_list = '' -%}
 
-{%- if repo.local_app_dir_list is defined %}
-{%- for local_app_dir in repo.local_app_dir_list %}
+{%- if (repo.local_app_dir | default({}) | dict2items | length) > 0 %}
+{%- for local_app_dir in repo.local_app_dir | default({}) | dict2items | sort %}
 {% set env_local_app_dir_list = 
   env_local_app_dir_list 
-  + "-e local_app_dir_rel_" + local_app_dir.name 
-  + "='" + local_app_dir.dir + "' "
-  + "-e local_app_dir_" + local_app_dir.name 
-  + "='" + repo_base_dir_app + "/" + local_app_dir.dir + "' "
+  + "-e local_app_dir_rel_" + local_app_dir.key 
+  + "='" + local_app_dir.value + "' "
+  + "-e local_app_dir_" + local_app_dir.key 
+  + "='" + repo_base_dir_app + "/" + local_app_dir.value + "' "
 -%}
 env_local_app_dir_list="$env_local_app_dir_list {{ env_local_app_dir_list }}"
 {% endfor %}

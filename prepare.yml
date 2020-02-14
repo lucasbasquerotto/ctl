@@ -132,6 +132,10 @@
       template_remote_src: false
       template_local: true
       template_params: "{{ repo_env }}"
+      template_ctl_params: "{{ repo }}"
+      template_local_params:
+        base_dir_pod: "{{ repo_base_dir_pod }}"
+        base_dir_app: "{{ repo_base_dir_app }}"
       template_meta: "{{ repo_env.meta_params[repo_env_init.meta | default('')] | default({}) }}"
       template_task_tags: ["other"]
     when: (repo_env_init.entrypoint_template_src | default('')) != ''
