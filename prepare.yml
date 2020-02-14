@@ -37,7 +37,8 @@
     vars:
       repo_env_title: "{{ repo_title }} - env"
       repo_env_file: "{{ repo_env_dest }}/{{ repo.env_file }}"
-      repo_env_ctx: "{{ repo.ctx | default('') }}"
+      repo_env_ctx: ""
+      repo_env_ctxs: "{{ repo.ctxs | default([]) }}"
       repo_env_dir: "{{ repo_env_dest }}"
       repo_env_ctl: true
       repo_env_main_dev: "{{ main_dev }}"
@@ -45,185 +46,41 @@
       repo_env_repo_dest: "{{ repo_dest }}"
     tags: ["other"]
 
-  # init params
-
-  - set_fact:
-      repo_env_init: "{{ repo_env.init[repo_env.ctx] }}"
-    tags: ["other", "no_print"]
-
-  - block:
-      
-    - include_role:
-        name: "params_mixer"
-      vars:
-        params_mixer_main_params: "{{ repo_env_init.params | default({}) }}"
-        params_mixer_other_params_names: "{{ repo_env_init.other_params | default({}) }}"
-        params_mixer_shared_params_name: "{{ repo_env_init.shared_params | default('') }}"
-        params_mixer_shared_params_names_dict: "{{ repo_env.init_shared_params | default({}) }}"
-        params_mixer_params_dict: "{{ repo_env.init_params | default({}) }}"
-      tags: ["other", "no_print"]
-
-    - set_fact:
-        repo_env_init: "{{ params_mixer_params }}"
-      tags: ["other", "no_print"]
-
-    when: repo_env_init.inner_params | default(false) | bool  
-    tags: ["other"]
-
-  # repo cloud repository
-
-  - name: "{{ repo_title }}"
-    set_fact:
-      repo_cloud_dest: >-
-        {{ 
-        (main_dev | bool) | 
-        ternary(
-        repo.local_cloud_dir | default('') | 
-        ternary(main_cloud_repo_dest_base + '/' + (repo.local_cloud_dir | default('')), ''), 
-        repo_dest + '/cloud'
-        )
-        }}
-    tags: ["other", "no_print"]
-
-  - name: "{{ repo_title }} - fail - repo_cloud_dest"
-    fail:
-      msg: "local_cloud_dir is not defined for the repository [{{ repo.name }}]"
-    when: (repo_cloud_dest | default('')) == ''
-    tags: ["other"]
+  # repo ctxs
 
   - name: "{{ repo_title }}"
     set_fact: 
-      repo_cloud: "{{ repo_env.repos[repo_env_init.repo] }}"
+      repo_env_aux: "{{ repo_env | combine({}) }}"
     tags: ["other", "no_print"]
 
-  - name: "{{ repo_title }}"
-    include_tasks: "tasks/git.yml"
+  - name: "{{ repo_title }} - copy the executable repo files"
+    include_tasks: "tasks/repo.ctx.yml"
     vars:
-      git_title: "{{ repo_title }} - git cloud ({{ repo_env_init.repo }})"
-      git_repo_private: "{{ repo_cloud.private | default(false) }}"
-      git_repo_key_file_encrypted: "{{ repo_env_dest }}/{{ repo_cloud.key_file_encrypted }}"
-      git_repo_src: "{{ repo_cloud.src }}"
-      git_repo_version: "{{ repo_cloud.version }}"
-      git_repo_key_file: "{{ repo_dest }}/var/repo.cloud.key_file"
-      git_repo_accept_hostkey: yes
-      git_repo_dest: "{{ repo_cloud_dest }}"
-      git_repo_update: "{{ (main_dev | bool) | ternary('no', 'yes') }}"
-      git_repo_force: no
-      git_task_tags: ["other"]
-    tags: ["other"]
-
-  # repo cloud entrypoint
-      
-  - name: "{{ repo_title }}"
-    fail:
-      msg: >-
-        {{ repo_title }} - the environment file init parameter doesn't contain
-        the entrypoint property defined
-    when: (repo_env_init.entrypoint | default('')) == ''
-    tags: ["other"]
-
-  - name: "{{ repo_title }}"
-    include_tasks: "tasks/template.yml"
-    vars:
-      template_title: "{{ repo_title }} - entrypoint ({{ repo_env_init.entrypoint_template_src }})"
-      template_src: "{{ repo_cloud_dest }}/{{ repo_env_init.entrypoint_template_src }}"
-      template_tmp_dest: "{{ repo_dest }}/var/cloud-entrypoint/{{ repo_env_init.entrypoint }}"
-      template_dest: "{{ repo_cloud_dest }}/{{ repo_env_init.entrypoint }}"
-      template_remote_src: false
-      template_local: true
-      template_params: "{{ repo_env }}"
-      template_ctl_params: "{{ repo }}"
-      template_local_params:
-        base_dir_pod: "{{ repo_base_dir_pod }}"
-        base_dir_app: "{{ repo_base_dir_app }}"
-      template_meta: "{{ repo_env.meta_params[repo_env_init.meta | default('')] | default({}) }}"
-      template_task_tags: ["other"]
-    when: (repo_env_init.entrypoint_template_src | default('')) != ''
-    tags: ["other"]
-
-  - name: "{{ repo_title }}"
-    set_fact: 
-      repo_cloud_entrypoint_rel: "{{ repo_env_init.entrypoint }}"
-      repo_cloud_entrypoint: "{{ repo_cloud_dest }}/{{ repo_env_init.entrypoint }}"
-    tags: ["other", "no_print"]
-
-  # repo hosts file (inventory)
-
-  - name: "{{ repo_title }}"
-    set_fact: 
-      repo_hosts_file_src: >-
-        {{ 
-        repo_env_init.hosts_file | default('')
-        | ternary(repo_env_dest + '/' + (repo_env_init.hosts_file | default('')), '')
-        }}
-      repo_hosts_content: "{{ repo_env_init.hosts_content | default('') }}"
-    tags: ["other", "no_print"]
-
-  - name: "{{ repo_title }} - ensure that there is a hosts file or content"
-    fail:
-      msg: "Enter a value for hosts_file or hosts_content"
-    when: >-
-      ((repo_hosts_file_src | default('')) == '') 
-      and 
-      ((repo_hosts_content | default('')) == '')
-    tags: ["other"]
-
-  - name: "{{ repo_title }} - ensure that there isn't a hosts file and a hosts content at once"
-    fail:
-      msg: "Enter a value for only one of hosts_file or hosts_content"
-    when: >-
-      ((repo_hosts_file_src | default('')) != '') 
-      and 
-      ((repo_hosts_content | default('')) != '')
-    tags: ["other"]
-
-  - name: "{{ repo_title }} - copy the hosts file temporarily to verify changes"
-    copy:
-      src: "{{ repo_hosts_file_src }}"
-      dest: "{{ repo_dest }}/var/hosts.tmp"
-      mode: 0600
-    register: diff_hosts_file
-    when: (repo_hosts_file_src | default('')) != ''
-    tags: ["other"]
-
-  - name: "{{ repo_title }} - copy the hosts content temporarily to verify changes"
-    copy:
-      content: "{{ repo_hosts_content }}"
-      dest: "{{ repo_dest }}/var/hosts.tmp"
-      mode: 0600
-    register: diff_hosts_content
-    when: (repo_hosts_content | default('')) != ''
-    tags: ["other"]
-
-  - name: "{{ repo_title }} - copy the hosts file when changed"
-    copy:
-      src: "{{ repo_dest }}/var/hosts.tmp"
-      dest: "{{ repo_dest }}/var/hosts"
-      mode: 0600
-      force: "{{ diff_hosts_file.changed or diff_hosts_content.changed }}"
-    tags: ["other"]
-
-  # repo executable files
-
-  - name: "{{ repo_title }} - copy the executable files"
-    template:
-      src: "templates/run.tpl.sh"
-      dest: "{{ repo_dest }}/{{ repo_item.name }}"
-      mode: 0700
-    vars:
-      repo_run_force: "{{ repo_item.force }}"
-      repo_force_vault: "{{ repo_env_repo.force_vault and not (repo_item.dev | default(false) | bool) }}"
-      repo_env_dir: "{{ repo_env_dest }}"
-      repo_cloud_repo_dest: "{{ repo_cloud_dest }}"
-      repo_cloud_entrypoint_rel: "{{ repo_cloud_entrypoint_rel }}"
-    loop:
-    - { name: "run", force: "true" }
-    - { name: "upgrade", force: "false" }
-    - { name: "dev", force: "true", dev: true }
+      repo_env_inner: "{{ repo_env_aux | combine({ 'ctx': repo_item }) }}"
+    loop: "{{ repo_env.ctxs }}"
     loop_control:
       loop_var: repo_item
     tags: ["other"]
-    
+      
+  - name: "{{ repo_title }} - copy the main executable files"
+    template:
+      src: "templates/run.tpl.sh"
+      dest: "{{ repo_dest }}/{{ repo_item }}"
+      mode: 0700
+    vars:
+      repo_dir: "{{ repo_dest }}"
+      repo_file: "{{ repo_item }}"
+      repo_env_ctxs: "{{ repo_env.ctxs }}"
+    loop:
+    - "run"
+    - "upgrade"
+    - "dev"
+    loop_control:
+      loop_var: repo_item
+    tags: ["other"]
+
+  # execute local repo ctxs
+
   - name: "{{ repo_title }} - execute the commands of the local repositories (dev/local)"
     command: "bash {{ env.repo_base_dest_workspace }}/{{ repo.local_repo }}/dev"
     when: repo.local | default(false) | bool

@@ -14,7 +14,7 @@
     decrypt: yes
     mode: 0600
   when: (git_repo_private | bool)
-  tags: "{{ git_task_tags }}"
+  tags: "{{ git_task_tags | default([]) }}"
       
 - name: "{{ git_title }} - update repo ({{ git_repo_dest }})"
   git:
@@ -25,4 +25,4 @@
     dest: "{{ git_repo_dest }}"
     update: "{{ git_repo_update }}"
     force: "{{ git_repo_force }}"
-  tags: "{{ git_task_tags }}"
+  tags: "{{ git_task_tags | default([]) }}"
