@@ -31,7 +31,7 @@ The recommended commands are shown after running `./run run`. Example:
 
 ```bash
 # This step should be executed inside the container with Ansible
-/root/r/w/client2-forum/upgrade
+/root/w/r/client2-forum/upgrade
 ```
 
 ## 5. Destroy droplets and buckets (dev)
@@ -40,7 +40,7 @@ The following should be executed only in a development environment:
 
 ```bash
 # This step should be executed inside the container with Ansible
-/root/r/w/client2-forum/run --tags destroy
+/root/w/r/client2-forum/run --tags destroy
 ```
 
 # Encrypt with Ansible

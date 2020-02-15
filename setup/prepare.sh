@@ -58,7 +58,7 @@ else
 
   if [ ! -z "$pod_local_name" ]; then
     echo -e "${CYAN}$(date '+%F %X') run the upgrade script ($pod_local_name)${NC}"
-    ./ctl/run main-cmd "/root/r/w/$pod_local_name/upgrade"
+    ./ctl/run main-cmd "/root/w/r/$pod_local_name/upgrade"
     echo -e "${CYAN}$(date '+%F %X') upgrade script ($pod_local_name) executed${NC}"
   fi
 fi

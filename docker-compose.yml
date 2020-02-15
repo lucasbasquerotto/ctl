@@ -20,8 +20,8 @@ services:
     volumes:
     - .:/root/ctl:ro
     - ./tmp/run:/root/run:rw
-    - ../r:/root/r:rw
-    - ../r/ctl/var:/root/var:rw
+    - ../w:/root/w:rw
+    - ../w/ctl/var:/root/var:rw
     logging: *logging 
     command: sleep infinity
   
@@ -38,10 +38,10 @@ services:
     volumes:
     - .:/root/ctl:ro
     - ./tmp/run:/root/run:rw
-    - ../r/ctl/var:/root/var:rw
-    - ../r:/root/r:rw
-    - ../envs:/root/r/envs:ro
-    - ../clouds:/root/r/clouds:ro
+    - ../w/ctl/var:/root/var:rw
+    - ../w:/root/w:rw
+    - ../envs:/root/w/envs:ro
+    - ../clouds:/root/w/clouds:ro
     - ../envs:/main/envs:rw
     - ../clouds:/main/clouds:rw
     - ../pods:/main/pods:rw
