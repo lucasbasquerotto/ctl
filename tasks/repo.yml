@@ -11,7 +11,6 @@
   - "{{ env.repo_base_dest }}/var"
   - "{{ repo_dest }}/env"
   - "{{ repo_dest }}/var"
-  - "{{ repo_dest }}/tmp"
   loop_control:
     loop_var: repo_item
   tags: ["other"]
@@ -69,9 +68,9 @@
 
 - name: "[ctl] [repo] [{{ repo.name }}] copy the vault file"
   copy:
-    src: "env-main/{{ repo_env_repo.vault_file }}"
+    src: "env-main/{{ repo_env_repo_vault.file }}"
     dest: "{{ repo_dest }}/var/vault"
     decrypt: yes
     mode: 0600
-  when: (repo_env_repo.vault_file | default('')) != ''
+  when: (repo_env_repo_vault.file | default('')) != ''
   tags: ["other"]

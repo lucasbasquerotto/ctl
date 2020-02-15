@@ -17,8 +17,3 @@
     main_cloud_repo_dest_base: >-
       {{ ((main_dev | bool) | ternary('/main', env.repo_base_dest)) + '/clouds' }}
   tags: ["main", "other", "no_print"]
-
-- name: "[ctl] [main] (vars)"
-  set_fact:
-    main_env_repo_dest: "{{ main_env_repo_dest_base + '/' + env.env_repo.local_dir }}"
-  tags: ["main", "other", "no_print"]

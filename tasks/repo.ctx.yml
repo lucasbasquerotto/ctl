@@ -1,6 +1,8 @@
 - name: "{{ repo_title }}"
   set_fact:
     repo_inner_title: "{{ repo_title }} - {{ repo_env_inner.ctx }}"
+    repo_inner_var_dir: "{{ repo_dest }}/ctx/{{ repo_env_inner.ctx }}/var"
+    repo_inner_cloud_dir: "{{ repo_dest }}/ctx/{{ repo_env_inner.ctx }}/cloud"
   tags: ["other", "no_print"]
 
 # init params
@@ -41,7 +43,7 @@
       ternary(
       repo.local_cloud_dir | default('') | 
       ternary(main_cloud_repo_dest_base + '/' + (repo.local_cloud_dir | default('')), ''), 
-      repo_dest + '/cloud'
+      repo_inner_cloud_dir
       )
       }}
   tags: ["other", "no_print"]
@@ -65,7 +67,7 @@
     git_repo_key_file_encrypted: "{{ repo_env_dest }}/{{ repo_cloud.key_file_encrypted }}"
     git_repo_src: "{{ repo_cloud.src }}"
     git_repo_version: "{{ repo_cloud.version }}"
-    git_repo_key_file: "{{ repo_dest }}/var/repo.cloud.key_file"
+    git_repo_key_file: "{{ repo_inner_var_dir }}/repo.cloud.key_file"
     git_repo_accept_hostkey: yes
     git_repo_dest: "{{ repo_cloud_dest }}"
     git_repo_update: "{{ (main_dev | bool) | ternary('no', 'yes') }}"
@@ -88,7 +90,7 @@
   vars:
     template_title: "{{ repo_inner_title }} - entrypoint ({{ repo_env_init.entrypoint_template_src }})"
     template_src: "{{ repo_cloud_dest }}/{{ repo_env_init.entrypoint_template_src }}"
-    template_tmp_dest: "{{ repo_dest }}/var/cloud-entrypoint/{{ repo_env_init.entrypoint }}"
+    template_tmp_dest: "{{ repo_inner_var_dir }}/cloud-entrypoint/{{ repo_env_init.entrypoint }}"
     template_dest: "{{ repo_cloud_dest }}/{{ repo_env_init.entrypoint }}"
     template_remote_src: false
     template_local: true
@@ -141,7 +143,7 @@
 - name: "{{ repo_inner_title }} - copy the hosts file temporarily to verify changes"
   copy:
     src: "{{ repo_hosts_file_src }}"
-    dest: "{{ repo_dest }}/var/hosts.tmp"
+    dest: "{{ repo_inner_var_dir }}/hosts.tmp"
     mode: 0600
   register: diff_hosts_file
   when: (repo_hosts_file_src | default('')) != ''
@@ -150,7 +152,7 @@
 - name: "{{ repo_inner_title }} - copy the hosts content temporarily to verify changes"
   copy:
     content: "{{ repo_hosts_content }}"
-    dest: "{{ repo_dest }}/var/hosts.tmp"
+    dest: "{{ repo_inner_var_dir }}/hosts.tmp"
     mode: 0600
   register: diff_hosts_content
   when: (repo_hosts_content | default('')) != ''
@@ -158,8 +160,8 @@
 
 - name: "{{ repo_inner_title }} - copy the hosts file when changed"
   copy:
-    src: "{{ repo_dest }}/var/hosts.tmp"
-    dest: "{{ repo_dest }}/var/hosts"
+    src: "{{ repo_inner_var_dir }}/hosts.tmp"
+    dest: "{{ repo_inner_var_dir }}/hosts"
     mode: 0600
     force: "{{ diff_hosts_file.changed or diff_hosts_content.changed }}"
   tags: ["other"]
@@ -169,13 +171,13 @@
 - name: "{{ repo_inner_title }} - copy the executable ctx files"
   template:
     src: "templates/run.ctx.tpl.sh"
-    dest: "{{ repo_dest }}/{{ repo_inner_item.name }}.{{ repo_env_inner.ctx }}.sh"
+    dest: "{{ repo_dest }}/ctx/{{ repo_env_inner.ctx }}/{{ repo_inner_item.name }}"
     mode: 0700
   vars:
     repo_env_ctx: "{{ repo_env_inner.ctx }}"
     repo_run_force: "{{ repo_inner_item.force }}"
     repo_force_vault: >-
-      {{ repo_env_repo.force_vault and not (repo_inner_item.dev | default(false) | bool) }}
+      {{ (repo_env_repo_vault.force | bool) and not (repo_inner_item.dev | default(false) | bool) }}
     repo_env_dir: "{{ repo_env_dest }}"
     repo_cloud_repo_dest: "{{ repo_cloud_dest }}"
     repo_cloud_entrypoint_rel: "{{ repo_cloud_entrypoint_rel }}"
