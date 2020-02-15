@@ -4,12 +4,12 @@
     repo_env_repo: >-
       {{ 
       ((repo.global_env_repo | default('')) != '') | 
-      ternary(env.env_repo[repo.global_env_repo], repo.env_repo) 
+      ternary(env.env_repo[repo.global_env_repo | default('')], repo.env_repo) 
       }}
     repo_env_repo_vault: >-
       {{ 
       ((repo.global_env_repo_vault | default('')) != '') | 
-      ternary(env.env_repo_vault[repo.global_env_repo_vault], repo.env_repo_vault) 
+      ternary(env.env_repo_vault[repo.global_env_repo_vault | default('')], repo.env_repo_vault) 
       }}
     repo_base_dir_pod: "/main/pods"
     repo_base_dir_app: "/main/apps"
