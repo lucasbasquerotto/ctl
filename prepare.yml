@@ -74,7 +74,6 @@
     loop:
     - "run"
     - "upgrade"
-    - "dev"
     loop_control:
       loop_var: repo_item
     tags: ["other"]

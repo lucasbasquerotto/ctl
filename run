@@ -247,15 +247,7 @@ case "$command" in
 				;;
 		esac
 
-		final_cmd="run"
-
-		case "$command" in
-			"dev-deploy"|"dev-fast-deploy")
-				final_cmd="dev"
-				;;
-		esac
-
-		"$dir"/run "$new_cmd" bash "/root/w/r/$repo_name/$final_cmd" "${@}"
+		"$dir"/run "$new_cmd" bash "/root/w/r/$repo_name/run" "${@}"
 		;;
 	"stop")
 		cd "$dir"

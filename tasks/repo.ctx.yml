@@ -176,15 +176,13 @@
   vars:
     repo_env_ctx: "{{ repo_env_inner.ctx }}"
     repo_run_force: "{{ repo_inner_item.force }}"
-    repo_force_vault: >-
-      {{ (repo_env_repo_vault.force | bool) and not (repo_inner_item.dev | default(false) | bool) }}
+    repo_force_vault: "{{ repo_env_repo_vault.force | default(false) | bool }}"
     repo_env_dir: "{{ repo_env_dest }}"
     repo_cloud_repo_dest: "{{ repo_cloud_dest }}"
     repo_cloud_entrypoint_rel: "{{ repo_cloud_entrypoint_rel }}"
   loop:
   - { name: "run", force: "true" }
   - { name: "upgrade", force: "false" }
-  - { name: "dev", force: "true", dev: true }
   loop_control:
     loop_var: repo_inner_item
   tags: ["other"]
