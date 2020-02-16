@@ -19,7 +19,6 @@ env_file_tmp="$var_dir/env.tmp"
 vault="{{ repo_force_vault | ternary('--vault-id workspace@prompt', '') }}"
 vault_file="$repo/var/vault"
 env_local_data_dir="/main/data"
-env_local_data_dir_rel="../../data"
 playbook="{{ repo_cloud_entrypoint_rel }}"
 env_task_file="/root/ctl/tasks/env.yml"
 
@@ -90,7 +89,6 @@ if [ "$run" -eq 1 ]; then
     -e env_tmp_dir="$tmp_dir" \
     -e env_local_repo="$env_local_repo" \
     -e env_local_data_dir="$env_local_data_dir" \
-    -e env_local_data_dir_rel="$env_local_data_dir_rel" \
     $env_local_pod_dir_list $env_local_app_dir_list "${@}"    
   cp "$env_file" "$env_file_tmp"
 else
