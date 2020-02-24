@@ -257,6 +257,15 @@ case "$command" in
 		cd "$dir"
 		sudo docker-compose rm --stop -v --force
 		;;
+	"stop-all")
+		cd "$dir"
+		sudo docker container stop $(sudo docker ps -q) ||:
+		;;
+	"rm-all")
+		cd "$dir"
+		sudo docker container stop $(sudo docker ps -q) ||:
+		sudo docker container rm $(sudo docker ps -aq) ||:
+		;;
 	"ssh")
 		repo_name="${1:-}"
 		instance_type="${2:-}"
