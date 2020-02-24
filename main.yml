@@ -15,7 +15,7 @@
     loop: "{{ env.repos }}"  
     loop_control:
       loop_var: repo
-      label: "{{ repo.name }}"
+      label: "{{ repo.name }} ({{ repo.local_repo }})"
     when: ((env_repo_name | default('')) == '') or (env_repo_name == repo.local_repo)
     tags: ["env", "other"]
 

@@ -10,7 +10,7 @@ echo -e "${CYAN}$start [start] running all contexts ({{ repo_dir }}/{{ repo_file
 
 {% if (repo_env_ctxs | default([]) | length) > 0 %}
 {% for ctx in repo_env_ctxs %}
-{{ repo_dir }}/ctx/{{ ctx }}/{{ repo_file }} "${@}"
+bash {{ repo_dir }}/ctx/{{ ctx }}/{{ repo_file }} "${@}"
 {% endfor %}
 {% endif %}
 
