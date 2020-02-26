@@ -25,7 +25,7 @@ case "$command" in
 	"setup"|"s")
 		env_repo_default=${1:-}
 		
-		echo -e "${CYAN}$(date '+%F %X') Setup started at $(date '+%F %X')${NC}"
+		echo -e "${CYAN}$(date '+%F %T') Setup started at $(date '+%F %T')${NC}"
 
 		git_repo=''
 
@@ -47,27 +47,27 @@ case "$command" in
 			git clone "$git_repo" "$dir/$main_env_dir"
 		fi
 
-		echo -e "${CYAN}$(date '+%F %X') Main git environment repository: $git_repo at $dir/$main_env_dir${NC}"
+		echo -e "${CYAN}$(date '+%F %T') Main git environment repository: $git_repo at $dir/$main_env_dir${NC}"
 
 		cp "$dir/$main_env_dir"/.env "$dir"/
 
-		echo -e "${CYAN}$(date '+%F %X') Building the docker images...${NC}"
+		echo -e "${CYAN}$(date '+%F %T') Building the docker images...${NC}"
 
 		cd "$dir"
 		sudo docker-compose build
 
-		echo -e "${CYAN}$(date '+%F %X') Docker images created${NC}"
+		echo -e "${CYAN}$(date '+%F %T') Docker images created${NC}"
 
-		echo -e "${CYAN}$(date '+%F %X') Setup finished at $(date '+%F %X')${NC}"
+		echo -e "${CYAN}$(date '+%F %T') Setup finished at $(date '+%F %T')${NC}"
 		;;
 	"dev-setup")
-		echo -e "${CYAN}$(date '+%F %X') Setup dev started at $(date '+%F %X')${NC}"
+		echo -e "${CYAN}$(date '+%F %T') Setup dev started at $(date '+%F %T')${NC}"
 		
 		"$dir"/run setup "$@"
 		
 		"$dir"/run dev-build all --tags "main,other,local"
 
-		echo -e "${CYAN}$(date '+%F %X') Setup dev finished at $(date '+%F %X')${NC}"
+		echo -e "${CYAN}$(date '+%F %T') Setup dev finished at $(date '+%F %T')${NC}"
 		;;
 	"reset")
 		rm -rf "${dir:?}/$main_env_dir"
@@ -96,9 +96,9 @@ case "$command" in
 		fi
 	
 		./run init
-		echo -e "${CYAN}$(date '+%F %X') main - start${NC}"
+		echo -e "${CYAN}$(date '+%F %T') main - start${NC}"
 		ansible-playbook --vault-id /root/var/vault main.yml "${params[@]}" "${@}"
-		echo -e "${CYAN}$(date '+%F %X') main - end${NC}"
+		echo -e "${CYAN}$(date '+%F %T') main - end${NC}"
 		./run prepare "$repo_name" "${@}"
 		;;
 	"prepare")
@@ -114,13 +114,13 @@ case "$command" in
 		./run init
 
 		if [ ! -z "$repo_name" ] && [ "$repo_name" != "all" ]; then
-			echo -e "${CYAN}$(date '+%F %X') prepare [$repo_name] - start${NC}"
+			echo -e "${CYAN}$(date '+%F %T') prepare [$repo_name] - start${NC}"
 			bash /root/w/r/"$repo_name"/prepare "${@}"
-			echo -e "${CYAN}$(date '+%F %X') prepare [$repo_name] - end${NC}"
+			echo -e "${CYAN}$(date '+%F %T') prepare [$repo_name] - end${NC}"
 		else
-			echo -e "${CYAN}$(date '+%F %X') prepare all - start${NC}"
+			echo -e "${CYAN}$(date '+%F %T') prepare all - start${NC}"
 			/root/run/prepare-all.sh "${@}"
-		echo -e "${CYAN}$(date '+%F %X') prepare all - end${NC}"
+		echo -e "${CYAN}$(date '+%F %T') prepare all - end${NC}"
 		fi
 		;;
 	"main"|"main-cmd"|"main-cmd-nontty"|"dev"|"dev-cmd"|"dev-cmd-nontty")
@@ -185,7 +185,7 @@ case "$command" in
 				cp /root/ctl/tmp/var/vault /root/var/vault
 			else
 				echo -n "Enter the main vault pass (to decrypt the ssh keys of the environment repositories): "
-				read -s vault_pass
+				read -r -s vault_pass
 				echo
 				echo "$vault_pass" > /root/var/vault
 			fi
@@ -258,13 +258,13 @@ case "$command" in
 		sudo docker-compose rm --stop -v --force
 		;;
 	"stop-all")
-		cd "$dir"
-		sudo docker container stop $(sudo docker ps -q) ||:
+    mapfile -t list < <(sudo docker ps -q)
+    [[ ${#list[@]} -gt 0 ]] && sudo docker container stop "${list[@]}"
 		;;
 	"rm-all")
-		cd "$dir"
-		sudo docker container stop $(sudo docker ps -q) ||:
-		sudo docker container rm $(sudo docker ps -aq) ||:
+		"$dir"/run "stop-all"
+    mapfile -t list < <(sudo docker ps -aq)
+    [[ ${#list[@]} -gt 0 ]] && sudo docker container rm "${list[@]}"
 		;;
 	"ssh")
 		repo_name="${1:-}"
