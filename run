@@ -274,11 +274,18 @@ case "$command" in
 		;;
 	"ssh")
 		repo_name="${1:-}"
-		instance_type="${2:-}"
-		index="${3:-1}"
+		ctx_name="${2:-}"
+		instance_type="${3:-}"
+		index="${4:-1}"
 
 		if [ -z "$repo_name" ]; then
 			msg="Define the repo_name parameter (as defined in $main_env_dir/vars.yml)"
+			echo -e "${RED}${msg}${NC}"
+			exit 1
+		fi
+
+		if [ -z "$ctx_name" ]; then
+			msg="Define the ctx_name parameter (as defined in $main_env_dir/vars.yml or in the env file)"
 			echo -e "${RED}${msg}${NC}"
 			exit 1
 		fi

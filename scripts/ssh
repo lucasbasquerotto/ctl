@@ -6,17 +6,19 @@ ctl_dir="$(dirname "$run_dir")"
 base_dir="$(dirname "$ctl_dir")"
 
 repo_name="$1"
-instance_type="$2"
-instance_index="${3:-1}"
+ctx_name="$2"
+instance_type="$3"
+instance_index="${4:-1}"
 
 RED='\033[0;31m'
 NC='\033[0m' # No Color
 
 repo_dir="$base_dir/w/r/$repo_name"
-hosts_file="$repo_dir/var/hosts"
+ctx_dir="$repo_dir/ctx/$ctx_name"
+hosts_file="$ctx_dir/var/hosts"
 
 line=$(cat "$hosts_file" | grep "instance_type=$instance_type" \
-| grep "instance_index=$instance_index" | tail -n 1 || :)
+  | grep "instance_index=$instance_index" | tail -n 1 || :)
 
 if [ -z "$line" ]; then
     msg="No line in the hosts file ($hosts_file)"
