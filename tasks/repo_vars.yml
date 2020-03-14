@@ -24,11 +24,11 @@
       {{ main_env_repo_dest_base + '/' + (repo.env_repo.local_dir | default('')) }}
     repo_env_repo_dev_dir: >-
       {{ repo.env_repo.local_dir | default('') | ternary(repo_env_repo_dev_dir_aux, '') }}
-    repo_env_repo_dir: >
+    repo_env_repo_dir: >-
       {{ (main_dev | bool) | ternary(repo_env_repo_dev_dir, repo_dest + '/env') }}
     repo_global_env_repo_dir: >-
       {{ 
       main_env_repo_dest_base + '/' + 
       (env.env_repo[repo.global_env_repo].local_dir | default('')) 
-      }}    
+      }}
   tags: ["other", "no_print"]
