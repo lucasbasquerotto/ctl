@@ -23,6 +23,9 @@ case "$command" in
 	"d")
     command="dev-deploy"
     ;;
+	"f")
+    command="dev-fast-deploy"
+    ;;
 esac
 
 function join_by { local IFS="$1"; shift; echo "$@"; }
@@ -223,7 +226,7 @@ case "$command" in
 		repo_name="${1:-}"
 		"$dir"/run dev-cmd bash "/root/w/r/$repo_name/run" --tags destroy
 		;;
-	"deploy"|"deploy-nontty"|"fast-deploy"|"f"|"fast-deploy-nontty"|"dev-deploy"|"dev-fast-deploy")
+	"deploy"|"deploy-nontty"|"fast-deploy"|"fast-deploy-nontty"|"dev-deploy"|"dev-fast-deploy")
 		repo_name="${1:-}"
 
 		if [ -z "$repo_name" ]; then

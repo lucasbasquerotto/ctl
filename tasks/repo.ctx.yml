@@ -62,18 +62,40 @@
 - name: "{{ repo_inner_title }}"
   include_tasks: "tasks/git.yml"
   vars:
-    git_title: "{{ repo_inner_title }} - git cloud ({{ repo_env_init.repo }})"
+    git_title: "{{ repo_inner_title }} - git cloud repo ({{ repo_env_init.repo }})"
     git_repo_private: "{{ repo_cloud.private | default(false) }}"
-    git_repo_key_file_encrypted: "{{ repo_env_dest }}/{{ repo_cloud.key_file_encrypted }}"
+    git_repo_key_file_encrypted: >-
+      {{ repo_env_dest }}/{{ repo_cloud.key_file_encrypted | default('') }}
     git_repo_src: "{{ repo_cloud.src }}"
     git_repo_version: "{{ repo_cloud.version }}"
-    git_repo_key_file: "{{ repo_inner_var_dir }}/repo.cloud.key_file"
+    git_repo_key_file: "{{ repo_inner_var_dir }}/repo/cloud.key_file"
     git_repo_accept_hostkey: yes
     git_repo_dest: "{{ repo_cloud_dest }}"
     git_repo_update: "{{ (main_dev | bool) | ternary('no', 'yes') }}"
     git_repo_force: no
     git_task_tags: ["other"]
   tags: ["other"]
+
+- name: "{{ repo_inner_title }}"
+  include_tasks: "tasks/git.yml"
+  vars:
+    repo_env_repo: "{{ repo_env_inner.repos[repo_env_repo_data.repo] }}"
+    git_title: "{{ repo_inner_title }} - git cloud env repo ({{ repo_env_repo_data.repo }})"
+    git_repo_private: "{{ repo_env_repo.private | default(false) }}"
+    git_repo_key_file_encrypted: >-
+      {{ repo_env_dest }}/{{ repo_env_repo.key_file_encrypted | default('') }}
+    git_repo_src: "{{ repo_env_repo.src }}"
+    git_repo_version: "{{ repo_env_repo.version }}"
+    git_repo_key_file: "{{ repo_inner_var_dir }}/repo/{{ repo_env_repo_data.dir }}/cloud.key_file"
+    git_repo_accept_hostkey: yes
+    git_repo_dest: "{{ repo_cloud_dest }}/{{ repo_env_repo_data.dir }}"
+    git_repo_update: "{{ (main_dev | bool) | ternary('no', 'yes') }}"
+    git_repo_force: no
+    git_task_tags: ["other"]
+  loop: "{{ repo_env_init.env_repos | default([]) }}"
+  loop_control:
+    loop_var: repo_env_repo_data
+    label: "{{ repo_env_repo_data.repo }}"
 
 # repo cloud entrypoint
     
