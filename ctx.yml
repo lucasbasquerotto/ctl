@@ -13,7 +13,7 @@ files:
   params: 
     vault: "{{ params.credentials.vault.encrypted_value }}"
 
-{% if params.main.test is defined
+{% if params.main.test | default('false') | bool
 %}- src: "env-main/test/tpl.yml"
   dest: "env-test/test.yml"
   root: true
