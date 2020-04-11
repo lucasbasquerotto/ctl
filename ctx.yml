@@ -18,6 +18,7 @@ files:
   dest: "env-test/test.yml"
   root: true
   params: 
+    domain: "{{ params.dependencies_node_ip_dict.remote }}"
     test: {{ params.main | to_json }}
 {% endif %}
 
