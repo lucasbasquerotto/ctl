@@ -53,8 +53,8 @@
       repo_env_aux: "{{ repo_env | combine({}) }}"
     tags: ["other", "no_print"]
 
-  - name: "{{ repo_title }} - copy the executable repo files"
-    include_tasks: "tasks/repo.ctx.yml"
+  - name: "{{ repo_title }} - copy the executable repo ctx files"
+    include_tasks: "tasks/scripts.ctx.yml"
     vars:
       repo_env_inner: "{{ repo_env_aux | combine({ 'ctx': repo_item }) }}"
     loop: "{{ repo_env.ctxs }}"
@@ -77,11 +77,4 @@
     loop_control:
       loop_var: repo_item
     tags: ["other"]
-
-  # execute local repo ctxs
-
-  - name: "{{ repo_title }} - execute the commands of the local repositories (dev/local)"
-    command: "bash {{ env.repo_base_dest_workspace }}/{{ repo.local_repo }}/dev"
-    when: repo.local | default(false) | bool
-    tags: ["never", "local"]
 

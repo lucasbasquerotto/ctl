@@ -94,13 +94,13 @@ case "$command" in
 	"build-inner")
 		repo_name="${1:-}"
 
-		if [ ! -z "$repo_name" ]; then
+		if [ -n "$repo_name" ]; then
 			shift;
 		fi	
 
 		params=()
 
-		if [ ! -z "$repo_name" ] && [ "$repo_name" != "all" ]; then
+		if [ -n "$repo_name" ] && [ "$repo_name" != "all" ]; then
 			params=( "-e" "env_repo_name='$repo_name'" )
 		fi
 	
@@ -122,7 +122,7 @@ case "$command" in
 
 		./run init
 
-		if [ ! -z "$repo_name" ] && [ "$repo_name" != "all" ]; then
+		if [ -n "$repo_name" ] && [ "$repo_name" != "all" ]; then
 			echo -e "${CYAN}$(date '+%F %T') prepare [$repo_name] - start${NC}"
 			bash /root/w/r/"$repo_name"/prepare "${@}"
 			echo -e "${CYAN}$(date '+%F %T') prepare [$repo_name] - end${NC}"
@@ -163,7 +163,7 @@ case "$command" in
 				;;
 		esac
 	
-		if [ ! -z "$service" ]; then
+		if [ -n "$service" ]; then
 			cd "$dir"
 			sudo docker-compose up -d "$service"
 			sudo docker exec $interactive "$(sudo docker-compose ps -q "$service")" "${cmd[@]}"
@@ -174,7 +174,7 @@ case "$command" in
 		hostname=''
 		dev="${DEV:-}"
 		
-		if [ ! -z "$dev" ]; then
+		if [ -n "$dev" ]; then
 			if [ "$dev" = "1" ]; then
 				hostname='ctl-dev'
 			else
@@ -226,7 +226,8 @@ case "$command" in
 		repo_name="${1:-}"
 		"$dir"/run dev-cmd bash "/root/w/r/$repo_name/run" --tags destroy
 		;;
-	"deploy"|"deploy-nontty"|"fast-deploy"|"fast-deploy-nontty"|"dev-deploy"|"dev-fast-deploy")
+	"deploy"|"deploy-nontty"|"fast-deploy"|"fast-deploy-nontty"|\
+	"dev-deploy"|"dev-fast-deploy"|"force-deploy"|"force-deploy-nontty")
 		repo_name="${1:-}"
 
 		if [ -z "$repo_name" ]; then
@@ -237,7 +238,7 @@ case "$command" in
 		new_cmd="main-cmd"
 
 		case "$command" in
-			"deploy-nontty")
+			"deploy-nontty"|"force-deploy-nontty")
 				new_cmd="main-cmd-nontty"
 				;;
 			"dev-deploy"|"dev-fast-deploy")
@@ -250,13 +251,24 @@ case "$command" in
 
 		set -- "${@:2}"
 
+		inner_cmd="fast-run"
+
+		case "$command" in
+			"deploy"|"deploy-nontty")
+				inner_cmd="upgrade"
+				;;
+			"force-deploy"|"force-deploy-nontty"|"dev-deploy")
+				inner_cmd="run"
+				;;
+		esac
+
 		case "$command" in
 			"deploy"|"deploy-nontty"|"dev-deploy")
 				"$dir"/run "$new_cmd" ./run build-inner "$repo_name"
 				;;
 		esac
 
-		"$dir"/run "$new_cmd" bash "/root/w/r/$repo_name/run" "${@}"
+		"$dir"/run "$new_cmd" bash "/root/w/r/$repo_name/$inner_cmd" "${@}"
 		;;
 	"stop")
 		cd "$dir"

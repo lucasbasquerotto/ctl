@@ -1,0 +1,76 @@
+- name: "{{ repo_title }}"
+  set_fact:
+    repo_inner_title: "{{ repo_title }} - {{ repo_env_inner.ctx }}"
+    repo_inner_var_dir: "{{ repo_dest }}/ctx/{{ repo_env_inner.ctx }}/var"
+    repo_inner_cloud_dir: "{{ repo_dest }}/ctx/{{ repo_env_inner.ctx }}/cloud"
+  tags: ["other", "no_print"]
+
+# init params
+
+- name: "{{ repo_inner_title }}"
+  set_fact:
+    repo_env_init: "{{ repo_env_inner.init[repo_env_inner.ctx] }}"
+  tags: ["other", "no_print"]
+
+- block:
+    
+  - name: "{{ repo_inner_title }}"
+    include_role:
+      name: "params_mixer"
+    vars:
+      params_mixer_main_params: "{{ repo_env_init.params | default({}) }}"
+      params_mixer_other_params_names: "{{ repo_env_init.other_params | default({}) }}"
+      params_mixer_shared_params_name: "{{ repo_env_init.shared_params | default('') }}"
+      params_mixer_shared_params_names_dict: "{{ repo_env_inner.init_shared_params | default({}) }}"
+      params_mixer_params_dict: "{{ repo_env_inner.init_params | default({}) }}"
+    tags: ["other", "no_print"]
+
+  - name: "{{ repo_inner_title }}"
+    set_fact:
+      repo_env_init: "{{ params_mixer_params }}"
+    tags: ["other", "no_print"]
+
+  when: repo_env_init.inner_params | default(false) | bool  
+  tags: ["other"]
+
+- name: "{{ repo_inner_title }}"
+  set_fact:
+    repo_cloud_dest: >-
+      {{ 
+      (main_dev | bool) | 
+      ternary(
+      repo.local_cloud_dir | default('') | 
+      ternary(main_cloud_repo_dest_base + '/' + (repo.local_cloud_dir | default('')), ''), 
+      repo_inner_cloud_dir
+      )
+      }}
+  tags: ["other", "no_print"]
+
+# repo executable files
+
+- name: "{{ repo_inner_title }} - create the ctx directory"
+  file:
+    path: "{{ repo_dest }}/ctx/{{ repo_env_inner.ctx }}"
+    state: directory
+    mode: 0755
+  tags: ["other"]
+
+- name: "{{ repo_inner_title }} - copy the executable ctx files"
+  template:
+    src: "templates/run.ctx.tpl.sh"
+    dest: "{{ repo_dest }}/ctx/{{ repo_env_inner.ctx }}/{{ repo_inner_item.name }}"
+    mode: 0700
+  vars:
+    repo_env_ctx: "{{ repo_env_inner.ctx }}"
+    repo_run_force: "{{ repo_inner_item.force }}"
+    repo_force_vault: "{{ repo_env_repo_vault.force | default(false) | bool }}"
+    repo_env_dir: "{{ repo_env_dest }}"
+    repo_cloud_repo_dest: "{{ repo_cloud_dest }}"
+    repo_cloud_entrypoint_rel: "{{ repo_env_init.entrypoint }}"
+  loop:
+  - { name: "run", force: "true" }
+  - { name: "upgrade", force: "false" }
+  loop_control:
+    loop_var: repo_inner_item
+  tags: ["other"]
+  

@@ -5,6 +5,7 @@ set -euo pipefail
 ##################### Define Variables ######################
 #############################################################
 
+base_dir="/root/ctl"
 force="{{ repo_run_force }}"
 cloud_repo="{{ repo_cloud_repo_dest }}"
 repo="{{ repo_dest }}"
@@ -79,6 +80,13 @@ if [ "$force" != "true" ]; then
 fi
 
 if [ "$run" -eq 1 ]; then
+  cd "$base_dir"
+
+  ansible-playbook $vault prepare.ctx.yml \
+    -e env_local_repo="$env_local_repo" \
+    -e env_dir="$env_dir" \
+    -e env_ctx="$env_ctx"
+
   cd "$cloud_repo"
 
   ansible-playbook $vault "$playbook" -i "$hosts" \

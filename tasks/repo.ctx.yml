@@ -126,12 +126,6 @@
   when: (repo_env_init.entrypoint_template_src | default('')) != ''
   tags: ["other"]
 
-- name: "{{ repo_inner_title }}"
-  set_fact: 
-    repo_cloud_entrypoint_rel: "{{ repo_env_init.entrypoint }}"
-    repo_cloud_entrypoint: "{{ repo_cloud_dest }}/{{ repo_env_init.entrypoint }}"
-  tags: ["other", "no_print"]
-
 # repo hosts file (inventory)
 
 - name: "{{ repo_inner_title }}"
@@ -187,25 +181,3 @@
     mode: 0600
     force: "{{ diff_hosts_file.changed or diff_hosts_content.changed }}"
   tags: ["other"]
-
-# repo executable files
-
-- name: "{{ repo_inner_title }} - copy the executable ctx files"
-  template:
-    src: "templates/run.ctx.tpl.sh"
-    dest: "{{ repo_dest }}/ctx/{{ repo_env_inner.ctx }}/{{ repo_inner_item.name }}"
-    mode: 0700
-  vars:
-    repo_env_ctx: "{{ repo_env_inner.ctx }}"
-    repo_run_force: "{{ repo_inner_item.force }}"
-    repo_force_vault: "{{ repo_env_repo_vault.force | default(false) | bool }}"
-    repo_env_dir: "{{ repo_env_dest }}"
-    repo_cloud_repo_dest: "{{ repo_cloud_dest }}"
-    repo_cloud_entrypoint_rel: "{{ repo_cloud_entrypoint_rel }}"
-  loop:
-  - { name: "run", force: "true" }
-  - { name: "upgrade", force: "false" }
-  loop_control:
-    loop_var: repo_inner_item
-  tags: ["other"]
-  
