@@ -3,13 +3,13 @@
   gather_facts: no  
   tasks:  
 
-  - name: "[ctl] [prepare_ctx]"
+  - name: "[ctl - env] [prepare_ctx]"
     include_tasks: "tasks/main_vars.yml"
     tags: ["other"]
 
-  - name: "[ctl] [prepare_ctx] [{{ env_local_repo }}]"
+  - name: "{{ main_title }} [prepare_ctx] [{{ env_local_repo }}]"
     set_fact: 
-      repo_title: "[ctl] [prepare_ctx] [{{ env_local_repo }}] [ctx - {{ env_ctx }}]"
+      repo_title: "{{ main_title }} [prepare_ctx] [{{ env_local_repo }}] [ctx - {{ env_ctx }}]"
     tags: ["other", "no_print"]
 
   - name: "{{ repo_title }}"

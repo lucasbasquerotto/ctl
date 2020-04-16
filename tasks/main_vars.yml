@@ -1,15 +1,20 @@
-- name: "[ctl] [main] (vars) - load environment vars"
+- name: "[ctl - env] (vars)"
+  set_fact:
+    main_dev: "{{ lookup('env', 'DEV') == '1' }}"
+  tags: ["main", "other", "no_print"]
+
+- name: "[ctl - env] (vars) - title"
+  set_fact:
+    main_title: "[ctl - {{ main_dev| ternary('dev', 'main') }}]"
+  tags: ["main", "other", "no_print"]
+
+- name: "{{ main_title }} (vars) - load environment vars"
   include_vars:
     file: "env-main/vars.yml"
     name: env
   tags: ["main", "other"]
 
-- name: "[ctl] [main] (vars)"
-  set_fact:
-    main_dev: "{{ lookup('env', 'DEV') == '1' }}"
-  tags: ["main", "other", "no_print"]
-
-- name: "[ctl] [main] (vars)"
+- name: "{{ main_title }} - define vars"
   set_fact:
     main_var_dest_base: "/root/var"
     main_env_repo_dest_base: >-

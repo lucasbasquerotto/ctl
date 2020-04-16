@@ -2,15 +2,15 @@
   hosts: main
   gather_facts: no  
   tasks: 
-  - name: "[ctl] [main] gathering facts"
+  - name: "[ctl - env] [main] gathering facts"
     setup: 
     tags: ["main", "other"]
 
-  - name: "[ctl] [main]"
+  - name: "[ctl - env] [main]"
     include_tasks: "tasks/main_vars.yml"
     tags: ["main", "other"]
 
-  - name: "[ctl] [main] update the workspace repos"
+  - name: "{{ main_title }} [main] update the workspace repos"
     include_tasks: "tasks/repo.yml"
     loop: "{{ env.repos }}"  
     loop_control:
@@ -19,7 +19,7 @@
     when: ((env_repo_name | default('')) == '') or (env_repo_name == repo.local_repo)
     tags: ["env", "other"]
 
-  - name: "[ctl] [main] run files of all repositories"
+  - name: "{{ main_title }} [main] run files of all repositories"
     template: 
       src: "{{ main_item.src }}"
       dest: "{{ main_item.dest }}"
@@ -37,7 +37,7 @@
     when: (env_repo_name | default('')) == ''
     tags: ["other", "print_action"]
   
-  - name: "[ctl] [main] update the repositories and directories permissions (dev)"
+  - name: "{{ main_title }} [main] update the repositories and directories permissions (dev)"
     command: "chown -R --reference=/root/ctl/ /main/"
     args:
       warn: false

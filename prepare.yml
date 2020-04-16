@@ -3,11 +3,11 @@
   gather_facts: no  
   tasks:  
 
-  - name: "[ctl] [prepare]"
+  - name: "[ctl - env] [prepare]"
     include_tasks: "tasks/main_vars.yml"
     tags: ["other"]
 
-  - name: "[ctl] [prepare] [{{ env_local_repo }}]"
+  - name: "{{ main_title }} [prepare] [{{ env_local_repo }}]"
     set_fact: 
       repo: >-
         {{ 
@@ -15,15 +15,15 @@
         }}
     tags: ["other", "no_print"]
 
-  - name: "[ctl] [prepare] - [{{ env_local_repo }}] fail - repo not found"
+  - name: "{{ main_title }} [prepare] - [{{ env_local_repo }}] fail - repo not found"
     fail:
       msg: "the repository was not found [{{ repo.name }}]"
     when: (repo.local_repo | default('')) == ''
     tags: ["other"]
 
-  - name: "[ctl] [prepare] [{{ env_local_repo }}]"
+  - name: "{{ main_title }} [prepare] [{{ env_local_repo }}]"
     set_fact: 
-      repo_title: "[ctl] [prepare] [{{ env_local_repo }}]"
+      repo_title: "{{ main_title }} [prepare] [{{ env_local_repo }}]"
     tags: ["other", "no_print"]
 
   - name: "{{ repo_title }}"
