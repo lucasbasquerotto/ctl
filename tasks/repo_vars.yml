@@ -1,4 +1,4 @@
-- name: "[ctl] [repo] (vars)"
+- name: "[ctl] [repo - {{ repo.local_repo }}] (vars)"
   set_fact: 
     repo_dest: "{{ env.repo_base_dest_workspace }}/{{ repo.local_repo }}"
     repo_env_repo: >-
@@ -15,7 +15,7 @@
     repo_base_dir_app: "/main/apps"
   tags: ["other", "no_print"]
 
-- name: "[ctl] [repo] (vars)"
+- name: "[ctl] [repo - {{ repo.local_repo }}] (vars)"
   set_fact:
     repo_env_dest: >-
       {{ (repo.env_repo is defined) | ternary(repo_env_repo_dir, repo_global_env_repo_dir) }}
@@ -29,6 +29,6 @@
     repo_global_env_repo_dir: >-
       {{ 
       main_env_repo_dest_base + '/' + 
-      (env.env_repo[repo.global_env_repo].local_dir | default('')) 
+      (env.env_repo[repo.global_env_repo | default('')].local_dir | default('')) 
       }}
   tags: ["other", "no_print"]
