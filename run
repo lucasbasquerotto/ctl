@@ -251,19 +251,16 @@ case "$command" in
 
 		set -- "${@:2}"
 
-		inner_cmd="fast-run"
+		inner_cmd="run"
 
 		case "$command" in
 			"deploy"|"deploy-nontty")
 				inner_cmd="upgrade"
 				;;
-			"force-deploy"|"force-deploy-nontty"|"dev-deploy")
-				inner_cmd="run"
-				;;
 		esac
 
 		case "$command" in
-			"deploy"|"deploy-nontty"|"dev-deploy")
+			"deploy"|"deploy-nontty"|"force-deploy"|"force-deploy-nontty"|"dev-deploy")
 				"$dir"/run "$new_cmd" ./run build-inner "$repo_name"
 				;;
 		esac
