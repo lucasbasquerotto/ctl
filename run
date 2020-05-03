@@ -280,9 +280,8 @@ case "$command" in
     [[ ${#list[@]} -gt 0 ]] && sudo docker container stop "${list[@]}"
 		;;
 	"rm-all")
-		"$dir"/run "stop-all"
     mapfile -t list < <(sudo docker ps -aq)
-    [[ ${#list[@]} -gt 0 ]] && sudo docker container rm "${list[@]}"
+    [[ ${#list[@]} -gt 0 ]] && sudo docker container rm -f "${list[@]}"
 		;;
 	"ssh")
 		repo_name="${1:-}"
