@@ -7,6 +7,7 @@ set -euo pipefail
 
 base_dir="/root/ctl"
 force="{{ repo_run_force }}"
+fast="{{ repo_run_fast }}"
 cloud_repo="{{ repo_cloud_repo_dest }}"
 repo="{{ repo_dest }}"
 env_ctx="{{ repo_env_ctx | default('') }}"
@@ -80,12 +81,14 @@ if [ "$force" != "true" ]; then
 fi
 
 if [ "$run" -eq 1 ]; then
-  cd "$base_dir"
+  if [ "$fast" != "true" ]; then
+    cd "$base_dir"
 
-  ansible-playbook $vault prepare.ctx.yml \
-    -e env_local_repo="$env_local_repo" \
-    -e env_dir="$env_dir" \
-    -e env_ctx="$env_ctx"
+    ansible-playbook $vault prepare.ctx.yml \
+      -e env_local_repo="$env_local_repo" \
+      -e env_dir="$env_dir" \
+      -e env_ctx="$env_ctx"
+  fi
 
   cd "$cloud_repo"
 

@@ -257,6 +257,9 @@ case "$command" in
 			"deploy"|"deploy-nontty")
 				inner_cmd="upgrade"
 				;;
+			"dev-fast-deploy")
+				inner_cmd="run-fast"
+				;;
 		esac
 
 		case "$command" in

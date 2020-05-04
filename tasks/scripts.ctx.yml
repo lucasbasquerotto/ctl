@@ -62,14 +62,16 @@
     mode: 0700
   vars:
     repo_env_ctx: "{{ repo_env_inner.ctx }}"
-    repo_run_force: "{{ repo_inner_item.force }}"
+    repo_run_force: "{{ repo_inner_item.force | default('false') }}"
+    repo_run_fast: "{{ repo_inner_item.fast | default('false') }}"
     repo_force_vault: "{{ repo_env_repo_vault.force | default(false) | bool }}"
     repo_env_dir: "{{ repo_env_dest }}"
     repo_cloud_repo_dest: "{{ repo_cloud_dest }}"
     repo_cloud_entrypoint_rel: "{{ repo_env_init.entrypoint }}"
   loop:
   - { name: "run", force: "true" }
-  - { name: "upgrade", force: "false" }
+  - { name: "run-fast", force: "true", fast: "true" }
+  - { name: "upgrade" }
   loop_control:
     loop_var: repo_inner_item
   tags: ["other"]
