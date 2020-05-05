@@ -17,8 +17,8 @@ repo_dir="$base_dir/w/r/$repo_name"
 ctx_dir="$repo_dir/ctx/$ctx_name"
 hosts_file="$ctx_dir/var/hosts"
 
-line=$(cat "$hosts_file" | grep "instance_type=$instance_type" \
-  | grep "instance_index=$instance_index" | tail -n 1 || :)
+line="$(cat "$hosts_file" | grep "instance_type=$instance_type " \
+  | grep "instance_index=$instance_index " | tail -n 1 || :)"
 
 if [ -z "$line" ]; then
     msg="No line in the hosts file ($hosts_file)"
@@ -35,7 +35,7 @@ if [ -z "$key_file" ]; then
     echo "ssh $user@$host"
     ssh "$user@$host"
 else
-    key_file=$(echo "$key_file" | sed "s!^/root!$base_dir!")
+    key_file="$(echo "$key_file" | sed "s!^/root!$base_dir!")"
     echo "ssh -i $key_file $user@$host"
     ssh -i "$key_file" "$user@$host"
 fi
