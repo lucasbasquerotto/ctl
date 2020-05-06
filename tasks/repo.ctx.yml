@@ -19,9 +19,11 @@
       name: "params_mixer"
     vars:
       params_mixer_main_params: "{{ repo_env_init.params | default({}) }}"
-      params_mixer_other_params_names: "{{ repo_env_init.other_params | default({}) }}"
-      params_mixer_shared_params_name: "{{ repo_env_init.shared_params | default('') }}"
+      params_mixer_group_params_names: "{{ repo_env_init.group_params | default({}) }}"
+      params_mixer_shared_params_names: "{{ repo_env_init.shared_params | default([]) }}"
       params_mixer_shared_params_names_dict: "{{ repo_env_inner.init_shared_params | default({}) }}"
+      params_mixer_shared_group_params_name: "{{ repo_env_init.shared_group_params | default('') }}"
+      params_mixer_shared_group_params_names_dict: "{{ repo_env_inner.init_shared_group_params | default({}) }}"
       params_mixer_params_dict: "{{ repo_env_inner.init_params | default({}) }}"
     tags: ["other", "no_print"]
 
