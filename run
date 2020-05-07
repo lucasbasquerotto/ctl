@@ -288,29 +288,9 @@ case "$command" in
 		;;
 	"ssh")
 		repo_name="${1:-}"
-		ctx_name="${2:-}"
-		instance_type="${3:-}"
-		index="${4:-1}"
-
-		if [ -z "$repo_name" ]; then
-			msg="Define the repo_name parameter (as defined in $main_env_dir/vars.yml)"
-			echo -e "${RED}${msg}${NC}"
-			exit 1
-		fi
-
-		if [ -z "$ctx_name" ]; then
-			msg="Define the ctx_name parameter (as defined in $main_env_dir/vars.yml or in the env file)"
-			echo -e "${RED}${msg}${NC}"
-			exit 1
-		fi
-
-		if [ -z "$instance_type" ]; then
-			msg="Define the instance_type parameter (as defined in $main_env_dir/vars.yml -> contexts -> group)"
-			echo -e "${RED}${msg}${NC}"
-			exit 1
-		fi
-
-		"$dir"/scripts/ssh "$repo_name" "$ctx_name" "$instance_type" "$index"
+		shift;
+		
+		"$dir"/run main-cmd-nontty bash "/root/w/r/$repo_name/ssh" "${@}"
 		;;
 	*)
 		echo -e "${RED}Invalid command: $command (valid commands: $commands)${NC}"

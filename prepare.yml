@@ -79,3 +79,52 @@
       loop_var: repo_item
     tags: ["other"]
 
+  # repo ssh
+
+  - name: "{{ repo_title }} - define node names"
+    set_fact: 
+      repo_env_nodes_objs: []
+    tags: ["other", "no_print"]
+
+  - name: "{{ repo_title }} - define nodes"
+    set_fact: 
+      repo_env_nodes_objs: "{{ repo_env_nodes_objs + tmp_nodes }}"
+    vars:
+      tmp_nodes: "{{ repo_env.main[repo_item].nodes | default([]) }}"
+    loop: "{{ repo_env.ctxs | default([]) }}"
+    loop_control:
+      loop_var: repo_item
+    tags: ["other", "no_print"]
+
+  - name: "{{ repo_title }} - define node names (create)"
+    set_fact: 
+      repo_env_nodes: []
+    tags: ["other", "no_print"]
+
+  - name: "{{ repo_title }} - define node names"
+    set_fact: 
+      repo_env_nodes: "{{ repo_env_nodes + [tmp_node] }}"
+    vars:
+      tmp_node: "{{ repo_item.node | default(repo_item.name) | default(repo_item) }}"
+    loop: "{{ repo_env_nodes_objs | default([]) }}"
+    loop_control:
+      loop_var: repo_item
+      label: "{{ tmp_node }}"
+    tags: ["other", "no_print"]
+
+  - name: "{{ repo_title }} - define unique node names"
+    set_fact: 
+      repo_env_nodes: "{{ repo_env_nodes | unique }}"
+    tags: ["other", "no_print"]
+
+  - name: "{{ repo_title }} - copy the ssh executable files"
+    template:
+      src: "templates/ssh.tpl.sh"
+      dest: "{{ repo_dest }}/ssh"
+      mode: 0700
+    vars:
+      repo_dir: "{{ repo_dest }}"
+      repo_env_ctxs: "{{ repo_env.ctxs }}"
+      repo_ssh_default_ctx: "{{ repo_env.default_ctx | default('') }}"
+      repo_ssh_default_node: "{{ repo_env.default_node | default('') }}"
+    tags: ["other"]

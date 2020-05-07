@@ -6,22 +6,22 @@ set -euo pipefail
 #############################################################
 
 base_dir="/root/ctl"
-force="{{ repo_run_force }}"
-fast="{{ repo_run_fast }}"
-cloud_repo="{{ repo_cloud_repo_dest }}"
-repo="{{ repo_dest }}"
-env_ctx="{{ repo_env_ctx | default('') }}"
+force={{ repo_run_force | quote }}
+fast={{ repo_run_fast | quote }}
+cloud_repo={{ repo_cloud_repo_dest | quote }}
+repo={{ repo_dest | quote }}
+env_ctx={{ repo_env_ctx | default('') | quote }}
 var_dir="$repo/ctx/$env_ctx/var"
 tmp_dir="$repo/ctx/$env_ctx/tmp"
 hosts="$var_dir/hosts"
-env_local_repo="{{ repo.local_repo }}"
-env_dir="{{ repo_env_dir }}"
-env_file="{{ repo_env_dir }}/{{ repo.env_file }}"
+env_local_repo={{ repo.local_repo | quote }}
+env_dir={{ repo_env_dir | quote }}
+env_file={{ (repo_env_dir + '/' + repo.env_file) | quote }}
 env_file_tmp="$var_dir/env.tmp"
-vault="{{ repo_force_vault | ternary('--vault-id workspace@prompt', '') }}"
+vault={{ repo_force_vault | ternary('--vault-id workspace@prompt', '') | quote }}
 vault_file="$repo/var/vault"
 env_local_data_dir="/main/data"
-playbook="{{ repo_cloud_entrypoint_rel }}"
+playbook={{ repo_cloud_entrypoint_rel | quote }}
 env_task_file="/root/ctl/tasks/env.yml"
 
 if [ -f "$vault_file" ]; then
