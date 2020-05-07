@@ -20,7 +20,7 @@ function error {
 
 args=("$@")
 
-while getopts ':-:' OPT; do
+while getopts ':c:n:i:-:' OPT; do
 	if [ "$OPT" = "-" ]; then    # long option: reformulate OPT and OPTARG
 		OPT="${OPTARG%%=*}"      # extract long option name
 		OPTARG="${OPTARG#$OPT}"  # extract long option argument (may be empty)
@@ -40,7 +40,6 @@ shift $((OPTIND-1))
         {% set error = {} %}
         {{ error['error.invalid_ctx.' + repo_ssh_default_ctx] }}
     {% endif %}
-
     {% set ssh_default_ctx = repo_ssh_default_ctx %}
 {% else %}
     {% if (repo_env_ctxs | default([]) | length) == 1 %}
@@ -52,7 +51,6 @@ shift $((OPTIND-1))
         {% set error = {} %}
         {{ error['error.invalid_node.' + repo_ssh_default_node] }}
     {% endif %}
-
     {% set ssh_default_node = repo_ssh_default_node %}
 {% else %}
     {% if (repo_env_nodes | default([]) | length) == 1 %}

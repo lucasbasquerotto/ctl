@@ -125,6 +125,6 @@
     vars:
       repo_dir: "{{ repo_dest }}"
       repo_env_ctxs: "{{ repo_env.ctxs }}"
-      repo_ssh_default_ctx: "{{ repo_env.default_ctx | default('') }}"
-      repo_ssh_default_node: "{{ repo_env.default_node | default('') }}"
+      repo_ssh_default_ctx: "{{ repo.default_ctx | default('') }}"
+      repo_ssh_default_node: "{{ repo.default_node | default('') }}"
     tags: ["other"]
