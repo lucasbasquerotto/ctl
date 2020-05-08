@@ -83,12 +83,12 @@
 
   - name: "{{ repo_title }} - define node names"
     set_fact: 
-      repo_env_nodes_objs: []
+      repo_env_nodes_list: []
     tags: ["other", "no_print"]
 
   - name: "{{ repo_title }} - define nodes"
     set_fact: 
-      repo_env_nodes_objs: "{{ repo_env_nodes_objs + tmp_nodes }}"
+      repo_env_nodes_list: "{{ repo_env_nodes_list + tmp_nodes }}"
     vars:
       tmp_nodes: "{{ repo_env.main[repo_item].nodes | default([]) }}"
     loop: "{{ repo_env.ctxs | default([]) }}"
@@ -98,15 +98,15 @@
 
   - name: "{{ repo_title }} - define node names (create)"
     set_fact: 
-      repo_env_nodes: []
+      repo_env_nodes_all: []
     tags: ["other", "no_print"]
 
   - name: "{{ repo_title }} - define node names"
     set_fact: 
-      repo_env_nodes: "{{ repo_env_nodes + [tmp_node] }}"
+      repo_env_nodes_all: "{{ repo_env_nodes_all + [tmp_node] }}"
     vars:
-      tmp_node: "{{ repo_item.node | default(repo_item.name) | default(repo_item) }}"
-    loop: "{{ repo_env_nodes_objs | default([]) }}"
+      tmp_node: "{{ repo_item.name | default(repo_item) }}"
+    loop: "{{ repo_env_nodes_list | default([]) }}"
     loop_control:
       loop_var: repo_item
       label: "{{ tmp_node }}"
@@ -114,7 +114,13 @@
 
   - name: "{{ repo_title }} - define unique node names"
     set_fact: 
-      repo_env_nodes: "{{ repo_env_nodes | unique }}"
+      repo_env_nodes: "{{ repo_env_nodes_all | unique }}"
+    tags: ["other", "no_print"]
+
+  - name: "{{ repo_title }} - verify unique node names"
+    fail: 
+      repo_env_nodes: "There are duplicated node names in your settings"
+    when: (repo_env_nodes | length) != (repo_env_nodes_all | length)
     tags: ["other", "no_print"]
 
   - name: "{{ repo_title }} - copy the ssh executable files"
