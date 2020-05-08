@@ -290,7 +290,7 @@ case "$command" in
 		repo_name="${1:-}"
 		shift;
 		
-		"$dir"/run main-cmd-nontty bash "/root/w/r/$repo_name/ssh" "${@}"
+		"$dir"/run main-cmd bash "/root/w/r/$repo_name/ssh" "${@}"
 		;;
 	*)
 		echo -e "${RED}Invalid command: $command (valid commands: $commands)${NC}"

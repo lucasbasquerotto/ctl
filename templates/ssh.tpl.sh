@@ -1,4 +1,5 @@
 #!/bin/bash
+#shellcheck disable=SC2214
 set -euo pipefail
 
 CYAN='\033[0;36m'
@@ -102,7 +103,6 @@ if [ -z "$key_file" ]; then
     echo "ssh $user@$host"
     ssh "$user@$host"
 else
-    key_file="$(echo "$key_file" | sed "s!^/root!$base_dir!")"
     echo "ssh -i $key_file $user@$host"
     ssh -i "$key_file" "$user@$host"
 fi
