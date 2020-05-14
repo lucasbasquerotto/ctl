@@ -74,5 +74,6 @@
   - { name: "upgrade" }
   loop_control:
     loop_var: repo_inner_item
+    label: "{{ repo_inner_item.name }}"
   tags: ["other"]
   
