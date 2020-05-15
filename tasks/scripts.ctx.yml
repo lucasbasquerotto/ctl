@@ -5,32 +5,8 @@
     repo_inner_cloud_dir: "{{ repo_dest }}/ctx/{{ repo_env_inner.ctx }}/cloud"
   tags: ["other", "no_print"]
 
-# init params
-
 - name: "{{ repo_inner_title }}"
-  set_fact:
-    repo_env_init: "{{ repo_env_inner.init[repo_env_inner.ctx] }}"
-  tags: ["other", "no_print"]
-
-- block:
-    
-  - name: "{{ repo_inner_title }}"
-    include_role:
-      name: "params_mixer"
-    vars:
-      params_mixer_main_params: "{{ repo_env_init.params | default({}) }}"
-      params_mixer_group_params_names: "{{ repo_env_init.group_params | default({}) }}"
-      params_mixer_shared_group_params_name: "{{ repo_env_init.shared_group_params | default('') }}"
-      params_mixer_shared_group_params_names_dict: "{{ repo_env_inner.init_shared_group_params | default({}) }}"
-      params_mixer_params_dict: "{{ repo_env_inner.init_params | default({}) }}"
-    tags: ["other", "no_print"]
-
-  - name: "{{ repo_inner_title }}"
-    set_fact:
-      repo_env_init: "{{ params_mixer_params }}"
-    tags: ["other", "no_print"]
-
-  when: repo_env_init.inner_params | default(false) | bool  
+  include_tasks: "tasks/repo_main_params.yml"
   tags: ["other"]
 
 - name: "{{ repo_inner_title }}"
@@ -67,7 +43,7 @@
     repo_force_vault: "{{ repo_env_repo_vault.force | default(false) | bool }}"
     repo_env_dir: "{{ repo_env_dest }}"
     repo_cloud_repo_dest: "{{ repo_cloud_dest }}"
-    repo_cloud_entrypoint_rel: "{{ repo_env_init.entrypoint }}"
+    repo_cloud_entrypoint_rel: "{{ repo_env_main_params.entrypoint }}"
   loop:
   - { name: "run", force: "true" }
   - { name: "run-fast", force: "true", fast: "true" }

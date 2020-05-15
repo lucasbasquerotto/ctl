@@ -5,34 +5,8 @@
     repo_inner_cloud_dir: "{{ repo_dest }}/ctx/{{ repo_env_inner.ctx }}/cloud"
   tags: ["other", "no_print"]
 
-# init params
-
 - name: "{{ repo_inner_title }}"
-  set_fact:
-    repo_env_init: "{{ repo_env_inner.init[repo_env_inner.ctx] }}"
-  tags: ["other", "no_print"]
-
-- block:
-    
-  - name: "{{ repo_inner_title }}"
-    include_role:
-      name: "params_mixer"
-    vars:
-      params_mixer_main_params: "{{ repo_env_init.params | default({}) }}"
-      params_mixer_group_params_names: "{{ repo_env_init.group_params | default({}) }}"
-      params_mixer_shared_params_names: "{{ repo_env_init.shared_params | default([]) }}"
-      params_mixer_shared_params_names_dict: "{{ repo_env_inner.init_shared_params | default({}) }}"
-      params_mixer_shared_group_params_name: "{{ repo_env_init.shared_group_params | default('') }}"
-      params_mixer_shared_group_params_names_dict: "{{ repo_env_inner.init_shared_group_params | default({}) }}"
-      params_mixer_params_dict: "{{ repo_env_inner.init_params | default({}) }}"
-    tags: ["other", "no_print"]
-
-  - name: "{{ repo_inner_title }}"
-    set_fact:
-      repo_env_init: "{{ params_mixer_params }}"
-    tags: ["other", "no_print"]
-
-  when: repo_env_init.inner_params | default(false) | bool  
+  include_tasks: "tasks/repo_main_params.yml"
   tags: ["other"]
 
 # repo cloud repository
@@ -58,13 +32,13 @@
 
 - name: "{{ repo_inner_title }}"
   set_fact: 
-    repo_cloud: "{{ repo_env_inner.repos[repo_env_init.repo] }}"
+    repo_cloud: "{{ repo_env_inner.repos[repo_env_main_params.repo] }}"
   tags: ["other", "no_print"]
 
 - name: "{{ repo_inner_title }}"
   include_tasks: "tasks/git.yml"
   vars:
-    git_title: "{{ repo_inner_title }} - git cloud repo ({{ repo_env_init.repo }})"
+    git_title: "{{ repo_inner_title }} - git cloud repo ({{ repo_env_main_params.repo }})"
     git_repo_private: "{{ repo_cloud.private | default(false) }}"
     git_repo_key_file_encrypted: >-
       {{ repo_env_dest }}/{{ repo_cloud.key_file_encrypted | default('') }}
@@ -94,7 +68,7 @@
     git_repo_update: "{{ (main_dev | bool) | ternary('no', 'yes') }}"
     git_repo_force: no
     git_task_tags: ["other"]
-  loop: "{{ repo_env_init.env_repos | default([]) }}"
+  loop: "{{ repo_env_main_params.env_repos | default([]) }}"
   loop_control:
     loop_var: repo_env_repo_data
     label: "{{ repo_env_repo_data.repo }}"
@@ -106,16 +80,16 @@
     msg: >-
       {{ repo_inner_title }} - the environment file init parameter doesn't contain
       the entrypoint property defined
-  when: (repo_env_init.entrypoint | default('')) == ''
+  when: (repo_env_main_params.entrypoint | default('')) == ''
   tags: ["other"]
 
 - name: "{{ repo_inner_title }}"
   include_tasks: "tasks/template.yml"
   vars:
-    template_title: "{{ repo_inner_title }} - entrypoint ({{ repo_env_init.entrypoint_template_src }})"
-    template_src: "{{ repo_cloud_dest }}/{{ repo_env_init.entrypoint_template_src }}"
-    template_tmp_dest: "{{ repo_inner_var_dir }}/cloud-entrypoint/{{ repo_env_init.entrypoint }}"
-    template_dest: "{{ repo_cloud_dest }}/{{ repo_env_init.entrypoint }}"
+    template_title: "{{ repo_inner_title }} - entrypoint ({{ repo_env_main_params.entrypoint_template_src }})"
+    template_src: "{{ repo_cloud_dest }}/{{ repo_env_main_params.entrypoint_template_src }}"
+    template_tmp_dest: "{{ repo_inner_var_dir }}/cloud-entrypoint/{{ repo_env_main_params.entrypoint }}"
+    template_dest: "{{ repo_cloud_dest }}/{{ repo_env_main_params.entrypoint }}"
     template_remote_src: false
     template_local: true
     template_params: "{{ repo_env_inner }}"
@@ -123,9 +97,9 @@
     template_local_params:
       base_dir_pod: "{{ repo_base_dir_pod }}"
       base_dir_app: "{{ repo_base_dir_app }}"
-    template_meta: "{{ repo_env_inner.meta_params[repo_env_init.meta | default('')] | default({}) }}"
+    template_meta: "{{ repo_env_inner.meta_params[repo_env_main_params.meta | default('')] | default({}) }}"
     template_task_tags: ["other"]
-  when: (repo_env_init.entrypoint_template_src | default('')) != ''
+  when: (repo_env_main_params.entrypoint_template_src | default('')) != ''
   tags: ["other"]
 
 # repo hosts file (inventory)
@@ -134,10 +108,10 @@
   set_fact: 
     repo_hosts_file_src: >-
       {{ 
-      repo_env_init.hosts_file | default('')
-      | ternary(repo_env_dest + '/' + (repo_env_init.hosts_file | default('')), '')
+      repo_env_main_params.hosts_file | default('')
+      | ternary(repo_env_dest + '/' + (repo_env_main_params.hosts_file | default('')), '')
       }}
-    repo_hosts_content: "{{ repo_env_init.hosts_content | default('') }}"
+    repo_hosts_content: "{{ repo_env_main_params.hosts_content | default('') }}"
   tags: ["other", "no_print"]
 
 - name: "{{ repo_inner_title }} - ensure that there is a hosts file or content"
