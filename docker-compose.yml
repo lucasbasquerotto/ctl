@@ -6,11 +6,11 @@ x-logging:
       max-size: 50m
 
 services:
-  
+
   ctl:
     container_name: ctl
     hostname: ctl
-    build: 
+    build:
       context: ./
       args:
         CTL_IMAGE: $CTL_IMAGE
@@ -22,13 +22,13 @@ services:
     - ./tmp/run:/root/run:rw
     - ../w:/root/w:rw
     - ../w/ctl/var:/root/var:rw
-    logging: *logging 
+    logging: *logging
     command: sleep infinity
-  
+
   ctl-dev:
     container_name: ctl-dev
     hostname: ctl-dev
-    build: 
+    build:
       context: ./
       args:
         CTL_IMAGE: $CTL_IMAGE
@@ -48,5 +48,6 @@ services:
     - ../apps:/main/apps:rw
     - ../data:/main/data:rw
     - ../data:/data:rw
-    logging: *logging 
+    - ../projects:/main/projects:rw
+    logging: *logging
     command: sleep infinity

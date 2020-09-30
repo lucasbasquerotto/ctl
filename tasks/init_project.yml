@@ -1,0 +1,70 @@
+- name: "[ctl] [project] - {{ project.name }} - set_fact"
+  set_fact:
+    project_title: "[ctl] [project] - {{ project.name }}"
+    project_dir_rel: "projects/{{ env_project_key }}"
+    project_env_repo: >-
+      {{
+        ((project.global_env_repo | default('')) != '')
+        | ternary(
+          env.env_repo[project.global_env_repo | default('')],
+          project.env_repo
+        )
+      }}
+    project_env_repo_vault: >-
+      {{
+        ((project.global_env_repo_vault | default('')) != '')
+        | ternary(
+          env.env_repo_vault[project.global_env_repo_vault | default('')],
+          project.env_repo_vault
+        )
+      }}
+
+- name: "[ctl] [project] - {{ project.name }} - project_container_type"
+  set_fact:
+    project_container_type: "{{ project_env_repo.container_type | default('docker', true) }}"
+
+- name: "{{ project_title }} - validate container_type"
+  fail:
+    msg: "container_type value invalid ({{ project_container_type }})"
+  when: not (project_container_type in ['docker'])
+
+- name: "{{ project_title }} - define the project init params"
+  set_fact:
+    project_init_dir: "/main/{{ project_dir_rel }}/init"
+    project_init:
+      key: "{{ env_project_key }}"
+      dev: "{{ env_dev }}"
+      root_dir: "{{ env_root_dir }}"
+      project_dir_rel: "{{ project_dir_rel }}"
+      container: "{{ project_env_repo.init.container }}"
+      container_type: "{{ project_container_type }}"
+      root: "{{ project_env_repo.init.root | default(false) }}"
+      repo:
+        local_dir: "{{ project_env_repo.local_dir | default('') }}"
+        private: "{{ project_env_repo.private | default('') }}"
+        src: "{{ project_env_repo.src | default('') }}"
+        version: "{{ project_env_repo.version | default('') }}"
+        key_file_encrypted: "{{ project_env_repo.key_file_encrypted | default('') }}"
+      repo_vault:
+        force: "{{ project_env_repo_vault.force | default('') }}"
+        file: "{{ project_env_repo_vault.file | default('') }}"
+
+- name: "{{ project_title }} - create the project init directory ({{ project_init_dir }})"
+  file:
+    path: "{{ project_init_dir }}"
+    state: directory
+    mode: 0755
+
+- name: "{{ project_title }} - create the project init config file"
+  copy:
+    content: "{{ project_init | to_nice_yaml }}"
+    dest: "{{ project_init_dir }}/vars.yml"
+    mode: 0600
+
+- name: "{{ project_title }} - create the project init run file"
+  template:
+    src: "templates/init.tpl.sh"
+    dest: "{{ project_init_dir }}/init.sh"
+    mode: 0700
+  vars:
+    params: "{{ project_init }}"

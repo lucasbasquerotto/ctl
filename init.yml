@@ -1,0 +1,33 @@
+- name: Play 01 - Create and update the main and the environment repositories
+  hosts: main
+  gather_facts: no
+  tasks:
+  - set_fact:
+      main_title: "[ctl] main"
+
+  - name: "{{ main_title }} - gathering facts"
+    setup:
+
+  - name: "{{ main_title }} - vars - load the main environment vars"
+    include_vars:
+      file: "env-main/vars.yml"
+      name: env
+
+  - name: "{{ main_title }} - vars - load the main environment vars"
+    fail:
+      msg: >-
+        trying to run in a development environment when dev is not true
+        in the main environment vars
+    when: >-
+      (env_dev | default(false, true) | bool) and
+      (not (env.dev | default(false, true) | bool))
+
+  - name: "{{ main_title }} - vars - load the main environment vars"
+    fail:
+      msg: "[error] there is no project with the key {{ env_project_key }}"
+    when: not (env.projects[env_project_key] is defined)
+
+  - name: "{{ main_title }} - create the init script file for the projects"
+    include_tasks: "tasks/init_project.yml"
+    vars:
+      project: "{{ env.projects[env_project_key] }}"
