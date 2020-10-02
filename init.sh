@@ -29,10 +29,6 @@ fi
 
 shift;
 
-echo "project=$project"
-echo "dev=${dev:-}"
-echo "no_vault=${no_vault:-}"
-
 secrets_dir_rel="secrets/projects/$project"
 secrets_dir="$root_dir/$secrets_dir_rel"
 secrets_dir_container="/main/$secrets_dir_rel"
@@ -57,6 +53,7 @@ if [ "${no_vault:-}" != "true" ]; then
 	vault=( '--vault-id' "$secrets_dir_container/vault" )
 fi
 
+#TODO
 cd "$ctl_dir"
 sudo docker-compose up -d ctl-dev
 sudo docker-compose exec ctl-dev \
