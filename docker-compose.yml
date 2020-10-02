@@ -48,6 +48,10 @@ services:
     - ../apps:/main/apps:rw
     - ../data:/main/data:rw
     - ../data:/data:rw
+
+    - .:/main/ctl:ro
+    - ../secrets:/main/secrets:rw
     - ../projects:/main/projects:rw
+    working_dir: /main/ctl
     logging: *logging
     command: sleep infinity

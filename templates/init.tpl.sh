@@ -2,12 +2,12 @@
 set -eou pipefail
 
 key='{{ params.key }}'
-dev='{{ params.dev | default(false, true) }}'
+dev='{{ params.dev | bool | ternary("true", "false") }}'
 root_dir='{{ params.root_dir }}'
 project_dir_rel='{{ params.project_dir_rel }}'
-container='{{ params.container }}'
-container_type='{{ params.container_type }}'
-root='{{ params.root | bool | ternary("true", "false") }}'
+container='{{ params.init.container }}'
+container_type='{{ params.init.container_type }}'
+root='{{ params.init.root | bool | ternary("true", "false") }}'
 
 if [ -z "$root_dir" ]; then
     echo "[error] root directory not defined"
@@ -30,6 +30,7 @@ fi
 volumes=()
 
 if [ "$dev" = 'true' ]; then
+    volumes+=( -v "${project_dir}/secrets:/main/secrets" )
     volumes+=( -v "${project_dir}/init:/main/init" )
     volumes+=( -v "${project_dir}/data:/main/data" )
     volumes+=( -v "${root_dir}/envs:/main/envs" )
