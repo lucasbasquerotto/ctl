@@ -41,4 +41,4 @@ else
     volumes+=( -v "${project_dir}:/main" )
 fi
 
-"${cmd[@]}" run --rm --name="local-ctl-init-$key" "${volumes[@]}" "$container"
+"${cmd[@]}" run --rm --name="local-ctl-run-$key" "${volumes[@]}" "$container"

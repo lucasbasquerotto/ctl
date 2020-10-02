@@ -53,10 +53,37 @@ if [ "${no_vault:-}" != "true" ]; then
 	vault=( '--vault-id' "$secrets_dir_container/vault" )
 fi
 
-#TODO
-cd "$ctl_dir"
-sudo docker-compose up -d ctl-dev
-sudo docker-compose exec ctl-dev \
+# shellcheck source=SCRIPTDIR/env-main/env.sh
+# shellcheck disable=SC1091
+source "${ctl_dir}/env-main/env.sh"
+
+# shellcheck disable=SC2154
+var_container="$container"
+var_container_type="${container_type:-}"
+var_root="${root:-}"
+
+if [ "$var_container_type" = "" ]; then
+	var_container_type="docker"
+fi
+
+if [ "$var_container_type" != 'docker' ]; then
+    echo "[error] unsupported container type: $var_container_type"
+    exit 2
+fi
+
+cmd=( "$var_container_type" )
+
+if [ "$var_root" = 'true' ]; then
+    cmd=( sudo "$var_container_type" )
+fi
+
+"${cmd[@]}" run --rm -t \
+	--name="local-ctl-init-$project" \
+	--workdir "/main/ctl" \
+	-v "${ctl_dir}:/main/ctl:ro" \
+	-v "${root_dir}/secrets:/main/secrets" \
+	-v "${root_dir}/projects:/main/projects" \
+	"$var_container" \
 	ansible-playbook \
 	${vault[@]+"${vault[@]}"} \
 	--extra-vars "env_project_key=$project" \
