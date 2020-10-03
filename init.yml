@@ -141,6 +141,7 @@
           root: "{{ project_init.root | default(false, true) }}"
         repo:
           env_dir: "{{ project_repo.env_dir }}"
+          env_file: "{{ project.env_file }}"
           src: "{{ project_repo.src }}"
           version: "{{ project_repo.version }}"
           ssh_file: "{{ project_repo_ssh_file }}"
