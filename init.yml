@@ -115,8 +115,8 @@
   - name: "{{ project_title }} - define the project dirs and files"
     set_fact:
       project_base_dir: "/main/{{ project_dir_rel }}"
-      project_secrets_dir: "/main/{{ project_dir_rel }}/secrets"
-      project_init_dir: "/main/{{ project_dir_rel }}/init"
+      project_secrets_dir: "/main/{{ project_dir_rel }}/secrets/ctl"
+      project_init_dir: "/main/{{ project_dir_rel }}/init/ctl"
       project_repo_ssh_file: >-
         {{
           ((project_repo.ssh_file | default('')) != '')
@@ -132,8 +132,10 @@
     set_fact:
       project_init_params:
         key: "{{ env_project_key }}"
+        ctxs: "{{ project.ctxs | default([]) }}"
         root_dir: "{{ env_root_dir }}"
         dev: "{{ env_dev | default(false, true) }}"
+        local: "{{ project.local | default(false, true) }}"
         project_dir_rel: "{{ project_dir_rel }}"
         init:
           container: "{{ project_init.container }}"
@@ -148,6 +150,7 @@
         repo_vault:
           force: "{{ project_repo_vault.force | default(false, true) }}"
           file: "{{ project_repo_vault_file }}"
+        params: "{{ project.params | default({}) }}"
 
   ### Project - Directories and Files ###
 
@@ -157,8 +160,10 @@
       state: directory
       mode: "{{ env_dev | default(false, true) | bool | ternary(0777, 0755) }}"
     loop:
-    - "secrets"
     - "init"
+    - "init/ctl"
+    - "secrets"
+    - "secrets/ctl"
     - "data"
     loop_control:
       loop_var: project_item
@@ -187,7 +192,7 @@
   - name: "{{ project_title }} - create the project init run file"
     template:
       src: "templates/init.tpl.sh"
-      dest: "{{ project_init_dir }}/init.sh"
+      dest: "{{ project_init_dir }}/run.sh"
       mode: "{{ env_dev | default(false, true) | bool | ternary(0777, 0700) }}"
     vars:
       params: "{{ project_init_params }}"
