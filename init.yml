@@ -51,7 +51,7 @@
 
   ### Project - Start ###
 
-  - name: "[ctl] [project] - {{ project.name }} - define project title"
+  - name: "[ctl] [project - {{ env_project_key }}] - {{ project.name }} - define project title"
     set_fact:
       project_title: "[ctl] [project - {{ env_project_key }}] - {{ project.name }}"
 
@@ -104,7 +104,6 @@
       msg: "{{ project_item }} not specified for the project repository"
     when: (project_repo[project_item] | default('')) == ''
     loop:
-    - "env_dir"
     - "src"
     - "version"
     loop_control:
@@ -116,7 +115,7 @@
     set_fact:
       project_base_dir: "/main/{{ project_dir_rel }}"
       project_secrets_dir: "/main/{{ project_dir_rel }}/secrets/ctl"
-      project_init_dir: "/main/{{ project_dir_rel }}/init/ctl"
+      project_files_dir: "/main/{{ project_dir_rel }}/files/ctl"
       project_repo_ssh_file: >-
         {{
           ((project_repo.ssh_file | default('')) != '')
@@ -142,7 +141,6 @@
           container_type: "{{ project_container_type }}"
           root: "{{ project_init.root | default(false, true) }}"
         repo:
-          env_dir: "{{ project_repo.env_dir }}"
           env_file: "{{ project.env_file }}"
           src: "{{ project_repo.src }}"
           version: "{{ project_repo.version }}"
@@ -168,7 +166,7 @@
     loop_control:
       loop_var: project_item
 
-  - name: "{{ project_title }} - copy ssh file"
+  - name: "{{ project_title }} - copy the ssh file"
     copy:
       src: "env-main/{{ project_repo.ssh_file }}"
       dest: "{{ project_secrets_dir }}/{{ project_repo_ssh_file }}"
@@ -186,13 +184,13 @@
   - name: "{{ project_title }} - create the project init config file"
     copy:
       content: "{{ project_init_params | to_nice_yaml }}"
-      dest: "{{ project_init_dir }}/vars.yml"
+      dest: "{{ project_files_dir }}/vars.yml"
       mode: "{{ env_dev | default(false, true) | bool | ternary(0666, 0600) }}"
 
   - name: "{{ project_title }} - create the project init run file"
     template:
       src: "templates/init.tpl.sh"
-      dest: "{{ project_init_dir }}/run.sh"
+      dest: "{{ project_files_dir }}/run.sh"
       mode: "{{ env_dev | default(false, true) | bool | ternary(0777, 0700) }}"
     vars:
       params: "{{ project_init_params }}"
