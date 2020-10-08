@@ -8,6 +8,7 @@ project_dir_rel='{{ params.project_dir_rel }}'
 container='{{ params.init.container }}'
 container_type='{{ params.init.container_type }}'
 root='{{ params.init.root | bool | ternary("true", "false") }}'
+force_vault='{{ params.repo_vault.force | bool | ternary("true", "false") }}'
 
 if [ -z "$root_dir" ]; then
     echo "[error] root directory not defined"
@@ -27,18 +28,14 @@ if [ "$root" = 'true' ]; then
     cmd=( sudo "$container_type" )
 fi
 
-volumes=()
+volumes=( -v "${project_dir}:/main" )
 
 if [ "$dev" = 'true' ]; then
-    volumes+=( -v "${project_dir}/secrets:/main/secrets" )
-    volumes+=( -v "${project_dir}/init:/main/init" )
-    volumes+=( -v "${project_dir}/data:/main/data" )
-    volumes+=( -v "${root_dir}/envs:/main/envs" )
-    volumes+=( -v "${root_dir}/clouds:/main/clouds" )
-    volumes+=( -v "${root_dir}/pods:/main/pods" )
-    volumes+=( -v "${root_dir}/apps:/main/apps" )
-else
-    volumes+=( -v "${project_dir}:/main" )
+    volumes+=( -v "${root_dir}:/main/shared" )
 fi
 
-"${cmd[@]}" run --rm -t --name="local-ctl-run-$key" "${volumes[@]}" "$container"
+"${cmd[@]}" run --rm -t \
+    --name="local-ctl-run-$key" \
+    -e "FORCE_VAULT=$force_vault" \
+    "${volumes[@]}" \
+    "$container"
