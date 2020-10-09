@@ -162,6 +162,7 @@
           container: "{{ project_init.container }}"
           container_type: "{{ project_container_type }}"
           root: "{{ project_init.root | default(false, true) }}"
+          run_file: "{{ project_init.run_file | default('/usr/local/bin/run') }}"
         repo:
           env_file: "{{ project.env_file }}"
           src: "{{ project_repo.src }}"
@@ -212,7 +213,7 @@
   - name: "{{ project_title }} - create the project init run file"
     template:
       src: "templates/init.tpl.sh"
-      dest: "{{ project_files_dir }}/run.sh"
+      dest: "{{ project_files_dir }}/run"
       mode: "{{ env_dev | default(false, true) | bool | ternary(0777, 0700) }}"
     vars:
       params: "{{ project_init_params }}"

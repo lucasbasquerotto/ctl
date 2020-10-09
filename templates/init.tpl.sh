@@ -8,6 +8,7 @@ project_dir_rel='{{ params.project_dir_rel }}'
 container='{{ params.init.container }}'
 container_type='{{ params.init.container_type }}'
 root='{{ params.init.root | bool | ternary("true", "false") }}'
+run_file='{{ params.init.run_file }}'
 force_vault='{{ params.repo_vault.force | bool | ternary("true", "false") }}'
 
 if [ -z "$root_dir" ]; then
@@ -38,4 +39,6 @@ fi
     --name="local-ctl-run-$key" \
     -e "FORCE_VAULT=$force_vault" \
     "${volumes[@]}" \
-    "$container"
+    "$container" \
+    "$run_file" \
+    "${@}"

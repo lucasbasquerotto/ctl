@@ -1,8 +1,18 @@
 #!/bin/bash
 set -eou pipefail
 
-ctl_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-root_dir="$(cd "$(dirname "$ctl_dir")" && pwd)"
+CYAN='\033[0;36m'
+GREEN='\033[0;32m'
+RED='\033[0;31m'
+NC='\033[0m' # No Color
+
+function error {
+	msg="$(date '+%F %T') - ${BASH_SOURCE[0]}: line ${BASH_LINENO[0]}: ${*}"
+	>&2 echo -e "${RED}${msg}${NC}"
+	exit 2
+}
+
+args=()
 
 # shellcheck disable=SC2214
 while getopts ':-:' OPT; do
@@ -14,13 +24,22 @@ while getopts ':-:' OPT; do
 	case "$OPT" in
 		dev ) dev="true";;
 		no-vault ) no_vault="true";;
-		??* ) error "Illegal option --$OPT" ;;  # bad long option
+		fast ) arg_fast="true"; args+=( "--$OPT" );;
+		??* ) [ -z "$OPTARG" ] \
+			&& args+=( "--$OPT" ) \
+			|| args+=( "--$OPT=$OPTARG" ) ;;  # bad long option
 		\? )  exit 2 ;;  # bad short option (error reported via getopts)
 	esac
 done
 shift $((OPTIND-1))
 
 project="${1:-}"
+
+start="$(date '+%F %T')"
+echo -e "${CYAN}$start [start] running the project ($project)${NC}"
+
+ctl_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+root_dir="$(cd "$(dirname "$ctl_dir")" && pwd)"
 
 if [ -z "$project" ]; then
 	echo "[error] enter the project name"
@@ -77,16 +96,30 @@ if [ "$var_root" = 'true' ]; then
     cmd=( sudo "$var_container_type" )
 fi
 
-"${cmd[@]}" run --rm -t \
-	--name="local-ctl-init-$project" \
-	--workdir "/main/ctl" \
-	-v "${ctl_dir}:/main/ctl:ro" \
-	-v "${root_dir}/secrets:/main/secrets" \
-	-v "${root_dir}/projects:/main/projects" \
-	"$var_container" \
-	ansible-playbook \
-	${vault[@]+"${vault[@]}"} \
-	--extra-vars "env_project_key=$project" \
-	--extra-vars "env_root_dir=$root_dir" \
-	--extra-vars "env_dev=${dev:-}" \
-	init.yml
+if [ "${arg_fast:-}" = 'true' ]; then
+	echo "[ctl] skipping init project (fast)..."
+else
+	"${cmd[@]}" run --rm -t \
+		--name="local-ctl-init-$project" \
+		--workdir "/main/ctl" \
+		-v "${ctl_dir}:/main/ctl:ro" \
+		-v "${root_dir}/secrets:/main/secrets" \
+		-v "${root_dir}/projects:/main/projects" \
+		"$var_container" \
+		ansible-playbook \
+		${vault[@]+"${vault[@]}"} \
+		--extra-vars "env_project_key=$project" \
+		--extra-vars "env_root_dir=$root_dir" \
+		--extra-vars "env_dev=${dev:-}" \
+		init.yml \
+		|| error "[error] project $project - init"
+fi
+
+"${root_dir}/projects/$project/files/ctl/run" \
+	${args[@]+"${args[@]}"} \
+	|| error "[error] project $project - run"
+
+end="$(date '+%F %T')"
+echo -e "${CYAN}$end [end] running the project ($project)${NC}"
+
+echo -e "${GREEN} [project - $project] [run] summary - $start to $end ${NC}"
