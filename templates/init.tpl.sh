@@ -35,7 +35,7 @@ if [ "$dev" = 'true' ]; then
     volumes+=( -v "${root_dir}:/main/shared" )
 fi
 
-"${cmd[@]}" run --rm -t \
+"${cmd[@]}" run --rm -it \
     --name="local-ctl-run-$key" \
     -e "FORCE_VAULT=$force_vault" \
     "${volumes[@]}" \
