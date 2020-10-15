@@ -121,7 +121,7 @@ else
 		|| error "[error] project $project - init"
 fi
 
-"${root_dir}/projects/$project/files/ctl/run" \
+bash "${root_dir}/projects/$project/files/ctl/run" \
 	${args[@]+"${args[@]}"} "${@}" \
 	|| error "[error] project $project - run"
 
