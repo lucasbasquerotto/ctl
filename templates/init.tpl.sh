@@ -32,7 +32,7 @@ fi
 volumes=( -v "${project_dir}:/main" )
 
 if [ "$dev" = 'true' ]; then
-    volumes+=( -v "${root_dir}:/main/shared" )
+    volumes+=( -v "${root_dir}:/main/dev" )
 fi
 
 "${cmd[@]}" run --rm -it \
