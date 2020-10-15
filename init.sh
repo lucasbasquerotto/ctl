@@ -16,7 +16,7 @@ args=()
 debug=()
 
 # shellcheck disable=SC2214
-while getopts ':df-:' OPT; do
+while getopts ':dfp-:' OPT; do
 	if [ "$OPT" = "-" ]; then   # long option: reformulate OPT and OPTARG
 		OPT="${OPTARG%%=*}"       # extract long option name
 		OPTARG="${OPTARG#$OPT}"   # extract long option argument (may be empty)
@@ -25,6 +25,7 @@ while getopts ':df-:' OPT; do
 	case "$OPT" in
 		d|dev ) dev="true";;
 		f|fast ) fast="true"; args+=( "--fast" );;
+		p|prepare ) prepare="true"; args+=( "--prepare" );;
 		debug ) debug=( "-vvvvv" ); args+=( "--debug" );;
 		no-vault ) no_vault="true";;
 		??* ) break;;
@@ -104,6 +105,12 @@ fi
 if [ "${fast:-}" = 'true' ]; then
 	echo "[ctl] skipping init project (fast)..."
 else
+    prepare_args=()
+
+    if [ "${prepare:-}" = 'true' ]; then
+        prepare_args=( "${@}" )
+    fi
+
 	"${cmd[@]}" run --rm -it \
 		--name="local-ctl-init-$project" \
 		--workdir "/main/ctl" \
@@ -112,6 +119,7 @@ else
 		-v "${root_dir}/projects:/main/projects" \
 		"$var_container" \
 		ansible-playbook \
+		${prepare_args[@]+"${prepare_args[@]}"} \
 		${vault[@]+"${vault[@]}"} \
 		${debug[@]+"${debug[@]}"} \
 		--extra-vars "env_project_key=$project" \
