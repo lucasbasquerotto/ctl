@@ -33,7 +33,7 @@ function join_by { local IFS="$1"; shift; echo "$@"; }
 case "$command" in
 	"setup"|"s")
 		env_repo_default=${1:-}
-		
+
 		echo -e "${CYAN}$(date '+%F %T') Setup started at $(date '+%F %T')${NC}"
 
 		git_repo=''
@@ -56,28 +56,28 @@ case "$command" in
 			git clone "$git_repo" "$dir/$main_env_dir"
 		fi
 
-		echo -e "${CYAN}$(date '+%F %T') Main git environment repository: $git_repo at $dir/$main_env_dir${NC}"
+		# echo -e "${CYAN}$(date '+%F %T') Main git environment repository: $git_repo at $dir/$main_env_dir${NC}"
 
-		cp "$dir/$main_env_dir"/.env "$dir"/
+		# cp "$dir/$main_env_dir"/.env "$dir"/
 
-		echo -e "${CYAN}$(date '+%F %T') Building the docker images...${NC}"
+		# echo -e "${CYAN}$(date '+%F %T') Building the docker images...${NC}"
 
-		cd "$dir"
-		sudo docker-compose build
+		# cd "$dir"
+		# sudo docker-compose build
 
-		echo -e "${CYAN}$(date '+%F %T') Docker images created${NC}"
+		# echo -e "${CYAN}$(date '+%F %T') Docker images created${NC}"
 
-		echo -e "${CYAN}$(date '+%F %T') Setup finished at $(date '+%F %T')${NC}"
+		# echo -e "${CYAN}$(date '+%F %T') Setup finished at $(date '+%F %T')${NC}"
 		;;
-	"dev-setup")
-		echo -e "${CYAN}$(date '+%F %T') Setup dev started at $(date '+%F %T')${NC}"
-		
-		"$dir"/run setup "$@"
-		
-		"$dir"/run dev-build all --tags "main,other,local"
+	# "dev-setup")
+	# 	echo -e "${CYAN}$(date '+%F %T') Setup dev started at $(date '+%F %T')${NC}"
 
-		echo -e "${CYAN}$(date '+%F %T') Setup dev finished at $(date '+%F %T')${NC}"
-		;;
+	# 	"$dir"/run setup "$@"
+
+	# 	"$dir"/run dev-build all --tags "main,other,local"
+
+	# 	echo -e "${CYAN}$(date '+%F %T') Setup dev finished at $(date '+%F %T')${NC}"
+	# 	;;
 	"reset")
 		rm -rf "${dir:?}/$main_env_dir"
 		rm -rf "$dir/tmp"
@@ -96,14 +96,14 @@ case "$command" in
 
 		if [ -n "$repo_name" ]; then
 			shift;
-		fi	
+		fi
 
 		params=()
 
 		if [ -n "$repo_name" ] && [ "$repo_name" != "all" ]; then
 			params=( "-e" "env_repo_name='$repo_name'" )
 		fi
-	
+
 		./run init
 		echo -e "${CYAN}$(date '+%F %T') main - start${NC}"
 		ansible-playbook --vault-id /root/var/vault main.yml "${params[@]}" "${@}"
@@ -162,7 +162,7 @@ case "$command" in
 				interactive="-i"
 				;;
 		esac
-	
+
 		if [ -n "$service" ]; then
 			cd "$dir"
 			sudo docker-compose up -d "$service"
@@ -173,7 +173,7 @@ case "$command" in
 		cd "$dir"
 		hostname=''
 		dev="${DEV:-}"
-		
+
 		if [ -n "$dev" ]; then
 			if [ "$dev" = "1" ]; then
 				hostname='ctl-dev'
@@ -289,7 +289,7 @@ case "$command" in
 	"ssh")
 		repo_name="${1:-}"
 		shift;
-		
+
 		"$dir"/run main-cmd bash "/root/w/r/$repo_name/ssh" "${@}"
 		;;
 	*)
