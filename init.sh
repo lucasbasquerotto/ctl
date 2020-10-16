@@ -54,6 +54,10 @@ fi
 
 shift;
 
+if [ "${dev:-}" = 'true' ]; then
+    ln -rsfT "${root_dir}" "${root_dir}/link"
+fi
+
 secrets_dir_rel="secrets/projects/$project"
 secrets_dir="$root_dir/$secrets_dir_rel"
 secrets_dir_container="/main/$secrets_dir_rel"

@@ -32,6 +32,8 @@ fi
 volumes=( -v "${project_dir}:/main" )
 
 if [ "$dev" = 'true' ]; then
+    mkdir -p "${project_dir}/dev"
+    ln -rsfT "${root_dir}" "${project_dir}/dev/link"
     volumes+=( -v "${root_dir}:/main/dev" )
 fi
 
