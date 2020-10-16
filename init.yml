@@ -66,30 +66,83 @@
     - name: "{{ project_title }} - project_dir_rel"
       set_fact:
         project_dir_rel: "projects/{{ env_project_key }}"
-        project_init: >-
+      tags: ["no_print"]
+
+    - name: "{{ project_title }} - project_params - init"
+      set_fact:
+        project_params: {}
+      tags: ["no_print"]
+
+    - name: "{{ project_title }} - project_params - validate (required)"
+      fail:
+        msg: "project has neither {{ project_item }} nor shared_{{ project_item }} defined (define one)"
+      when: >-
+        ((project['shared_' + project_item] | default('')) == '')
+        and
+        (project[project_item] is not defined)
+      loop:
+        - "init"
+        - "repo"
+      loop_control:
+        loop_var: "project_item"
+      tags: ["no_print"]
+
+    - name: "{{ project_title }} - project_params - validate (duplicate)"
+      fail:
+        msg: "project has {{ project_item }} and shared_{{ project_item }} defined (define only one)"
+      when: >-
+        ((project['shared_' + project_item] | default('')) != '')
+        and
+        (project[project_item] is defined)
+      loop:
+        - "init"
+        - "repo"
+        - "repo_vault"
+        - "env_params"
+        - "path_params"
+      loop_control:
+        loop_var: "project_item"
+      tags: ["no_print"]
+
+    - name: "{{ project_title }} - project_params - validate (shared not defined)"
+      fail:
+        msg: >-
+          project has shared_{{ project_item }} defined but
+          {{ project_item }}.{{ project_item_shared }} is not defined in the env vars
+      when: (project_item_shared != '') and ((env[project_item] | default({}))[project_item_shared] is not defined)
+      vars:
+        project_item_shared: "{{ project['shared_' + project_item] | default('') }}"
+      loop:
+        - "init"
+        - "repo"
+        - "repo_vault"
+        - "env_params"
+        - "path_params"
+      loop_control:
+        loop_var: "project_item"
+      tags: ["no_print"]
+
+    - name: "{{ project_title }} - project_params - fill"
+      set_fact:
+        project_params: >-
           {{
-            ((project.shared_init | default('')) != '')
-            | ternary(
-              env.init[project.shared_init | default('')],
-              project.init
-            )
+            project_params
+            | combine({
+              project_item: (project_item_shared != '') | ternary(project_item_shared_value, project_item_value)
+            })
           }}
-        project_repo: >-
-          {{
-            ((project.shared_repo | default('')) != '')
-            | ternary(
-              env.repo[project.shared_repo | default('')],
-              project.repo
-            )
-          }}
-        project_repo_vault: >-
-          {{
-            ((project.shared_repo_vault | default('')) != '')
-            | ternary(
-              env.repo_vault[project.shared_repo_vault | default('')],
-              project.repo_vault
-            )
-          }}
+      vars:
+        project_item_shared: "{{ project['shared_' + project_item] | default('') }}"
+        project_item_value: "{{ project[project_item] | default({}) }}"
+        project_item_shared_value: "{{ (env[project_item] | default({}))[project_item_shared] | default({}) }}"
+      loop:
+        - "init"
+        - "repo"
+        - "repo_vault"
+        - "env_params"
+        - "path_params"
+      loop_control:
+        loop_var: "project_item"
       tags: ["no_print"]
 
     ### Project - Validations ###
@@ -97,12 +150,12 @@
     - name: "{{ project_title }} - verify the project init params"
       fail:
         msg: "container not specified for the project init params"
-      when: (project_init.container | default('')) == ''
+      when: (project_params.init.container | default('')) == ''
       tags: ["no_print"]
 
     - name: "{{ project_title }} - project_container_type"
       set_fact:
-        project_container_type: "{{ project_init.container_type | default('docker', true) }}"
+        project_container_type: "{{ project_params.init.container_type | default('docker', true) }}"
       tags: ["no_print"]
 
     - name: "{{ project_title }} - validate container_type"
@@ -114,7 +167,7 @@
     - name: "{{ project_title }} - verify the project repo params"
       fail:
         msg: "{{ project_item }} not specified for the project repository"
-      when: (project_repo[project_item] | default('')) == ''
+      when: (project_params.repo[project_item] | default('')) == ''
       loop:
         - "src"
         - "version"
@@ -141,12 +194,12 @@
       set_fact:
         project_repo_ssh_file: >-
           {{
-            ((project_repo.ssh_file | default('')) != '')
+            ((project_params.repo.ssh_file | default('')) != '')
             | ternary('ssh.key', '')
           }}
         project_repo_vault_file: >-
           {{
-            ((project_repo_vault.file | default('')) != '')
+            ((project_params.repo_vault.file | default('')) != '')
             | ternary('vault', '')
           }}
       tags: ["no_print"]
@@ -161,19 +214,20 @@
           local: "{{ project.local | default(false, true) }}"
           project_dir_rel: "{{ project_dir_rel }}"
           init:
-            container: "{{ project_init.container }}"
+            container: "{{ project_params.init.container }}"
             container_type: "{{ project_container_type }}"
-            root: "{{ project_init.root | default(false, true) }}"
-            run_file: "{{ project_init.run_file | default('/usr/local/bin/run') }}"
+            root: "{{ project_params.init.root | default(false, true) }}"
+            run_file: "{{ project_params.init.run_file | default('/usr/local/bin/run') }}"
           repo:
             env_file: "{{ project.env_file }}"
-            src: "{{ project_repo.src }}"
-            version: "{{ project_repo.version }}"
+            src: "{{ project_params.repo.src }}"
+            version: "{{ project_params.repo.version }}"
             ssh_file: "{{ project_repo_ssh_file }}"
           repo_vault:
-            force: "{{ project_repo_vault.force | default(false, true) }}"
+            force: "{{ project_params.repo_vault.force | default(false, true) }}"
             file: "{{ project_repo_vault_file }}"
-          params: "{{ project.params | default({}) }}"
+          env_params: "{{ project_params.env_params }}"
+          path_params: "{{ project_params.path_params }}"
 
     ### Project - Directories and Files ###
 
@@ -193,15 +247,15 @@
 
     - name: "{{ project_title }} - copy the ssh file"
       copy:
-        src: "env-main/{{ project_repo.ssh_file }}"
+        src: "env-main/{{ project_params.repo.ssh_file }}"
         dest: "{{ project_secrets_dir }}/{{ project_repo_ssh_file }}"
-        decrypt: "{{ project_repo.ssh_file_encrypted | default(false) | bool }}"
+        decrypt: "{{ project_params.repo.ssh_file_encrypted | default(false) | bool }}"
         mode: 0600
       when: project_repo_ssh_file != ''
 
     - name: "{{ project_title }} - copy the vault file"
       copy:
-        src: "env-main/{{ project_repo_vault.file }}"
+        src: "env-main/{{ project_params.repo_vault.file }}"
         dest: "{{ project_secrets_dir }}/{{ project_repo_vault_file }}"
         mode: "{{ env_dev | default(false, true) | bool | ternary(0666, 0600) }}"
       when: project_repo_vault_file != ''
