@@ -121,6 +121,7 @@ else
 		-v "${ctl_dir}:/main/ctl:ro" \
 		-v "${root_dir}/secrets:/main/secrets" \
 		-v "${root_dir}/projects:/main/projects" \
+		-e "ANSIBLE_CONFIG=/main/ctl/ansible.cfg" \
 		"$var_container" \
 		ansible-playbook \
 		${prepare_args[@]+"${prepare_args[@]}"} \
