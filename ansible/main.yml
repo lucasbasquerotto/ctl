@@ -6,6 +6,8 @@
 
     - set_fact:
         main_title: "[ctl] main"
+        main_root_dir: "/main"
+        env_main_dir: "/main/ctl/env-main"
       tags: ["no_print"]
 
     - name: "{{ main_title }} - gathering facts"
@@ -13,7 +15,7 @@
 
     - name: "{{ main_title }} - vars - load the main environment vars"
       include_vars:
-        file: "env-main/vars.yml"
+        file: "{{ env_main_dir }}/vars.yml"
         name: env
 
     ### Main - Parameters and Variables ###
@@ -181,9 +183,9 @@
 
     - name: "{{ project_title }} - define the project base dirs"
       set_fact:
-        project_base_dir: "/main/{{ project_dir_rel }}"
-        project_secrets_base_dir: "/main/{{ project_dir_rel }}/secrets"
-        project_files_base_dir: "/main/{{ project_dir_rel }}/files"
+        project_base_dir: "{{ main_root_dir }}/{{ project_dir_rel }}"
+        project_secrets_base_dir: "{{ main_root_dir }}/{{ project_dir_rel }}/secrets"
+        project_files_base_dir: "{{ main_root_dir }}/{{ project_dir_rel }}/files"
       tags: ["no_print"]
 
     - name: "{{ project_title }} - define the project dirs"
@@ -249,7 +251,7 @@
 
     - name: "{{ project_title }} - copy the ssh file"
       copy:
-        src: "env-main/{{ project_params.repo.ssh_file }}"
+        src: "{{ env_main_dir }}/{{ project_params.repo.ssh_file }}"
         dest: "{{ project_secrets_dir }}/{{ project_repo_ssh_file }}"
         decrypt: "{{ project_params.repo.ssh_file_encrypted | default(false) | bool }}"
         mode: 0600
@@ -257,7 +259,7 @@
 
     - name: "{{ project_title }} - copy the vault file"
       copy:
-        src: "env-main/{{ project_params.repo_vault.file }}"
+        src: "{{ env_main_dir }}/{{ project_params.repo_vault.file }}"
         dest: "{{ project_secrets_dir }}/{{ project_repo_vault_file }}"
         mode: "{{ env_dev | default(false, true) | bool | ternary(0666, 0600) }}"
       when: project_repo_vault_file != ''
@@ -270,7 +272,7 @@
 
     - name: "{{ project_title }} - create the project main run file"
       template:
-        src: "templates/run.tpl.sh"
+        src: "run.tpl.sh"
         dest: "{{ project_files_dir }}/run"
         mode: "{{ env_dev | default(false, true) | bool | ternary(0777, 0700) }}"
       vars:

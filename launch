@@ -121,16 +121,17 @@ else
 		-v "${ctl_dir}:/main/ctl:ro" \
 		-v "${root_dir}/secrets:/main/secrets" \
 		-v "${root_dir}/projects:/main/projects" \
-		-e "ANSIBLE_CONFIG=/main/ctl/ansible.cfg" \
+		-e "ANSIBLE_CONFIG=/main/ctl/ansible/ansible.cfg" \
 		"$var_container" \
 		ansible-playbook \
 		${prepare_args[@]+"${prepare_args[@]}"} \
 		${vault[@]+"${vault[@]}"} \
 		${debug[@]+"${debug[@]}"} \
+		-i "/main/ctl/ansible/hosts" \
 		--extra-vars "env_project_key=$project" \
 		--extra-vars "env_root_dir=$root_dir" \
 		--extra-vars "env_dev=${dev:-}" \
-		main.yml \
+		ansible/main.yml \
 		|| error "[error] $ctl_title project $project - init"
 fi
 
