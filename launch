@@ -142,4 +142,4 @@ bash "${root_dir}/projects/$project/files/ctl/run" \
 end="$(date '+%F %T')"
 echo -e "${CYAN}$end $ctl_title [end] running the project ($project)${NC}"
 
-echo -e "${GREEN} $ctl_title [project - $project] [run] summary - $start to $end ${NC}"
+echo -e "${GREEN}$ctl_title [project - $project] [run] summary - $start to $end ${NC}"
