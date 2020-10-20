@@ -1,0 +1,299 @@
+#!/bin/bash
+set -eou pipefail
+
+command="${1:-}"
+set -- "${@:2}"
+
+commands="setup, dev-setup, reset, main, main-cmd, dev, dev-cmd, build, dev-build"
+commands="$commands, deploy, fast-deploy, dev-deploy, stop"
+dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+main_env_dir="env-main"
+
+CYAN='\033[0;36m'
+RED='\033[0;31m'
+NC='\033[0m' # No Color
+
+if [ -z "$command" ]; then
+	echo -e "${RED}No command passed (valid commands: $commands)${NC}"
+	exit 1
+fi
+
+case "$command" in
+	"d")
+    command="dev-deploy"
+    ;;
+	"f")
+    command="dev-fast-deploy"
+    ;;
+esac
+
+function join_by { local IFS="$1"; shift; echo "$@"; }
+
+case "$command" in
+	"setup"|"s")
+		env_repo_default=${1:-}
+
+		echo -e "${CYAN}$(date '+%F %T') Setup started at $(date '+%F %T')${NC}"
+
+		git_repo=''
+
+		if [ -d "$dir/$main_env_dir" ]; then
+			git_repo=$(git --git-dir="$dir/$main_env_dir/.git" remote get-url origin || :);
+		fi
+
+		if [ -z "$git_repo" ]; then
+			rm -rf "${dir:?}/$main_env_dir"
+
+			if [ -z "$env_repo_default" ]; then
+				read -r -e -p "Enter the main (global) git environment repository: " \
+					-i "your-repo.git" git_repo
+			else
+				git_repo="$env_repo_default"
+			fi
+
+			git config --global credential.helper store
+			git clone "$git_repo" "$dir/$main_env_dir"
+		fi
+
+		# echo -e "${CYAN}$(date '+%F %T') Main git environment repository: $git_repo at $dir/$main_env_dir${NC}"
+
+		# cp "$dir/$main_env_dir"/.env "$dir"/
+
+		# echo -e "${CYAN}$(date '+%F %T') Building the docker images...${NC}"
+
+		# cd "$dir"
+		# sudo docker-compose build
+
+		# echo -e "${CYAN}$(date '+%F %T') Docker images created${NC}"
+
+		# echo -e "${CYAN}$(date '+%F %T') Setup finished at $(date '+%F %T')${NC}"
+		;;
+	# "dev-setup")
+	# 	echo -e "${CYAN}$(date '+%F %T') Setup dev started at $(date '+%F %T')${NC}"
+
+	# 	"$dir"/run setup "$@"
+
+	# 	"$dir"/run dev-build all --tags "main,other,local"
+
+	# 	echo -e "${CYAN}$(date '+%F %T') Setup dev finished at $(date '+%F %T')${NC}"
+	# 	;;
+	"reset")
+		rm -rf "${dir:?}/$main_env_dir"
+		rm -rf "$dir/tmp"
+		;;
+	"build"|"dev-build")
+		new_cmd="main-cmd"
+
+		if [ "$command" = "dev-build" ]; then
+			new_cmd="dev-cmd"
+		fi
+
+		"$dir"/run "$new_cmd" ./run build-inner	"$@"
+		;;
+	"build-inner")
+		repo_name="${1:-}"
+
+		if [ -n "$repo_name" ]; then
+			shift;
+		fi
+
+		params=()
+
+		if [ -n "$repo_name" ] && [ "$repo_name" != "all" ]; then
+			params=( "-e" "env_repo_name='$repo_name'" )
+		fi
+
+		./run init
+		echo -e "${CYAN}$(date '+%F %T') main - start${NC}"
+		ansible-playbook --vault-id /root/var/vault main.yml "${params[@]}" "${@}"
+		echo -e "${CYAN}$(date '+%F %T') main - end${NC}"
+		./run prepare "$repo_name" "${@}"
+		;;
+	"prepare")
+		repo_name="${1:-}"
+
+		if [ -z "$repo_name" ]; then
+			echo "Nothing to prepare (repository name not specified)..."
+			exit 0
+		fi
+
+		shift;
+
+		./run init
+
+		if [ -n "$repo_name" ] && [ "$repo_name" != "all" ]; then
+			echo -e "${CYAN}$(date '+%F %T') prepare [$repo_name] - start${NC}"
+			bash /root/w/r/"$repo_name"/prepare "${@}"
+			echo -e "${CYAN}$(date '+%F %T') prepare [$repo_name] - end${NC}"
+		else
+			echo -e "${CYAN}$(date '+%F %T') prepare all - start${NC}"
+			/root/run/prepare-all.sh "${@}"
+		echo -e "${CYAN}$(date '+%F %T') prepare all - end${NC}"
+		fi
+		;;
+	"main"|"main-cmd"|"main-cmd-nontty"|"dev"|"dev-cmd"|"dev-cmd-nontty")
+		service=''
+		cmd=( '/bin/bash' )
+
+		case "$command" in
+			"main"|"main-cmd"|"main-cmd-nontty")
+				service='ctl'
+				;;
+			"dev"|"dev-cmd"|"dev-cmd-nontty")
+				service='ctl-dev'
+				;;
+			*)
+				echo -e "${RED}Unexpected invalid command: $command${NC}"
+				exit 1
+				;;
+		esac
+
+		case "$command" in
+			"main-cmd"|"main-cmd-nontty"|"dev-cmd"|"dev-cmd-nontty")
+				cmd=( "${@}" )
+				;;
+		esac
+
+		interactive="-it"
+
+		case "$command" in
+			"main-cmd-nontty"|"dev-cmd-nontty")
+				interactive="-i"
+				;;
+		esac
+
+		if [ -n "$service" ]; then
+			cd "$dir"
+			sudo docker-compose up -d "$service"
+			sudo docker exec $interactive "$(sudo docker-compose ps -q "$service")" "${cmd[@]}"
+		fi
+		;;
+	"init")
+		cd "$dir"
+		hostname=''
+		dev="${DEV:-}"
+
+		if [ -n "$dev" ]; then
+			if [ "$dev" = "1" ]; then
+				hostname='ctl-dev'
+			else
+				hostname='ctl'
+			fi
+		fi
+
+		if [ "$hostname" != "$HOSTNAME" ]; then
+			echo -e "${RED}Run the main or dev command before to enter a container${NC}"
+			exit 1
+		fi
+
+		mkdir -p /root/var
+
+		if [ ! -f /root/var/vault ]; then
+			if [ -f /root/ctl/tmp/var/vault ]; then
+				cp /root/ctl/tmp/var/vault /root/var/vault
+			else
+				echo -n "Enter the main vault pass (to decrypt the ssh keys of the environment repositories): "
+				read -r -s vault_pass
+				echo
+				echo "$vault_pass" > /root/var/vault
+			fi
+		fi
+		;;
+	# "main-deploy"|"m"|"main-dev-deploy"|"main-fast-deploy"|"main-dev-fast-deploy")
+	# 	args="$@"
+	# 	tags=""
+	# 	cmd_file="run"
+	# 	new_cmd_name="env_cmd"
+	# 	new_cmd="deploy-nontty"
+
+	# 	case "$command" in
+	# 		"main-dev-deploy"|"main-dev-fast-deploy")
+	# 			cmd_file="dev"
+	# 			;;
+	# 	esac
+
+	# 	if [ "$command" = "main-fast-deploy" ]; then
+	# 		tags="--tags=exec"
+	# 		new_cmd_name="env_exec_cmd"
+	# 		new_cmd="fast-deploy-nontty"
+	# 	fi
+
+	# 	cmd_value=$(echo "./run $new_cmd $args" | base64 -w 0)
+	# 	"$dir"/run dev-cmd bash "/root/w/r/main/$cmd_file" $tags -e "$new_cmd_name"="$cmd_value"
+	# 	;;
+	"destroy")
+		repo_name="${1:-}"
+		"$dir"/run dev-cmd bash "/root/w/r/$repo_name/run" --tags destroy
+		;;
+	"deploy"|"deploy-nontty"|"fast-deploy"|"fast-deploy-nontty"|\
+	"dev-deploy"|"dev-fast-deploy"|"force-deploy"|"force-deploy-nontty")
+		repo_name="${1:-}"
+
+		if [ -z "$repo_name" ]; then
+			echo "Nothing to deploy (repository name not specified)..."
+			exit 0
+		fi
+
+		new_cmd="main-cmd"
+
+		case "$command" in
+			"deploy-nontty"|"force-deploy-nontty")
+				new_cmd="main-cmd-nontty"
+				;;
+			"dev-deploy"|"dev-fast-deploy")
+				new_cmd="dev-cmd"
+				;;
+			"fast-deploy-nontty")
+				new_cmd="dev-cmd-nontty"
+				;;
+		esac
+
+		set -- "${@:2}"
+
+		inner_cmd="run"
+
+		case "$command" in
+			"deploy"|"deploy-nontty")
+				inner_cmd="upgrade"
+				;;
+			"dev-fast-deploy")
+				inner_cmd="run-fast"
+				;;
+		esac
+
+		case "$command" in
+			"deploy"|"deploy-nontty"|"force-deploy"|"force-deploy-nontty"|"dev-deploy")
+				"$dir"/run "$new_cmd" ./run build-inner "$repo_name"
+				;;
+		esac
+
+		"$dir"/run "$new_cmd" bash "/root/w/r/$repo_name/$inner_cmd" "${@}"
+		;;
+	"stop")
+		cd "$dir"
+		sudo docker-compose stop
+		;;
+	"rm")
+		cd "$dir"
+		sudo docker-compose rm --stop -v --force
+		;;
+	"stop-all")
+    mapfile -t list < <(sudo docker ps -q)
+    [[ ${#list[@]} -gt 0 ]] && sudo docker container stop "${list[@]}"
+		;;
+	"rm-all")
+    mapfile -t list < <(sudo docker ps -aq)
+    [[ ${#list[@]} -gt 0 ]] && sudo docker container rm -f "${list[@]}"
+		;;
+	"ssh")
+		repo_name="${1:-}"
+		shift;
+
+		"$dir"/run main-cmd bash "/root/w/r/$repo_name/ssh" "${@}"
+		;;
+	*)
+		echo -e "${RED}Invalid command: $command (valid commands: $commands)${NC}"
+		exit 1
+		;;
+esac

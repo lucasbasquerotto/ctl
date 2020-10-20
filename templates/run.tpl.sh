@@ -1,20 +1,46 @@
 #!/bin/bash
-set -euo pipefail
+set -eou pipefail
 
-CYAN='\033[0;36m'
-GREEN='\033[0;32m'
-NC='\033[0m' # No Color
+key='{{ params.key }}'
+dev='{{ params.dev | bool | ternary("true", "false") }}'
+root_dir='{{ params.root_dir }}'
+project_dir_rel='{{ params.project_dir_rel }}'
+container='{{ params.init.container }}'
+container_type='{{ params.init.container_type }}'
+root='{{ params.init.root | bool | ternary("true", "false") }}'
+run_file='{{ params.init.run_file }}'
+force_vault='{{ params.repo_vault.force | bool | ternary("true", "false") }}'
 
-start="$(date '+%F %T')"
-echo -e "${CYAN}$start [start] running all contexts ({{ repo_dir | quote }}/{{ repo_file | quote }})${NC}"
+if [ -z "$root_dir" ]; then
+    echo "[error] root directory not defined"
+    exit 2
+fi
 
-{% if (repo_env_ctxs | default([]) | length) > 0 %}
-{% for ctx in repo_env_ctxs %}
-bash {{ repo_dir | quote }}/ctx/{{ ctx | quote }}/{{ repo_file | quote }} "${@}"
-{% endfor %}
-{% endif %}
+project_dir="$root_dir/$project_dir_rel"
 
-end="$(date '+%F %T')"
-echo -e "${CYAN}$end [end] running all contexts ({{ repo_dir | quote }}/{{ repo_file | quote }})${NC}"
+if [ "$container_type" != 'docker' ]; then
+    echo "[error] unsupported container type: $container_type"
+    exit 2
+fi
 
-echo -e "${GREEN} [ctl] [repo] [run] summary - $start to $end ${NC}"
+cmd=( "$container_type" )
+
+if [ "$root" = 'true' ]; then
+    cmd=( sudo "$container_type" )
+fi
+
+volumes=( -v "${project_dir}:/main" )
+
+if [ "$dev" = 'true' ]; then
+    mkdir -p "${project_dir}/dev"
+    ln -rsfT "${root_dir}" "${project_dir}/dev/link"
+    volumes+=( -v "${root_dir}:/main/dev" )
+fi
+
+"${cmd[@]}" run --rm -it \
+    --name="local-ctl-run-$key" \
+    -e "FORCE_VAULT=$force_vault" \
+    "${volumes[@]}" \
+    "$container" \
+    "$run_file" \
+    "${@}"
