@@ -41,7 +41,7 @@ project="${1:-}"
 ctl_title="[ctl]"
 
 if [ "${dev:-}" = "true" ]; then
-	ctl_title=" [ctl - dev mode]"
+	ctl_title="[ctl - dev mode]"
 fi
 
 start="$(date '+%F %T')"
