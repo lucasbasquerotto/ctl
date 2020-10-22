@@ -19,14 +19,15 @@ args=()
 debug=()
 
 # shellcheck disable=SC2214
-while getopts ':dfp-:' OPT; do
-	if [ "$OPT" = "-" ]; then   # long option: reformulate OPT and OPTARG
+while getopts ':defp-:' OPT; do
+	if [ "$OPT" = "-" ]; then     # long option: reformulate OPT and OPTARG
 		OPT="${OPTARG%%=*}"       # extract long option name
 		OPTARG="${OPTARG#$OPT}"   # extract long option argument (may be empty)
 		OPTARG="${OPTARG#=}"      # if long option argument, remove assigning `=`
 	fi
 	case "$OPT" in
 		d|dev ) dev="true";;
+		e|enter ) enter="true";;
 		f|fast ) fast="true"; args+=( "--fast" );;
 		p|prepare ) prepare="true"; args+=( "--prepare" );;
 		debug ) debug=( "-vvvvv" ); args+=( "--debug" );;
@@ -115,14 +116,7 @@ else
         prepare_args=( "${@}" )
     fi
 
-	"${cmd[@]}" run --rm -it \
-		--name="local-ctl-init-$project" \
-		--workdir "/main/ctl" \
-		-v "${ctl_dir}:/main/ctl:ro" \
-		-v "${root_dir}/secrets:/main/secrets" \
-		-v "${root_dir}/projects:/main/projects" \
-		-e "ANSIBLE_CONFIG=/main/ctl/ansible/ansible.cfg" \
-		"$var_container" \
+	inner_cmd=( \
 		ansible-playbook \
 		${prepare_args[@]+"${prepare_args[@]}"} \
 		${vault[@]+"${vault[@]}"} \
@@ -132,12 +126,32 @@ else
 		--extra-vars "env_root_dir=$root_dir" \
 		--extra-vars "env_dev=${dev:-}" \
 		ansible/main.yml \
+	)
+
+	if [ "${enter:-}" = 'true' ]; then
+		mkdir -p "$ctl_dir/tmp"
+		echo "${inner_cmd[@]+"${inner_cmd[*]}"}" > "$ctl_dir/tmp/cmd"
+		inner_cmd=( /bin/bash )
+	fi
+
+	"${cmd[@]}" run --rm -it \
+		--name="local-ctl-init-$project" \
+		--workdir "/main/ctl" \
+		-v "${ctl_dir}:/main/ctl:ro" \
+		-v "${root_dir}/secrets:/main/secrets" \
+		-v "${root_dir}/projects:/main/projects" \
+		-e "ANSIBLE_CONFIG=/main/ctl/ansible/ansible.cfg" \
+		"$var_container" \
+		${inner_cmd[@]+"${inner_cmd[@]}"} \
 		|| error "[error] $ctl_title project $project - init"
 fi
 
-bash "${root_dir}/projects/$project/files/ctl/run" \
-	${args[@]+"${args[@]}"} "${@}" \
-	|| error "[error] $ctl_title project $project - run"
+
+if [ "${enter:-}" != 'true' ]; then
+	bash "${root_dir}/projects/$project/files/ctl/run" \
+		${args[@]+"${args[@]}"} "${@}" \
+		|| error "[error] $ctl_title project $project - run"
+fi
 
 end="$(date '+%F %T')"
 echo -e "${CYAN}$end $ctl_title [end] running the project ($project)${NC}"

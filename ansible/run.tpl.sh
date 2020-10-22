@@ -11,6 +11,23 @@ root='{{ params.init.root | bool | ternary("true", "false") }}'
 run_file='{{ params.init.run_file }}'
 force_vault='{{ params.repo_vault.force | bool | ternary("true", "false") }}'
 
+# shellcheck disable=SC2214
+while getopts ':ef-:' OPT; do
+	if [ "$OPT" = "-" ]; then     # long option: reformulate OPT and OPTARG
+		OPT="${OPTARG%%=*}"       # extract long option name
+		OPTARG="${OPTARG#$OPT}"   # extract long option argument (may be empty)
+		OPTARG="${OPTARG#=}"      # if long option argument, remove assigning `=`
+	fi
+	case "$OPT" in
+		e|enter ) enter="true";;
+		f|fast ) args+=( "--fast" );;
+		'') break;;
+		??* ) ;;
+		\? ) ;;
+	esac
+done
+shift $((OPTIND-1))
+
 if [ -z "$root_dir" ]; then
     echo "[error] root directory not defined"
     exit 2
@@ -37,10 +54,18 @@ if [ "$dev" = 'true' ]; then
     volumes+=( -v "${root_dir}:/main/dev" )
 fi
 
+inner_cmd=( "$run_file" ${args[@]+"${args[@]}"} "${@}" )
+
+if [ "${enter:-}" = 'true' ]; then
+    mkdir -p "${project_dir}/tmp"
+    echo "${inner_cmd[@]+"${inner_cmd[@]}"}" > "${project_dir}/tmp/cmd"
+    inner_cmd=( /bin/bash )
+fi
+
 "${cmd[@]}" run --rm -it \
     --name="local-ctl-run-$key" \
+    --workdir='/main' \
     -e "FORCE_VAULT=$force_vault" \
     "${volumes[@]}" \
     "$container" \
-    "$run_file" \
-    "${@}"
+    ${inner_cmd[@]+"${inner_cmd[@]}"}
