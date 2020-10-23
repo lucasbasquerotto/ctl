@@ -212,6 +212,7 @@
       set_fact:
         project_init_params:
           key: "{{ env_project_key }}"
+          migration: "{{ project.migration | default('') }}"
           ctxs: "{{ project.ctxs | default([]) }}"
           root_dir: "{{ env_root_dir }}"
           dev: "{{ env_dev | default(false, true) }}"
