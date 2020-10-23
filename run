@@ -1,19 +1,24 @@
 #!/bin/bash
 set -eou pipefail
 
-main_env_dir="env-main"
+ctl_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+main_env_dir="env-main"
 
 CYAN='\033[0;36m'
 RED='\033[0;31m'
 NC='\033[0m' # No Color
 
+function error {
+	msg="$(date '+%F %T') - ${BASH_SOURCE[0]}: line ${BASH_LINENO[0]}: ${*}"
+	>&2 echo -e "${RED}${msg}${NC}"
+	exit 2
+}
+
 command="${1:-}"
 
 if [ -z "$command" ]; then
-	echo -e "${RED}[error] no command entered${NC}"
-	exit 1
+	error "[error] no command entered"
 fi
 
 shift;
@@ -26,12 +31,12 @@ case "$command" in
 
 		git_repo=''
 
-		if [ -d "$dir/$main_env_dir" ]; then
-			git_repo=$(git --git-dir="$dir/$main_env_dir/.git" remote get-url origin || :);
+		if [ -d "$ctl_dir/$main_env_dir" ]; then
+			git_repo=$(git --git-dir="$ctl_dir/$main_env_dir/.git" remote get-url origin || :);
 		fi
 
 		if [ -z "$git_repo" ]; then
-			rm -rf "${dir:?}/$main_env_dir"
+			rm -rf "${ctl_dir:?}/$main_env_dir"
 
 			if [ -z "$env_repo_default" ]; then
 				read -r -e -p "Enter the main (global) git environment repository: " \
@@ -41,12 +46,12 @@ case "$command" in
 			fi
 
 			git config --global credential.helper store
-			git clone "$git_repo" "$dir/$main_env_dir"
+			git clone "$git_repo" "$ctl_dir/$main_env_dir"
 		fi
 		;;
 	"reset")
-		rm -rf "${dir:?}/$main_env_dir"
-		rm -rf "$dir/tmp"
+		rm -rf "${ctl_dir:?}/$main_env_dir"
+		rm -rf "$ctl_dir/tmp"
 		;;
 	"stop-all")
 		mapfile -t list < <(sudo docker ps -q)
@@ -56,8 +61,41 @@ case "$command" in
 		mapfile -t list < <(sudo docker ps -aq)
 		[[ ${#list[@]} -gt 0 ]] && sudo docker container rm -f "${list[@]}"
 		;;
+	"enter")
+		# shellcheck disable=SC1090,SC1091
+		source "${ctl_dir}/env-main/env.sh"
+
+		# shellcheck disable=SC2154
+		var_container="$container"
+		var_container_type="${container_type:-}"
+		var_root="${root:-}"
+
+		if [ "$var_container_type" = "" ]; then
+			var_container_type="docker"
+		fi
+
+		if [ "$var_container_type" != 'docker' ]; then
+			echo "[error] unsupported container type: $var_container_type"
+			exit 2
+		fi
+
+		cmd=( "$var_container_type" )
+
+		if [ "$var_root" = 'true' ]; then
+			cmd=( sudo "$var_container_type" )
+		fi
+
+		"${cmd[@]}" run --rm -it \
+			--name="local-ctl-init" \
+			--workdir="/main/tmp" \
+			-v "${ctl_dir}/tmp:/main/tmp" \
+			-e "UID=$(id -u)" \
+			-e "GID=$(id -g)" \
+			"$var_container" \
+			|| error "[error] $command"
+		;;
 	"launch"|"l")
-		"$dir/launch" "${@}"
+		"$ctl_dir/launch" "${@}"
 		;;
 	*)
 		echo -e "${RED}[error] invalid command: $command${NC}"
