@@ -11,8 +11,20 @@ root='{{ params.init.root | bool | ternary("true", "false") }}'
 run_file='{{ params.init.run_file }}'
 force_vault='{{ params.repo_vault.force | bool | ternary("true", "false") }}'
 
+RED='\033[0;31m'
+NC='\033[0m' # No Color
+
+function error {
+	msg="$(date '+%F %T') - ${BASH_SOURCE[0]}: line ${BASH_LINENO[0]}: ${*}"
+	>&2 echo -e "${RED}${msg}${NC}"
+	exit 2
+}
+
+last_index=1
+
 # shellcheck disable=SC2214
-while getopts ':ef-:' OPT; do
+while getopts ':efp-:' OPT; do
+	last_index="$OPTIND"
 	if [ "$OPT" = "-" ]; then     # long option: reformulate OPT and OPTARG
 		OPT="${OPTARG%%=*}"       # extract long option name
 		OPTARG="${OPTARG#$OPT}"   # extract long option argument (may be empty)
@@ -21,11 +33,17 @@ while getopts ':ef-:' OPT; do
 	case "$OPT" in
 		e|enter ) enter="true";;
 		f|fast ) args+=( "--fast" );;
-		'') break;;
-		??* ) ;;
-		\? ) ;;
+		p|prepare ) args+=( "--prepare" );;
+		debug ) args+=( "--debug" );;
+		\? ) error "[error] unknown short option: -${OPTARG:-}";;
+		?* ) error "[error] unknown long option: --${OPT:-}";;
 	esac
 done
+
+if [ "$last_index" != "$OPTIND" ]; then
+	args+=( "--" );
+fi
+
 shift $((OPTIND-1))
 
 if [ -z "$root_dir" ]; then

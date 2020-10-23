@@ -32,8 +32,8 @@ while getopts ':defp-:' OPT; do
 		p|prepare ) prepare="true"; args+=( "--prepare" );;
 		debug ) debug=( "-vvvvv" ); args+=( "--debug" );;
 		no-vault ) no_vault="true";;
-		??* ) break;;
-		\? )  break;;
+		\? ) error "[error] unknown short option: -${OPTARG:-}";;
+		?* ) error "[error] unknown long option: --${OPT:-}";;
 	esac
 done
 shift $((OPTIND-1))
@@ -54,6 +54,10 @@ if [ -z "$project" ]; then
 fi
 
 shift;
+
+if [ -n "${1:-}" ]; then
+	args+=( "--" );
+fi
 
 if [ "${dev:-}" = 'true' ]; then
     ln -rsfT "${root_dir}" "${root_dir}/link"
@@ -111,41 +115,58 @@ if [ "${fast:-}" = 'true' ]; then
 	echo "$ctl_title skipping init project (fast)..."
 else
     prepare_args=()
+	skip=''
 
     if [ "${prepare:-}" = 'true' ]; then
-        prepare_args=( "${@}" )
+		if [ "${1:-}" = "--skip" ]; then
+			skip='true';
+			shift;
+		else
+			for arg in "$@"; do
+				shift;
+
+				if [ "$arg" = "--" ]; then
+					break;
+				fi
+
+				prepare_args+=( "$arg" )
+			done
+		fi
     fi
 
-	inner_cmd=( \
-		ansible-playbook \
-		${prepare_args[@]+"${prepare_args[@]}"} \
-		${vault[@]+"${vault[@]}"} \
-		${debug[@]+"${debug[@]}"} \
-		-i "/main/ctl/ansible/hosts" \
-		--extra-vars "env_project_key=$project" \
-		--extra-vars "env_root_dir=$root_dir" \
-		--extra-vars "env_dev=${dev:-}" \
-		ansible/main.yml \
-	)
+	if [ "${skip:-}" = 'true' ]; then
+		echo "$ctl_title skipping init project (skip)..."
+	else
+		inner_cmd=( \
+			ansible-playbook \
+			${vault[@]+"${vault[@]}"} \
+			${debug[@]+"${debug[@]}"} \
+			-i "/main/ctl/ansible/hosts" \
+			--extra-vars "env_project_key=$project" \
+			--extra-vars "env_root_dir=$root_dir" \
+			--extra-vars "env_dev=${dev:-}" \
+			ansible/main.yml \
+			${prepare_args[@]+"${prepare_args[@]}"} \
+		)
 
-	if [ "${enter:-}" = 'true' ]; then
-		mkdir -p "$ctl_dir/tmp"
-		echo "${inner_cmd[@]+"${inner_cmd[*]}"}" > "$ctl_dir/tmp/cmd"
-		inner_cmd=( /bin/bash )
+		if [ "${enter:-}" = 'true' ]; then
+			mkdir -p "$ctl_dir/tmp"
+			echo "${inner_cmd[@]+"${inner_cmd[*]}"}" > "$ctl_dir/tmp/cmd"
+			inner_cmd=( /bin/bash )
+		fi
+
+		"${cmd[@]}" run --rm -it \
+			--name="local-ctl-init-$project" \
+			--workdir "/main/ctl" \
+			-v "${ctl_dir}:/main/ctl:ro" \
+			-v "${root_dir}/secrets:/main/secrets" \
+			-v "${root_dir}/projects:/main/projects" \
+			-e "ANSIBLE_CONFIG=/main/ctl/ansible/ansible.cfg" \
+			"$var_container" \
+			${inner_cmd[@]+"${inner_cmd[@]}"} \
+			|| error "[error] $ctl_title project $project - init"
 	fi
-
-	"${cmd[@]}" run --rm -it \
-		--name="local-ctl-init-$project" \
-		--workdir "/main/ctl" \
-		-v "${ctl_dir}:/main/ctl:ro" \
-		-v "${root_dir}/secrets:/main/secrets" \
-		-v "${root_dir}/projects:/main/projects" \
-		-e "ANSIBLE_CONFIG=/main/ctl/ansible/ansible.cfg" \
-		"$var_container" \
-		${inner_cmd[@]+"${inner_cmd[@]}"} \
-		|| error "[error] $ctl_title project $project - init"
 fi
-
 
 if [ "${enter:-}" != 'true' ]; then
 	bash "${root_dir}/projects/$project/files/ctl/run" \
