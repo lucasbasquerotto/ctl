@@ -100,7 +100,7 @@ if [ "$var_container_type" = "" ]; then
 	var_container_type="docker"
 fi
 
-if [ "$var_container_type" != 'docker' ]; then
+if [ "$var_container_type" != 'docker' ] && [ "$var_container_type" != 'podman' ]; then
     echo "[error] $ctl_title unsupported container type: $var_container_type"
     exit 2
 fi

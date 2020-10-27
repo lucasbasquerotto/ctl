@@ -53,7 +53,7 @@ fi
 
 project_dir="$root_dir/$project_dir_rel"
 
-if [ "$container_type" != 'docker' ]; then
+if [ "$container_type" != 'docker' ] && [ "$container_type" != 'podman' ]; then
     echo "[error] unsupported container type: $container_type"
     exit 2
 fi

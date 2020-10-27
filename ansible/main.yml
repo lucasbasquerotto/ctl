@@ -165,7 +165,7 @@
     - name: "{{ project_title }} - validate container_type"
       fail:
         msg: "container_type value invalid ({{ project_container_type }})"
-      when: not (project_container_type in ['docker'])
+      when: not (project_container_type in ['docker', 'podman'])
       tags: ["no_print"]
 
     - name: "{{ project_title }} - verify the project repo params"
