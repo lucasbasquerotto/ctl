@@ -47,7 +47,6 @@
             name: "env_project_key",
             value: "{{ env_project_key | default('') }}",
           }
-        - { name: "env_root_dir", value: "{{ env_root_dir | default('') }}" }
       loop_control:
         loop_var: main_item
         label: "{{ main_item.name }}"
@@ -218,7 +217,6 @@
           key: "{{ env_project_key }}"
           migration: "{{ project.migration | default('') }}"
           ctxs: "{{ project.ctxs | default([]) }}"
-          root_dir: "{{ env_root_dir }}"
           dev: "{{ env_dev | default(false, true) }}"
           local: "{{ project.local | default(false, true) }}"
           project_dir_rel: "{{ project_dir_rel }}"
@@ -282,8 +280,6 @@
             value: "{{ project_init_params.key }}"
           - key: "dev"
             value: "{{ project_init_params.dev | bool | ternary('true', 'false') }}"
-          - key: "root_dir"
-            value: "{{ project_init_params.root_dir }}"
           - key: "project_dir_rel"
             value: "{{ project_init_params.project_dir_rel }}"
           - key: "container"

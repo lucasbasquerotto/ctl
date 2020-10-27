@@ -2,6 +2,7 @@
 set -eou pipefail
 
 dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+project_dir="$(cd "$dir/../.." && pwd)"
 
 # shellcheck disable=SC1090
 . "$dir/vars.sh"
@@ -10,10 +11,6 @@ dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 var_key="$key"
 # shellcheck disable=SC2154
 var_dev="$dev"
-# shellcheck disable=SC2154
-var_root_dir="$root_dir"
-# shellcheck disable=SC2154
-var_project_dir_rel="$project_dir_rel"
 # shellcheck disable=SC2154
 var_container="$container"
 # shellcheck disable=SC2154
@@ -61,13 +58,6 @@ fi
 
 shift $((OPTIND-1))
 
-if [ -z "$var_root_dir" ]; then
-    echo "[error] root directory not defined"
-    exit 2
-fi
-
-project_dir="$var_root_dir/$var_project_dir_rel"
-
 if [ "$var_container_type" != 'docker' ] && [ "$var_container_type" != 'podman' ]; then
     echo "[error] unsupported container type: $var_container_type"
     exit 2
@@ -82,9 +72,14 @@ fi
 volumes=( -v "${project_dir}:/main" )
 
 if [ "$var_dev" = 'true' ]; then
-    mkdir -p "${project_dir}/dev"
-    ln -rsfT "${var_root_dir}" "${project_dir}/dev/link"
-    volumes+=( -v "${var_root_dir}:/main/dev" )
+	if [ "${inside:-}" = 'true' ]; then
+		mkdir -p /main/dev/link
+	else
+		root_dir="$(cd "$project_dir/../.." && pwd)"
+		mkdir -p "${project_dir}/dev"
+		ln -rsfT "${root_dir}" "${project_dir}/dev/link"
+		volumes+=( -v "${root_dir}:/main/dev" )
+	fi
 fi
 
 inner_cmd=( "$var_run_file" ${args[@]+"${args[@]}"} "${@}" )
