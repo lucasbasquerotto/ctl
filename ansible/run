@@ -1,0 +1,108 @@
+#!/bin/bash
+set -eou pipefail
+
+dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# shellcheck disable=SC1090
+. "$dir/vars.sh"
+
+# shellcheck disable=SC2154
+var_key="$key"
+# shellcheck disable=SC2154
+var_dev="$dev"
+# shellcheck disable=SC2154
+var_root_dir="$root_dir"
+# shellcheck disable=SC2154
+var_project_dir_rel="$project_dir_rel"
+# shellcheck disable=SC2154
+var_container="$container"
+# shellcheck disable=SC2154
+var_container_type="$container_type"
+# shellcheck disable=SC2154
+var_root="$root"
+# shellcheck disable=SC2154
+var_run_file="$run_file"
+# shellcheck disable=SC2154
+var_force_vault="$force_vault"
+
+RED='\033[0;31m'
+NC='\033[0m' # No Color
+
+function error {
+	msg="$(date '+%F %T') - ${BASH_SOURCE[0]}: line ${BASH_LINENO[0]}: ${*}"
+	>&2 echo -e "${RED}${msg}${NC}"
+	exit 2
+}
+
+last_index=1
+
+# shellcheck disable=SC2214
+while getopts ':efp-:' OPT; do
+	last_index="$OPTIND"
+	if [ "$OPT" = "-" ]; then     # long option: reformulate OPT and OPTARG
+		OPT="${OPTARG%%=*}"       # extract long option name
+		OPTARG="${OPTARG#$OPT}"   # extract long option argument (may be empty)
+		OPTARG="${OPTARG#=}"      # if long option argument, remove assigning `=`
+	fi
+	case "$OPT" in
+		e|enter ) enter="true";;
+		f|fast ) args+=( "--fast" );;
+		p|prepare ) args+=( "--prepare" );;
+		debug ) args+=( "--debug" );;
+		inside ) inside="true";;
+		\? ) error "[error] unknown short option: -${OPTARG:-}";;
+		?* ) error "[error] unknown long option: --${OPT:-}";;
+	esac
+done
+
+if [ "$last_index" != "$OPTIND" ]; then
+	args+=( "--" );
+fi
+
+shift $((OPTIND-1))
+
+if [ -z "$var_root_dir" ]; then
+    echo "[error] root directory not defined"
+    exit 2
+fi
+
+project_dir="$var_root_dir/$var_project_dir_rel"
+
+if [ "$var_container_type" != 'docker' ] && [ "$var_container_type" != 'podman' ]; then
+    echo "[error] unsupported container type: $var_container_type"
+    exit 2
+fi
+
+cmd=( "$var_container_type" )
+
+if [ "$var_root" = 'true' ]; then
+    cmd=( sudo "$var_container_type" )
+fi
+
+volumes=( -v "${project_dir}:/main" )
+
+if [ "$var_dev" = 'true' ]; then
+    mkdir -p "${project_dir}/dev"
+    ln -rsfT "${var_root_dir}" "${project_dir}/dev/link"
+    volumes+=( -v "${var_root_dir}:/main/dev" )
+fi
+
+inner_cmd=( "$var_run_file" ${args[@]+"${args[@]}"} "${@}" )
+
+if [ "${enter:-}" = 'true' ]; then
+    mkdir -p "${project_dir}/tmp"
+    echo "${inner_cmd[@]+"${inner_cmd[@]}"}" > "${project_dir}/tmp/cmd"
+    inner_cmd=( /bin/bash )
+fi
+
+if [ "${inside:-}" = 'true' ]; then
+    "${inner_cmd[@]}"
+else
+	"${cmd[@]}" run --rm -it \
+		--name="local-ctl-$var_key" \
+		--workdir='/main' \
+		-e "FORCE_VAULT=$var_force_vault" \
+		"${volumes[@]}" \
+		"$var_container" \
+		"${inner_cmd[@]}"
+fi

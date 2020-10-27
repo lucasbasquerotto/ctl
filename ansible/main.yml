@@ -60,9 +60,13 @@
 
     ### Project - Start ###
 
-    - name: "[ctl] [project - {{ env_project_key }}] - {{ project.name }} - define project title"
+    - name: "[ctl] [project - {{ env_project_key }}] - define project title"
       set_fact:
-        project_title: "[ctl] [project - {{ env_project_key }}] - {{ project.name }}"
+        project_title: >-
+          [ctl] [project - {{ env_project_key }}]{{
+            ((project.name | default('')) != '')
+            | ternary(' - ' + (project.name | default('')), '')
+          }}
       tags: ["no_print"]
 
     - name: "{{ project_title }} - project_dir_rel"
@@ -265,16 +269,57 @@
         mode: "{{ env_dev | default(false, true) | bool | ternary(0666, 0600) }}"
       when: project_repo_vault_file != ''
 
-    - name: "{{ project_title }} - create the project init config file"
+    - name: "{{ project_title }} - create the project init config file (vars.yml)"
       copy:
         content: "{{ project_init_params | to_nice_yaml }}"
         dest: "{{ project_files_dir }}/vars.yml"
         mode: "{{ env_dev | default(false, true) | bool | ternary(0666, 0600) }}"
 
+    - name: "{{ project_title }} - project_init_params_list_seed"
+      set_fact:
+        project_init_params_list_seed:
+          - key: "key"
+            value: "{{ project_init_params.key }}"
+          - key: "dev"
+            value: "{{ project_init_params.dev | bool | ternary('true', 'false') }}"
+          - key: "root_dir"
+            value: "{{ project_init_params.root_dir }}"
+          - key: "project_dir_rel"
+            value: "{{ project_init_params.project_dir_rel }}"
+          - key: "container"
+            value: "{{ project_init_params.init.container }}"
+          - key: "container_type"
+            value: "{{ project_init_params.init.container_type }}"
+          - key: "root"
+            value: "{{ project_init_params.init.root | bool | ternary('true', 'false') }}"
+          - key: "run_file"
+            value: "{{ project_init_params.init.run_file }}"
+          - key: "force_vault"
+            value: "{{ project_init_params.repo_vault.force | bool | ternary('true', 'false') }}"
+        project_init_params_list: []
+      tags: ["no_print"]
+
+    - name: "{{ project_title }} - project_init_params_list"
+      set_fact:
+        project_init_params_list: >-
+          {{
+            project_init_params_list
+            + [project_item.key + '=' + (project_item.value | quote)]
+          }}
+      loop: "{{ project_init_params_list_seed }}"
+      loop_control:
+        loop_var: project_item
+        label: "{{ project_item.key }}"
+      tags: ["no_print"]
+
+    - name: "{{ project_title }} - create the project init config file (vars.sh)"
+      copy:
+        content: "{{ project_init_params_list | join('\n') }}"
+        dest: "{{ project_files_dir }}/vars.sh"
+        mode: "{{ env_dev | default(false, true) | bool | ternary(0666, 0600) }}"
+
     - name: "{{ project_title }} - create the project main run file"
-      template:
-        src: "run.tpl.sh"
+      copy:
+        src: "run"
         dest: "{{ project_files_dir }}/run"
         mode: "{{ env_dev | default(false, true) | bool | ternary(0777, 0700) }}"
-      vars:
-        params: "{{ project_init_params }}"

@@ -30,6 +30,7 @@ while getopts ':defp-:' OPT; do
 		e|enter ) enter="true";;
 		f|fast ) fast="true"; args+=( "--fast" );;
 		p|prepare ) prepare="true"; args+=( "--prepare" );;
+		ctl ) ctl="true";;
 		debug ) debug=( "-vvvvv" ); args+=( "--debug" );;
 		no-vault ) no_vault="true";;
 		\? ) error "[error] unknown short option: -${OPTARG:-}";;
@@ -183,7 +184,7 @@ else
 		fi
 
 		"${cmd[@]}" run --rm -it \
-			--name="local-ctl-init-$project" \
+			--name="local-ctl-$project" \
 			--workdir "/main/ctl" \
 			-v "${ctl_dir}:/main/ctl:ro" \
 			-v "${root_dir}/secrets:/main/secrets" \
@@ -195,7 +196,7 @@ else
 	fi
 fi
 
-if [ "${enter:-}" != 'true' ]; then
+if [ "${enter:-}" != 'true' ] && [ "${ctl:-}" != 'true' ]; then
 	cmd=( bash "${root_dir}/projects/$project/files/ctl/run" ${args[@]+"${args[@]}"} "${@}" )
 	error_msg="[error] $ctl_title project $project - run"
 
