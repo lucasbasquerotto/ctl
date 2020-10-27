@@ -95,6 +95,12 @@ source "${ctl_dir}/env-main/env.sh"
 var_container="$container"
 var_container_type="${container_type:-}"
 var_root="${root:-}"
+var_main_user_group="${main_user_group:-}"
+var_subuser_group="${subuser_group:-}"
+var_subuser_prefix="${subuser_prefix:-}"
+
+main_user="$(whoami)"
+subuser="${var_subuser_prefix}${project}"
 
 if [ "$var_container_type" = "" ]; then
 	var_container_type="docker"
@@ -137,6 +143,24 @@ else
 	if [ "${skip:-}" = 'true' ]; then
 		echo "$ctl_title skipping init project (skip)..."
 	else
+		if [ -n "$var_main_user_group" ] || [ -n "$var_subuser_group" ]; then
+			if [ -z "$var_main_user_group" ]; then
+				error "[error] subuser_group($var_subuser_group) was specified, but main_user_group was not specified"
+			elif [ -z "$var_subuser_group" ]; then
+				error "[error] main_user_group($var_main_user_group) was specified, but subuser_group was not specified"
+			fi
+
+			sudo groupadd -f "$var_main_user_group" || error "[error] create main user group"
+			sudo usermod -a -G "$var_main_user_group" "$main_user" || error "[error] add main user to group"
+
+			sudo groupadd -f "$var_subuser_group" || error "[error] create subuser group"
+			id -u somename &>/dev/null \
+				|| sudo useradd --no-create-home --shell /bin/bash "$subuser" \
+				|| error "[error] create subuser"
+			sudo passwd -l "$subuser" || error "[error] disable subuser login"
+			sudo usermod -a -G "$var_subuser_group" "$subuser" || error "[error] add subuser to group"
+		fi
+
 		inner_cmd=( \
 			ansible-playbook \
 			${vault[@]+"${vault[@]}"} \
@@ -169,7 +193,15 @@ else
 fi
 
 if [ "${enter:-}" != 'true' ]; then
-	bash "${root_dir}/projects/$project/files/ctl/run" \
+	cmd=( bash )
+
+	if [ -n "$var_subuser_group" ]; then
+		cmd=( sudo su - "$subuser" bash )
+		"${cmd[@]}" "whoami=$(whoami)"
+		exit 0
+	fi
+
+	"${cmd[@]}" "${root_dir}/projects/$project/files/ctl/run" \
 		${args[@]+"${args[@]}"} "${@}" \
 		|| error "[error] $ctl_title project $project - run"
 fi
