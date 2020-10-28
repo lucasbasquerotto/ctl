@@ -3,6 +3,7 @@ set -eou pipefail
 
 dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 project_dir="$(cd "$dir/../.." && pwd)"
+root_dir="$(cd "$project_dir/../.." && pwd)"
 
 # shellcheck disable=SC1090
 . "$dir/vars.sh"
@@ -34,7 +35,7 @@ function error {
 last_index=1
 
 # shellcheck disable=SC2214
-while getopts ':efp-:' OPT; do
+while getopts ':efip-:' OPT; do
 	last_index="$OPTIND"
 	if [ "$OPT" = "-" ]; then     # long option: reformulate OPT and OPTARG
 		OPT="${OPTARG%%=*}"       # extract long option name
@@ -73,17 +74,12 @@ volumes=( -v "${project_dir}:/main" )
 
 if [ "$var_dev" = 'true' ]; then
 	mkdir -p "${project_dir}/dev"
-
-	if [ "${inside:-}" = 'true' ]; then
-		ln -rsfT "${project_dir}/dev" "${project_dir}/dev/link"
-	else
-		root_dir="$(cd "$project_dir/../.." && pwd)"
-		ln -rsfT "${root_dir}" "${project_dir}/dev/link"
-		volumes+=( -v "${root_dir}:/main/dev" )
-	fi
+	ln -rsfT "${root_dir}" "${project_dir}/dev/link"
+	volumes+=( -v "${root_dir}:/main/dev" )
 fi
 
-inner_cmd=( "$var_run_file" ${args[@]+"${args[@]}"} "${@}" )
+[ "${inside:-}" = 'true' ] && project_dir_inside="$project_dir" || project_dir_inside="/main"
+inner_cmd=( "$var_run_file" --project-dir="$project_dir_inside" ${args[@]+"${args[@]}"} "${@}" )
 
 if [ "${enter:-}" = 'true' ]; then
     mkdir -p "${project_dir}/tmp"

@@ -19,7 +19,7 @@ args=()
 debug=()
 
 # shellcheck disable=SC2214
-while getopts ':defp-:' OPT; do
+while getopts ':defip-:' OPT; do
 	if [ "$OPT" = "-" ]; then     # long option: reformulate OPT and OPTARG
 		OPT="${OPTARG%%=*}"       # extract long option name
 		OPTARG="${OPTARG#$OPT}"   # extract long option argument (may be empty)
@@ -68,6 +68,7 @@ fi
 secrets_dir_rel="secrets/projects/$project"
 secrets_dir="$root_dir/$secrets_dir_rel"
 
+[ "${inside:-}" = 'true' ] && root_dir_inside="$root_dir" || root_dir_inside="/main"
 [ "${inside:-}" = 'true' ] && secrets_dir_cmd="$secrets_dir" || secrets_dir_cmd="/main/$secrets_dir_rel"
 [ "${inside:-}" = 'true' ] && hosts_file="$ctl_dir/ansible/hosts" || hosts_file="/main/ctl/ansible/hosts"
 
@@ -178,6 +179,7 @@ else
 			${vault[@]+"${vault[@]}"} \
 			${debug[@]+"${debug[@]}"} \
 			-i "$hosts_file" \
+			--extra-vars "env_root_dir=$root_dir_inside" \
 			--extra-vars "env_project_key=$project" \
 			--extra-vars "env_dev=${dev:-}" \
 			ansible/main.yml \
@@ -194,16 +196,16 @@ else
 
 		if [ "${inside:-}" = 'true' ]; then
 			error_msg="$error_msg (inside)"
-			cmd=( ANSIBLE_CONFIG="$ctl_dir/ansible/ansible.cfg" "${inner_cmd[@]}" )
+			export ANSIBLE_CONFIG="$ctl_dir/ansible/ansible.cfg"
 
 			if [ -z "$var_subuser_group" ]; then
 				cd "$ctl_dir"
-				"${cmd[@]}" || error "$error_msg (same user)"
+				"${inner_cmd[@]}" || error "$error_msg (same user)"
 			else
 				sudo su - "$subuser" bash || error "$error_msg (as $subuser)" <<-SHELL
 					set -eou pipefail
 					cd "$ctl_dir"
-					${cmd[@]}
+					${inner_cmd[@]}
 				SHELL
 			fi
 		else

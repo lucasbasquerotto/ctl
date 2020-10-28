@@ -6,8 +6,8 @@
 
     - set_fact:
         main_title: "[ctl] main"
-        main_root_dir: "/main"
-        env_main_dir: "/main/ctl/env-main"
+        main_root_dir: "{{ env_root_dir }}"
+        env_main_dir: "{{ env_root_dir }}/ctl/env-main"
       tags: ["no_print"]
 
     - name: "{{ main_title }} - gathering facts"
