@@ -29,6 +29,7 @@ while getopts ':defp-:' OPT; do
 		d|dev ) dev="true";;
 		e|enter ) enter="true";;
 		f|fast ) fast="true"; args+=( "--fast" );;
+		i|inside ) inside="true"; args+=( "--inside" );;
 		p|prepare ) prepare="true"; args+=( "--prepare" );;
 		ctl ) ctl="true";;
 		debug ) debug=( "-vvvvv" ); args+=( "--debug" );;
@@ -66,7 +67,9 @@ fi
 
 secrets_dir_rel="secrets/projects/$project"
 secrets_dir="$root_dir/$secrets_dir_rel"
-secrets_dir_container="/main/$secrets_dir_rel"
+
+[ "${inside:-}" = 'true' ] && secrets_dir_cmd="$secrets_dir" || secrets_dir_cmd="/main/$secrets_dir_rel"
+[ "${inside:-}" = 'true' ] && hosts_file="$ctl_dir/ansible/hosts" || hosts_file="/main/ctl/ansible/hosts"
 
 vault=()
 
@@ -85,7 +88,7 @@ if [ "${no_vault:-}" != "true" ]; then
 		echo "$vault_pass" > "$vault_file"
 	fi
 
-	vault=( '--vault-id' "$secrets_dir_container/vault" )
+	vault=( '--vault-id' "$secrets_dir_cmd/vault" )
 fi
 
 # shellcheck source=SCRIPTDIR/env-main/env.sh
@@ -112,10 +115,10 @@ if [ "$var_container_type" != 'docker' ] && [ "$var_container_type" != 'podman' 
     exit 2
 fi
 
-cmd=( "$var_container_type" )
+container_cmd=( "$var_container_type" )
 
 if [ "$var_root" = 'true' ]; then
-    cmd=( sudo "$var_container_type" )
+    container_cmd=( sudo "$var_container_type" )
 fi
 
 if [ "${fast:-}" = 'true' ]; then
@@ -163,13 +166,18 @@ else
 			sudo chown "$subuser":"$subuser" "$subuser_home_dir"
 			sudo passwd -l "$subuser" || error "[error] disable subuser login"
 			sudo usermod -a -G "$var_subuser_group" "$subuser" || error "[error] add subuser to group"
+
+			sudo mkdir -p "${root_dir}/projects/$project"
+			sudo chown "$subuser":"$subuser" "${root_dir}/projects/$project"
+			sudo mkdir -p "${root_dir}/secrets/projects/$project"
+			sudo chown "$subuser":"$subuser" "${root_dir}/secrets/projects/$project"
 		fi
 
 		inner_cmd=( \
 			ansible-playbook \
 			${vault[@]+"${vault[@]}"} \
 			${debug[@]+"${debug[@]}"} \
-			-i "/main/ctl/ansible/hosts" \
+			-i "$hosts_file" \
 			--extra-vars "env_project_key=$project" \
 			--extra-vars "env_dev=${dev:-}" \
 			ansible/main.yml \
@@ -182,16 +190,44 @@ else
 			inner_cmd=( /bin/bash )
 		fi
 
-		"${cmd[@]}" run --rm -it \
-			--name="local-ctl-$project" \
-			--workdir "/main/ctl" \
-			-v "${ctl_dir}:/main/ctl:ro" \
-			-v "${root_dir}/secrets:/main/secrets" \
-			-v "${root_dir}/projects:/main/projects" \
-			-e "ANSIBLE_CONFIG=/main/ctl/ansible/ansible.cfg" \
-			"$var_container" \
-			${inner_cmd[@]+"${inner_cmd[@]}"} \
-			|| error "[error] $ctl_title project $project - init"
+		error_msg="[error] [ctl] project run - prepare"
+
+		if [ "${inside:-}" = 'true' ]; then
+			error_msg="$error_msg (inside)"
+			cmd=( ANSIBLE_CONFIG="$ctl_dir/ansible/ansible.cfg" "${inner_cmd[@]}" )
+
+			if [ -z "$var_subuser_group" ]; then
+				cd "$ctl_dir"
+				"${cmd[@]}" || error "$error_msg (same user)"
+			else
+				sudo su - "$subuser" bash || error "$error_msg (as $subuser)" <<-SHELL
+					set -eou pipefail
+					cd "$ctl_dir"
+					${cmd[@]}
+				SHELL
+			fi
+		else
+			cmd=( \
+				"${container_cmd[@]}" run --rm -it \
+					--name="local-ctl-$project" \
+					--workdir "/main/ctl" \
+					-v "${ctl_dir}:/main/ctl:ro" \
+					-v "${root_dir}/projects/$project:/main/projects/$project" \
+					-v "${root_dir}/secrets/projects/$project:/main/secrets/projects/$project" \
+					-e ANSIBLE_CONFIG=/main/ctl/ansible/ansible.cfg \
+					"$var_container" \
+					${inner_cmd[@]+"${inner_cmd[@]}"} \
+			)
+
+			if [ -z "$var_subuser_group" ]; then
+				"${cmd[@]}" || error "$error_msg (same user)"
+			else
+				sudo su - "$subuser" bash || error "$error_msg (as $subuser)" <<-SHELL
+					set -eou pipefail
+					${cmd[@]}
+				SHELL
+			fi
+		fi
 	fi
 fi
 

@@ -44,9 +44,9 @@ while getopts ':efp-:' OPT; do
 	case "$OPT" in
 		e|enter ) enter="true";;
 		f|fast ) args+=( "--fast" );;
+		i|inside ) inside="true";;
 		p|prepare ) args+=( "--prepare" );;
 		debug ) args+=( "--debug" );;
-		inside ) inside="true";;
 		\? ) error "[error] unknown short option: -${OPTARG:-}";;
 		?* ) error "[error] unknown long option: --${OPT:-}";;
 	esac
@@ -92,7 +92,7 @@ if [ "${enter:-}" = 'true' ]; then
 fi
 
 if [ "${inside:-}" = 'true' ]; then
-    "${inner_cmd[@]}"
+    "${inner_cmd[@]}" || error "[error] project run - init (inside)"
 else
 	"${cmd[@]}" run --rm -it \
 		--name="local-ctl-$var_key" \
@@ -100,5 +100,6 @@ else
 		-e "FORCE_VAULT=$var_force_vault" \
 		"${volumes[@]}" \
 		"$var_container" \
-		"${inner_cmd[@]}"
+		"${inner_cmd[@]}" \
+		|| error "[error] project run - init"
 fi
