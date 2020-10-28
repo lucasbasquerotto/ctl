@@ -72,11 +72,12 @@ fi
 volumes=( -v "${project_dir}:/main" )
 
 if [ "$var_dev" = 'true' ]; then
+	mkdir -p "${project_dir}/dev"
+
 	if [ "${inside:-}" = 'true' ]; then
-		mkdir -p /main/dev/link
+		ln -rsfT "${project_dir}/dev" "${project_dir}/dev/link"
 	else
 		root_dir="$(cd "$project_dir/../.." && pwd)"
-		mkdir -p "${project_dir}/dev"
 		ln -rsfT "${root_dir}" "${project_dir}/dev/link"
 		volumes+=( -v "${root_dir}:/main/dev" )
 	fi
