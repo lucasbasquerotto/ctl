@@ -63,8 +63,8 @@
       set_fact:
         project_title: >-
           [ctl] [project - {{ env_project_key }}]{{
-            ((project.name | default('')) != '')
-            | ternary(' - ' + (project.name | default('')), '')
+            ((project.title | default('')) != '')
+            | ternary(' - ' + (project.title | default('')), '')
           }}
       tags: ["no_print"]
 
