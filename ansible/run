@@ -5,22 +5,15 @@ dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 project_dir="$(cd "$dir/../.." && pwd)"
 root_dir="$(cd "$project_dir/../.." && pwd)"
 
-# shellcheck disable=SC1090
+# shellcheck source=./vars.sample.sh
 . "$dir/vars.sh"
 
-# shellcheck disable=SC2154
 var_key="$key"
-# shellcheck disable=SC2154
 var_dev="$dev"
-# shellcheck disable=SC2154
 var_container="$container"
-# shellcheck disable=SC2154
 var_container_type="$container_type"
-# shellcheck disable=SC2154
 var_root="$root"
-# shellcheck disable=SC2154
 var_run_file="$run_file"
-# shellcheck disable=SC2154
 var_force_vault="$force_vault"
 
 RED='\033[0;31m'

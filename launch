@@ -92,11 +92,9 @@ if [ "${no_vault:-}" != "true" ]; then
 	vault=( '--vault-id' "$secrets_dir_cmd/vault" )
 fi
 
-# shellcheck source=SCRIPTDIR/env-main/env.sh
-# shellcheck disable=SC1091
+# shellcheck source=./env-main/env.sh
 source "${ctl_dir}/env-main/env.sh"
 
-# shellcheck disable=SC2154
 var_container="$container"
 var_container_type="${container_type:-}"
 var_root="${root:-}"
@@ -220,7 +218,7 @@ else
 			fi
 		else
 			cmd=( \
-				"${container_cmd[@]}" run --rm \
+				"${container_cmd[@]}" run --rm -it \
 					--name="local-ctl-$project" \
 					--workdir "/main/ctl" \
 					-v "${ctl_dir}:/main/ctl:ro" \
