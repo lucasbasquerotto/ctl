@@ -292,7 +292,7 @@
             value: "{{ project_init_params.init.run_file }}"
           - key: "force_vault"
             value: "{{ project_init_params.repo_vault.force | bool | ternary('true', 'false') }}"
-        project_init_params_list: []
+        project_init_params_list: ["#!/bin/bash"]
       tags: ["no_print"]
 
     - name: "{{ project_title }} - project_init_params_list"
@@ -300,7 +300,7 @@
         project_init_params_list: >-
           {{
             project_init_params_list
-            + [project_item.key + '=' + (project_item.value | quote)]
+            + ['export ' + project_item.key + '=' + (project_item.value | quote)]
           }}
       loop: "{{ project_init_params_list_seed }}"
       loop_control:
