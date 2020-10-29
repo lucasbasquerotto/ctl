@@ -51,8 +51,7 @@ start="$(date '+%F %T')"
 echo -e "${CYAN}$start $ctl_title [start] running the project ($project)${NC}"
 
 if [ -z "$project" ]; then
-	echo "[error] $ctl_title enter the project name"
-	exit 2
+	error "[error] $ctl_title enter the project name"
 fi
 
 shift;
@@ -92,11 +91,12 @@ if [ "${no_vault:-}" != "true" ]; then
 	vault=( '--vault-id' "$secrets_dir_cmd/vault" )
 fi
 
-# shellcheck source=./env-main/env.sh
+# shellcheck source=./files/env.sample.sh
 source "${ctl_dir}/env-main/env.sh"
 
 var_container="$container"
 var_container_type="${container_type:-}"
+var_allow_container_type="${allow_container_type:-}"
 var_root="${root:-}"
 var_main_user_group="${main_user_group:-}"
 var_subuser_group="${subuser_group:-}"
@@ -109,9 +109,10 @@ if [ "$var_container_type" = "" ]; then
 	var_container_type="docker"
 fi
 
-if [ "$var_container_type" != 'docker' ] && [ "$var_container_type" != 'podman' ]; then
-    echo "[error] $ctl_title unsupported container type: $var_container_type"
-    exit 2
+if [ "$var_allow_container_type" != 'true' ]; then
+	if [ "$var_container_type" != 'docker' ] && [ "$var_container_type" != 'podman' ]; then
+		error "[error] $ctl_title unsupported container type: $var_container_type"
+	fi
 fi
 
 container_cmd=( "$var_container_type" )

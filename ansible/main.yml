@@ -160,17 +160,6 @@
       when: (project_params.init.container | default('')) == ''
       tags: ["no_print"]
 
-    - name: "{{ project_title }} - project_container_type"
-      set_fact:
-        project_container_type: "{{ project_params.init.container_type | default('docker', true) }}"
-      tags: ["no_print"]
-
-    - name: "{{ project_title }} - validate container_type"
-      fail:
-        msg: "container_type value invalid ({{ project_container_type }})"
-      when: not (project_container_type in ['docker', 'podman'])
-      tags: ["no_print"]
-
     - name: "{{ project_title }} - verify the project repo params"
       fail:
         msg: "{{ project_item }} not specified for the project repository"
@@ -222,7 +211,8 @@
           project_dir_rel: "{{ project_dir_rel }}"
           init:
             container: "{{ project_params.init.container }}"
-            container_type: "{{ project_container_type }}"
+            container_type: "{{ project_params.init.container_type | default('') }}"
+            allow_container_type: "{{ project_params.init.allow_container_type | default(false) }}"
             root: "{{ project_params.init.root | default(false, true) }}"
             run_file: "{{ project_params.init.run_file | default('/usr/local/bin/run') }}"
           repo:
@@ -286,6 +276,8 @@
             value: "{{ project_init_params.init.container }}"
           - key: "container_type"
             value: "{{ project_init_params.init.container_type }}"
+          - key: "allow_container_type"
+            value: "{{ project_init_params.init.allow_container_type | bool | ternary('true', 'false') }}"
           - key: "root"
             value: "{{ project_init_params.init.root | bool | ternary('true', 'false') }}"
           - key: "run_file"

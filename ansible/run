@@ -12,6 +12,7 @@ var_key="$key"
 var_dev="$dev"
 var_container="$container"
 var_container_type="$container_type"
+var_allow_container_type="$allow_container_type"
 var_root="$root"
 var_run_file="$run_file"
 var_force_vault="$force_vault"
@@ -52,9 +53,11 @@ fi
 
 shift $((OPTIND-1))
 
-if [ "$var_container_type" != 'docker' ] && [ "$var_container_type" != 'podman' ]; then
-    echo "[error] unsupported container type: $var_container_type"
-    exit 2
+
+if [ "$var_allow_container_type" != 'true' ]; then
+	if [ "$var_container_type" != 'docker' ] && [ "$var_container_type" != 'podman' ]; then
+		error "[error] unsupported container type: $var_container_type"
+	fi
 fi
 
 cmd=( "$var_container_type" )
