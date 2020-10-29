@@ -155,23 +155,33 @@ else
 				error "[error] main_user_group($var_main_user_group) was specified, but subuser_group was not specified"
 			fi
 
+			echo "[ctl] creating and defining user $subuser - start..."
+
 			sudo groupadd -f "$var_main_user_group" || error "[error] create main user group"
 			sudo usermod -a -G "$var_main_user_group" "$main_user" || error "[error] add main user to group"
 
-			subuser_home_dir="${root_dir}/projects/$project/$subuser"
+			subuser_home_base_dir="${root_dir}/projects/$project/user"
+			subuser_home_dir="$subuser_home_base_dir/$subuser"
+			sudo mkdir -p "$subuser_home_base_dir"
+
+			if ! id -u "$subuser" &>/dev/null; then
+				sudo rm -rf "$subuser_home_dir"
+				sudo useradd "$subuser" --create-home  --home-dir "$subuser_home_dir" --shell /bin/bash \
+					|| error "[error] create subuser"
+				sudo chown "$subuser":"$subuser" "$subuser_home_base_dir"
+				sudo chown "$subuser":"$subuser" "$subuser_home_dir"
+				sudo passwd -l "$subuser" || error "[error] disable subuser login"
+			fi
 
 			sudo groupadd -f "$var_subuser_group" || error "[error] create subuser group"
-			id -u "$subuser" &>/dev/null \
-				|| sudo useradd "$subuser" --create-home  --home-dir "$subuser_home_dir" --shell /bin/bash \
-				|| error "[error] create subuser"
-			sudo chown "$subuser":"$subuser" "$subuser_home_dir"
-			sudo passwd -l "$subuser" || error "[error] disable subuser login"
 			sudo usermod -a -G "$var_subuser_group" "$subuser" || error "[error] add subuser to group"
 
 			sudo mkdir -p "${root_dir}/projects/$project"
 			sudo chown "$subuser":"$subuser" "${root_dir}/projects/$project"
 			sudo mkdir -p "${root_dir}/secrets/projects/$project"
 			sudo chown "$subuser":"$subuser" "${root_dir}/secrets/projects/$project"
+
+			echo "[ctl] creating and defining user $subuser - end"
 		fi
 
 		inner_cmd=( \
@@ -210,7 +220,7 @@ else
 			fi
 		else
 			cmd=( \
-				"${container_cmd[@]}" run --rm -it \
+				"${container_cmd[@]}" run --rm \
 					--name="local-ctl-$project" \
 					--workdir "/main/ctl" \
 					-v "${ctl_dir}:/main/ctl:ro" \
@@ -224,7 +234,7 @@ else
 			if [ -z "$var_subuser_group" ]; then
 				"${cmd[@]}" || error "$error_msg (same user)"
 			else
-				sudo su - "$subuser" bash || error "$error_msg (as $subuser)" <<-SHELL
+				sudo su - "$subuser" <<-SHELL || error "$error_msg (as $subuser)"
 					set -eou pipefail
 					${cmd[@]}
 				SHELL
@@ -240,7 +250,7 @@ if [ "${enter:-}" != 'true' ] && [ "${ctl:-}" != 'true' ]; then
 	if [ -z "$var_subuser_group" ]; then
 		"${cmd[@]}" || error "$error_msg (same user)"
 	else
-		sudo su - "$subuser" bash || error "$error_msg (as $subuser)" <<-SHELL
+		sudo su - "$subuser" <<-SHELL || error "$error_msg (as $subuser)"
 			set -eou pipefail
 			${cmd[@]}
 		SHELL
