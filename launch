@@ -231,7 +231,7 @@ else
 		if [ "${inside:-}" = 'true' ]; then
 			error_msg="$error_msg (inside)"
 
-			if [ -z "$var_subuser_group" ]; then
+			if [ "$run_as_subuser" != 'true' ]; then
 				cd "$ctl_dir"
 				export ANSIBLE_CONFIG="$ctl_dir/ansible/ansible.cfg"
 				"${inner_cmd[@]}" || error "$error_msg (same user)"
@@ -256,6 +256,8 @@ else
 				main_env_dir="$(readlink -f "$main_env_dir")"
 			fi
 
+			project_dir="${root_dir}/projects/$project"
+
 			cmd=( \
 				"${container_cmd[@]}" run --rm -it \
 					--name="local-ctl-$project" \
@@ -269,11 +271,13 @@ else
 					${inner_cmd[@]+"${inner_cmd[@]}"} \
 			)
 
-			if [ -z "$var_subuser_group" ]; then
+			if [ "$run_as_subuser" != 'true' ]; then
+				mkdir -p "$project_dir"
 				"${cmd[@]}" || error "$error_msg (same user)"
 			else
 				sudo su - "$subuser" <<-SHELL || error "$error_msg (as $subuser)"
 					set -eou pipefail
+					mkdir -p "$project_dir"
 					${cmd[@]}
 				SHELL
 			fi
@@ -285,7 +289,7 @@ if [ "${enter:-}" != 'true' ] && [ "${ctl:-}" != 'true' ]; then
 	cmd=( bash "${root_dir}/projects/$project/files/ctl/run" ${args[@]+"${args[@]}"} "${@}" )
 	error_msg="[error] $ctl_title project $project - run"
 
-	if [ -z "$var_subuser_group" ]; then
+	if [ "$run_as_subuser" != 'true' ]; then
 		"${cmd[@]}" || error "$error_msg (same user)"
 	else
 		sudo su - "$subuser" <<-SHELL || error "$error_msg (as $subuser)"
