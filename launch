@@ -244,11 +244,24 @@ else
 				SHELL
 			fi
 		else
+			main_env_dir="${ctl_dir:?}/env-main"
+
+			if [ -L "$main_env_dir" ]; then
+				if [ "${dev:-}" != 'true' ]; then
+					error_msg="the main environment (env-main directory) is a symlink"
+					error_msg="$error_msg: this is only allowed in development (--dev)"
+					error "[error] [ctl] project run - $error_msg"
+				fi
+
+				main_env_dir="$(readlink -f "$main_env_dir")"
+			fi
+
 			cmd=( \
 				"${container_cmd[@]}" run --rm -it \
 					--name="local-ctl-$project" \
 					--workdir "/main/ctl" \
 					-v "${ctl_dir}:/main/ctl:ro" \
+					-v "${main_env_dir}:/main/ctl/env-main:ro" \
 					-v "${root_dir}/projects/$project:/main/projects/$project" \
 					-v "${root_dir}/secrets/projects/$project:/main/secrets/projects/$project" \
 					-e ANSIBLE_CONFIG=/main/ctl/ansible/ansible.cfg \
