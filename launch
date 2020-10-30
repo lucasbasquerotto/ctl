@@ -19,7 +19,7 @@ args=()
 debug=()
 
 # shellcheck disable=SC2214
-while getopts ':defip-:' OPT; do
+while getopts ':defipV-:' OPT; do
 	if [ "$OPT" = "-" ]; then     # long option: reformulate OPT and OPTARG
 		OPT="${OPTARG%%=*}"       # extract long option name
 		OPTARG="${OPTARG#$OPT}"   # extract long option argument (may be empty)
@@ -31,9 +31,9 @@ while getopts ':defip-:' OPT; do
 		f|fast ) fast="true"; args+=( "--fast" );;
 		i|inside ) inside="true"; args+=( "--inside" );;
 		p|prepare ) prepare="true"; args+=( "--prepare" );;
+		V|no-vault ) no_vault="true";;
 		ctl ) ctl="true";;
 		debug ) debug=( "-vvvvv" ); args+=( "--debug" );;
-		no-vault ) no_vault="true";;
 		\? ) error "[error] unknown short option: -${OPTARG:-}";;
 		?* ) error "[error] unknown long option: --${OPT:-}";;
 	esac
