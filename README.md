@@ -1,4 +1,4 @@
-# Controller Layer
+# (Under Construction) Controller Layer
 
 This repository corresponds to the controller layer used to deploy projects.
 
@@ -10,11 +10,84 @@ The following instructions assume that they are being run from the parent folder
 
 ## Setup
 
-Download the main environment repository (contains the data to deploy the projects).
+The machine that will deploy the projects should have the following tools:
+
+- Bash 4+
+
+- Git
+
+- A container engine (like [docker](https://www.docker.com/) or [podman](https://podman.io/))
+
+To be able to deploy the projects, the controller will need to know which projects to deploy. That information is declared in the [main environment repository](#main-environment-repository). You can manually clone the repository with git at the folder `ctl/env-main` (or point a symlink located at `ctl/env-main` to another location on you machine) or run the following command that will do that for you:
 
 ```bash
 ./ctl/run setup
 ```
+
+The above command will ask you to enter the repository which willl be cloned. An alternative is to enter the repository directly like the following:
+
+```bash
+./ctl/run setup <git_env_main_repo_location>
+```
+
+If you have a symlink at `ctl/env-main` pointing to an empty directory, the git repository will be cloned at that target repository.
+
+To make things more practical, you can create a repository to become the root of your environment and create an instruction that to do the entire setup step in a more straightforward way.
+
+This [repository](#) do that for you. You can fork it and change only the `env.sh`, defining in it the controller repository and branch, your main environment repository, and optionally the location of this repository relatively to the root directory (a symlink will be created at `ctl/env-main`).
+
+## Main Environment Repository
+
+The main environemnt repository will be a hub containing information about the projects to deploy. It will be located at `ctl/env-main` and must have the following files:
+
+- `env.sh`
+
+File that will be sourced during launch to know which container engine should run the projects nad also which image it will run. It also has other useful options as explained [bellow](#main-environment-options).
+
+An example of the file for a development environment is as follows:
+
+```bash
+export container=lucasbasquerotto/ansible:0.0.2
+export container_type=podman
+```
+
+Another example:
+
+```bash
+export container=lucasbasquerotto/ansible:0.0.2
+export root=true
+```
+
+An example of the file for a production environment is as follows:
+
+```bash
+export container=lucasbasquerotto/ansible:0.0.2
+export container_type=podman
+export main_user_group=main
+export subuser_group=subuser
+export subuser_prefix=project-
+```
+
+## Main Environment Options
+
+| Option | Default | Description |
+| ------ | ------- | ----------- |
+
+# Controller Preparation Step
+
+This step is the first and only step executed in the controller layer to launch the project (deployment). The [main environment repository](#main-environment-repository) must be present at `ctl/env-main` so that this step can be run.
+
+This file should have the following
+
+## Main Vault File
+
+The main vault file for a project is located at `secrets/projects/<project_name>/vault` and contains the value to decrypt:
+
+1) The [ssh key file](#) to clone the [project environment repository](#).
+
+2) The [project vault file](#).
+
+The encryption should be done with [ansible-vault](#encrypt-with-ansible).
 
 ## Launch options
 
@@ -30,16 +103,6 @@ Below are the options that can be used to launch a project (when running `ctl/ru
 | <nobr>`-V`<br>`--no-vault` | By default, the launch expects an unencrypted [vault file](#main-vault-file) at `secrets/projects/<project_name>/vault`. This option runs the [Cloud Context Preparation Step](#) without the vault file (this step shouldn't use encrypted values to be decrypted using a vault file, otherwise an error will be thrown). |
 | <nobr>`--ctl` | Runs only the [Controller Preparation Step](#) and generates the [Controller Output Vars](#). Usiful to generate the variables that will be used in a demo that doesn't need the controller layer, like the [official demo](#). |
 | <nobr>`--debug` | Runs in verbose mode and forwars this option to the subsequent step. |
-
-## Main Vault File
-
-The main vault file for a project is located at `secrets/projects/<project_name>/vault` and contains the value to decrypt:
-
-1) The [ssh key file](#) to clone the [project environment repository](#).
-
-2) The [project vault file](#).
-
-The encryption should be done with [ansible-vault](#encrypt-with-ansible).
 
 ## Examples
 
