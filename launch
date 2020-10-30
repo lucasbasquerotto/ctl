@@ -71,26 +71,6 @@ secrets_dir="$root_dir/$secrets_dir_rel"
 [ "${inside:-}" = 'true' ] && secrets_dir_cmd="$secrets_dir" || secrets_dir_cmd="/main/$secrets_dir_rel"
 [ "${inside:-}" = 'true' ] && hosts_file="$ctl_dir/ansible/hosts" || hosts_file="/main/ctl/ansible/hosts"
 
-vault=()
-
-if [ "${no_vault:-}" != "true" ]; then
-	mkdir -p "$secrets_dir"
-
-	vault_file="$secrets_dir/vault"
-
-	if [ ! -f "$vault_file" ]; then
-		echo -n "Enter the main vault pass (to decrypt the ssh keys of the environment repositories): "
-		read -r -s vault_pass
-		echo
-
-		touch "$vault_file"
-		chmod 600 "$vault_file"
-		echo "$vault_pass" > "$vault_file"
-	fi
-
-	vault=( '--vault-id' "$secrets_dir_cmd/vault" )
-fi
-
 # shellcheck source=./files/env.sample.sh
 source "${ctl_dir}/env-main/env.sh"
 
@@ -104,6 +84,86 @@ var_subuser_prefix="${subuser_prefix:-}"
 
 main_user="$(whoami)"
 subuser="${var_subuser_prefix}${project}"
+run_as_subuser=false
+
+if [ -n "$var_main_user_group" ] || [ -n "$var_subuser_group" ]; then
+	run_as_subuser=true
+fi
+
+if [ "$run_as_subuser" = 'true' ]; then
+	if [ -z "$var_main_user_group" ]; then
+		error "[error] subuser_group($var_subuser_group) was specified, but main_user_group was not specified"
+	elif [ -z "$var_subuser_group" ]; then
+		error "[error] main_user_group($var_main_user_group) was specified, but subuser_group was not specified"
+	fi
+
+	echo "[ctl] creating and defining user $subuser - start..."
+
+	subuser_home_dir="${root_dir}/users/$subuser"
+
+	if ! id -u "$subuser" &>/dev/null; then
+		sudo groupadd -f "$var_main_user_group" || error "[error] create main user group"
+		sudo usermod -a -G "$var_main_user_group" "$main_user" || error "[error] add main user to group"
+
+		sudo rm -rf "$subuser_home_dir"
+		sudo useradd "$subuser" --create-home  --home-dir "$subuser_home_dir" --shell /bin/bash \
+			|| error "[error] create subuser"
+		sudo passwd -l "$subuser" || error "[error] disable subuser login"
+
+		sudo groupadd -f "$var_subuser_group" || error "[error] create subuser group"
+		sudo usermod -a -G "$var_subuser_group" "$subuser" || error "[error] add subuser to group"
+	fi
+
+	if [ ! -d "$subuser_home_dir" ]; then
+		sudo usermod -d "$subuser_home_dir" "$subuser"
+		sudo mkdir -p "$subuser_home_dir"
+		sudo chown "$subuser":"$subuser" "$subuser_home_dir"
+	fi
+
+	if [ ! -d "${root_dir}/projects/$project" ]; then
+		sudo mkdir -p "${root_dir}/projects/$project"
+		sudo chown "$subuser":"$subuser" "${root_dir}/projects/$project"
+	fi
+
+	if [ ! -d "${root_dir}/secrets/projects/$project" ]; then
+		sudo mkdir -p "${root_dir}/secrets/projects/$project"
+		sudo chown "$subuser":"$subuser" "${root_dir}/secrets/projects/$project"
+	fi
+
+	echo "[ctl] creating and defining user $subuser - end"
+fi
+
+vault=()
+
+if [ "${no_vault:-}" != "true" ]; then
+	mkdir -p "$secrets_dir"
+
+	vault_file="$secrets_dir/vault"
+
+	if [ ! -f "$vault_file" ]; then
+		echo -n "Enter the main vault pass (to decrypt the ssh keys of the environment repositories): "
+		read -r -s vault_pass
+		echo
+
+		error_msg="[error] it wasn't possible to create the vault file ($vault_file)"
+
+		if [ "$run_as_subuser" = 'true' ]; then
+			sudo chown "$subuser":"$subuser" "$secrets_dir"
+			sudo su - "$subuser" <<-SHELL || error "$error_msg (as $subuser)"
+				set -eou pipefail
+				touch "$vault_file"
+				chmod 600 "$vault_file"
+				echo "$vault_pass" > "$vault_file"
+			SHELL
+		else
+			touch "$vault_file" || error "$error_msg"
+			chmod 600 "$vault_file"
+			echo "$vault_pass" > "$vault_file"
+		fi
+	fi
+
+	vault=( '--vault-id' "$secrets_dir_cmd/vault" )
+fi
 
 if [ "$var_container_type" = "" ]; then
 	var_container_type="docker"
@@ -147,41 +207,6 @@ else
 	if [ "${skip:-}" = 'true' ]; then
 		echo "$ctl_title skipping init project (skip)..."
 	else
-		if [ -n "$var_main_user_group" ] || [ -n "$var_subuser_group" ]; then
-			if [ -z "$var_main_user_group" ]; then
-				error "[error] subuser_group($var_subuser_group) was specified, but main_user_group was not specified"
-			elif [ -z "$var_subuser_group" ]; then
-				error "[error] main_user_group($var_main_user_group) was specified, but subuser_group was not specified"
-			fi
-
-			echo "[ctl] creating and defining user $subuser - start..."
-
-			sudo groupadd -f "$var_main_user_group" || error "[error] create main user group"
-			sudo usermod -a -G "$var_main_user_group" "$main_user" || error "[error] add main user to group"
-
-			subuser_home_base_dir="${root_dir}/projects/$project/user"
-			subuser_home_dir="$subuser_home_base_dir/$subuser"
-			sudo mkdir -p "$subuser_home_base_dir"
-
-			if ! id -u "$subuser" &>/dev/null; then
-				sudo rm -rf "$subuser_home_dir"
-				sudo useradd "$subuser" --create-home  --home-dir "$subuser_home_dir" --shell /bin/bash \
-					|| error "[error] create subuser"
-				sudo chown "$subuser":"$subuser" "$subuser_home_base_dir"
-				sudo chown "$subuser":"$subuser" "$subuser_home_dir"
-				sudo passwd -l "$subuser" || error "[error] disable subuser login"
-			fi
-
-			sudo groupadd -f "$var_subuser_group" || error "[error] create subuser group"
-			sudo usermod -a -G "$var_subuser_group" "$subuser" || error "[error] add subuser to group"
-
-			sudo mkdir -p "${root_dir}/projects/$project"
-			sudo chown "$subuser":"$subuser" "${root_dir}/projects/$project"
-			sudo mkdir -p "${root_dir}/secrets/projects/$project"
-			sudo chown "$subuser":"$subuser" "${root_dir}/secrets/projects/$project"
-
-			echo "[ctl] creating and defining user $subuser - end"
-		fi
 
 		inner_cmd=( \
 			ansible-playbook \
@@ -205,15 +230,16 @@ else
 
 		if [ "${inside:-}" = 'true' ]; then
 			error_msg="$error_msg (inside)"
-			export ANSIBLE_CONFIG="$ctl_dir/ansible/ansible.cfg"
 
 			if [ -z "$var_subuser_group" ]; then
 				cd "$ctl_dir"
+				export ANSIBLE_CONFIG="$ctl_dir/ansible/ansible.cfg"
 				"${inner_cmd[@]}" || error "$error_msg (same user)"
 			else
-				sudo su - "$subuser" bash || error "$error_msg (as $subuser)" <<-SHELL
+				sudo su - "$subuser" <<-SHELL || error "$error_msg (as $subuser)"
 					set -eou pipefail
 					cd "$ctl_dir"
+					export ANSIBLE_CONFIG="$ctl_dir/ansible/ansible.cfg"
 					${inner_cmd[@]}
 				SHELL
 			fi
