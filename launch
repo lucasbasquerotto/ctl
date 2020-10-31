@@ -67,9 +67,15 @@ fi
 secrets_dir_rel="secrets/projects/$project"
 secrets_dir="$root_dir/$secrets_dir_rel"
 
-[ "${inside:-}" = 'true' ] && root_dir_inside="$root_dir" || root_dir_inside="/main"
-[ "${inside:-}" = 'true' ] && secrets_dir_cmd="$secrets_dir" || secrets_dir_cmd="/main/$secrets_dir_rel"
-[ "${inside:-}" = 'true' ] && hosts_file="$ctl_dir/ansible/hosts" || hosts_file="/main/ctl/ansible/hosts"
+[ "${inside:-}" = 'true' ] \
+	&& root_dir_inside="$root_dir" \
+	|| root_dir_inside="/main"
+[ "${inside:-}" = 'true' ] \
+	&& secrets_dir_cmd="$secrets_dir" \
+	|| secrets_dir_cmd="/main/$secrets_dir_rel"
+[ "${inside:-}" = 'true' ] \
+	&& hosts_file="$ctl_dir/ansible/hosts" \
+	|| hosts_file="/main/ctl/ansible/hosts"
 
 # shellcheck source=./files/env.sample.sh
 source "${ctl_dir}/env-main/env.sh"
@@ -78,46 +84,31 @@ var_container="$container"
 var_container_type="${container_type:-}"
 var_allow_container_type="${allow_container_type:-}"
 var_root="${root:-}"
-var_main_user_group="${main_user_group:-}"
-var_subuser_group="${subuser_group:-}"
+var_use_subuser="${use_subuser:-}"
 var_subuser_prefix="${subuser_prefix:-}"
 
-main_user="$(whoami)"
 subuser="${var_subuser_prefix}${project}"
-run_as_subuser=false
 
-if [ -n "$var_main_user_group" ] || [ -n "$var_subuser_group" ]; then
-	run_as_subuser=true
+if [ -n "$var_use_subuser" ] && [ -z "$var_subuser_prefix" ]; then
+	error "[error] no subuser prefix specified"
 fi
 
-if [ "$run_as_subuser" = 'true' ]; then
-	if [ -z "$var_main_user_group" ]; then
-		error "[error] subuser_group($var_subuser_group) was specified, but main_user_group was not specified"
-	elif [ -z "$var_subuser_group" ]; then
-		error "[error] main_user_group($var_main_user_group) was specified, but subuser_group was not specified"
-	fi
-
+if [ "$var_use_subuser" = 'true' ]; then
 	echo "[ctl] creating and defining user $subuser - start..."
 
 	subuser_home_dir="${root_dir}/users/$subuser"
 
 	if ! id -u "$subuser" &>/dev/null; then
-		sudo groupadd -f "$var_main_user_group" || error "[error] create main user group"
-		sudo usermod -a -G "$var_main_user_group" "$main_user" || error "[error] add main user to group"
-
 		sudo rm -rf "$subuser_home_dir"
-		sudo useradd "$subuser" --create-home  --home-dir "$subuser_home_dir" --shell /bin/bash \
+		sudo useradd "$subuser" --no-create-home --shell /bin/bash \
 			|| error "[error] create subuser"
 		sudo passwd -l "$subuser" || error "[error] disable subuser login"
-
-		sudo groupadd -f "$var_subuser_group" || error "[error] create subuser group"
-		sudo usermod -a -G "$var_subuser_group" "$subuser" || error "[error] add subuser to group"
 	fi
 
 	if [ ! -d "$subuser_home_dir" ]; then
-		sudo usermod -d "$subuser_home_dir" "$subuser"
 		sudo mkdir -p "$subuser_home_dir"
 		sudo chown "$subuser":"$subuser" "$subuser_home_dir"
+		sudo usermod -d "$subuser_home_dir" "$subuser"
 	fi
 
 	if [ ! -d "${root_dir}/projects/$project" ]; then
@@ -131,6 +122,9 @@ if [ "$run_as_subuser" = 'true' ]; then
 	fi
 
 	echo "[ctl] creating and defining user $subuser - end"
+else
+	mkdir -p "${root_dir}/projects/$project"
+	mkdir -p "${root_dir}/secrets/projects/$project"
 fi
 
 vault=()
@@ -147,7 +141,7 @@ if [ "${no_vault:-}" != "true" ]; then
 
 		error_msg="[error] it wasn't possible to create the vault file ($vault_file)"
 
-		if [ "$run_as_subuser" = 'true' ]; then
+		if [ "$var_use_subuser" = 'true' ]; then
 			sudo chown "$subuser":"$subuser" "$secrets_dir"
 			sudo su - "$subuser" <<-SHELL || error "$error_msg (as $subuser)"
 				set -eou pipefail
@@ -231,7 +225,7 @@ else
 		if [ "${inside:-}" = 'true' ]; then
 			error_msg="$error_msg (inside)"
 
-			if [ "$run_as_subuser" != 'true' ]; then
+			if [ "$var_use_subuser" != 'true' ]; then
 				cd "$ctl_dir"
 				export ANSIBLE_CONFIG="$ctl_dir/ansible/ansible.cfg"
 				"${inner_cmd[@]}" || error "$error_msg (same user)"
@@ -256,8 +250,6 @@ else
 				main_env_dir="$(readlink -f "$main_env_dir")"
 			fi
 
-			project_dir="${root_dir}/projects/$project"
-
 			cmd=( \
 				"${container_cmd[@]}" run --rm -it \
 					--name="local-ctl-$project" \
@@ -271,13 +263,11 @@ else
 					${inner_cmd[@]+"${inner_cmd[@]}"} \
 			)
 
-			if [ "$run_as_subuser" != 'true' ]; then
-				mkdir -p "$project_dir"
+			if [ "$var_use_subuser" != 'true' ]; then
 				"${cmd[@]}" || error "$error_msg (same user)"
 			else
 				sudo su - "$subuser" <<-SHELL || error "$error_msg (as $subuser)"
 					set -eou pipefail
-					mkdir -p "$project_dir"
 					${cmd[@]}
 				SHELL
 			fi
@@ -289,7 +279,7 @@ if [ "${enter:-}" != 'true' ] && [ "${ctl:-}" != 'true' ]; then
 	cmd=( bash "${root_dir}/projects/$project/files/ctl/run" ${args[@]+"${args[@]}"} "${@}" )
 	error_msg="[error] $ctl_title project $project - run"
 
-	if [ "$run_as_subuser" != 'true' ]; then
+	if [ "$var_use_subuser" != 'true' ]; then
 		"${cmd[@]}" || error "$error_msg (same user)"
 	else
 		sudo su - "$subuser" <<-SHELL || error "$error_msg (as $subuser)"

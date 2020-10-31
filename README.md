@@ -24,25 +24,37 @@ To be able to deploy the projects, the controller will need to know which projec
 ./ctl/run setup
 ```
 
-The above command will ask you to enter the repository which willl be cloned. An alternative is to enter the repository directly like the following:
+The above command will ask you to enter the repository which willl be cloned (`git clone <git_env_main_repository>`). An alternative is to enter the repository directly like the following:
 
 ```bash
-./ctl/run setup <git_env_main_repo_location>
+./ctl/run setup <git_env_main_repository>
 ```
 
 If you have a symlink at `ctl/env-main` pointing to an empty directory, the git repository will be cloned at that target repository.
 
-To make things more practical, you can create a repository to become the root of your environment and create an instruction that to do the entire setup step in a more straightforward way.
+To make things more practical, you can create a repository to become the root folder of your environment and then make an instruction that runs the entire setup step in a more straightforward way.
 
-This [repository](#) do that for you. You can fork it and change only the `env.sh`, defining in it the controller repository and branch, your main environment repository, and optionally the location of this repository relatively to the root directory (a symlink will be created at `ctl/env-main`).
+This [repository](#) does that, and you can fork it and change only the `env.sh` file, defining in it the controller repository and branch, your main environment repository, and optionally the location of this repository relatively to the root directory (a symlink will be created at `ctl/env-main`).
 
 ## Main Environment Repository
 
 The main environemnt repository will be a hub containing information about the projects to deploy. It will be located at `ctl/env-main` and must have the following files:
 
-- `env.sh`
+- **Main Environment Options File**: `env.sh`
 
-File that will be sourced during launch to know which container engine should run the projects nad also which image it will run. It also has other useful options as explained [bellow](#main-environment-options).
+File that will be sourced during launch to know which container engine should run the projects nad also which image it will run. It also has other useful [options](#main-environment-options) and [examples](#main-environment-options-file---examples) explained below.
+
+## Main Environment Options
+
+| Option | Default | Description |
+| ------ | ------- | ----------- |
+| <nobr>`container` | | The container repository. |
+| <nobr>`root` | `false` | When `true`, runs the container in the [Controller Preparation Step](#controller-preparation-step) as root (with `sudo`). |
+| <nobr>`container_type` | `docker` | The container engine CLI used when running the container. The command to run the container is the value of this option. The commands accepted by the CLI are assumed to be compatible with the ones from the docker CLI. |
+| <nobr>`use_subuser` | `false` | When `true`, runs the container in the [Controller Preparation Step](#controller-preparation-step), as well as the container to run the steps in the next layer, with the user `<subuser_prefix><project_name>` (the user will be created if it doesn't exists already, and the home directory will be `users/project-<project_name>`). |
+| <nobr>`subuser_prefix` | | The prefix used to create the user that will run the containers. The username will be `<subuser_prefix><project_name>`. When `use_subuser` is `true`, this option is required and cannot be empty. |
+
+## Main Environment Options File - Examples
 
 An example of the file for a development environment is as follows:
 
@@ -58,20 +70,16 @@ export container=lucasbasquerotto/ansible:0.0.2
 export root=true
 ```
 
+_The above example will use docker as the container engine (`container_type`)._
+
 An example of the file for a production environment is as follows:
 
 ```bash
 export container=lucasbasquerotto/ansible:0.0.2
 export container_type=podman
-export main_user_group=main
-export subuser_group=subuser
+export use_subuser=true
 export subuser_prefix=project-
 ```
-
-## Main Environment Options
-
-| Option | Default | Description |
-| ------ | ------- | ----------- |
 
 # Controller Preparation Step
 
@@ -89,7 +97,7 @@ The main vault file for a project is located at `secrets/projects/<project_name>
 
 The encryption should be done with [ansible-vault](#encrypt-with-ansible).
 
-## Launch options
+## Launch Options
 
 Below are the options that can be used to launch a project (when running `ctl/run launch ...`):
 
@@ -97,14 +105,14 @@ Below are the options that can be used to launch a project (when running `ctl/ru
 | ------------- | ----------- |
 | <nobr>`-d`<br>`--dev` | Runs the project in a development environment. It allows to map paths to repositories to share the repository across multiple projects and avoid cleaning live changes made to the repository that were still not commited (will not update the repository to the version specified, which allows to develop and test changes without the need to push those changes). |
 | <nobr>`-e`<br>`--enter` | Enters the container that runs the preparation step in the controller layer, instead of executing it. The command that would be executed can be seen by running (inside the container) `cat tmp/cmd`. This command doesn't work with the `--inside` option. |
-| <nobr>`-f`<br>`--fast` | Skips the [Controller Preparation Step](#) and may skip preparation steps in subsequent layers (if thos layers use this option and forwards it to the next layer).<br><br>_Using the cloud layer defined at http://github.com/lucasbasquerotto/cloud, this will skips the [Controller Preparation Step](#), [Cloud Preparation Step](#) and [Cloud Context Preparation Step](#), running only the [Cloud Context Main Step](#) for each context._ |
+| <nobr>`-f`<br>`--fast` | Skips the [Controller Preparation Step](#controller-preparation-step) and may skip preparation steps in subsequent layers (if thos layers use this option and forwards it to the next layer).<br><br>_Using the cloud layer defined at http://github.com/lucasbasquerotto/cloud, this will skips the [Controller Preparation Step](#controller-preparation-step), [Cloud Preparation Step](#) and [Cloud Context Preparation Step](#), running only the [Cloud Context Main Step](#) for each context._ |
 | <nobr>`-i`<br>`--inside` | Considers that the current environment is already inside an environment that has the necessary stuff to run the project, without the need to run it inside a container (the environment may already be a container). See [Running Inside a Container](#) and [Running Without Containers](#) for more information. |
-| <nobr>`-p`<br>`--prepare` | Only runs the preparation step and expects that the subsequent layers accept this option so as to run only the preparation step in that layer, and forwards the option to subsequent layers, if needed.<br><br>This has a particular feature that allows to pass arguments to each step that will handle it (as long as subsequent layers handle it). For example, passing the args `-vv` after the project name would generally be used only by the last step, but in this case it will be used as args to run the [Controller Preparation Step](#) and no args to subsequent steps.<br><br>You can pass `--` to indicate the end of the arguments for a given step, so the following args `-a -b -- -c -- -d` will pass the args `-a -b` to the [Controller Preparation Step](#), and `-c -- -d` to the next step. You can use `--skip` to skip a given step (you shouldn't pass `--` in this case). For example, `--skip -c -- -d` will skip the [Controller Preparation Step](#) and pass `-c -- -d` to the next step.<br><br>_Using the cloud layer defined at http://github.com/lucasbasquerotto/cloud, this will run the steps [Controller Preparation Step](#), [Cloud Preparation Step](#) and [Cloud Context Preparation Step](#), but won't run the [Cloud Context Main Step](#). You will have 3 steps in this case, so if you run `ctl/run launch <project_name> -- --skip -vv`, the [Controller Preparation Step](#) will run without args, the [Cloud Preparation Step](#) will be skipped and the [Cloud Context Preparation Step](#) will run in [verbose mode](https://docs.ansible.com/ansible/latest/cli/ansible-playbook.html#cmdoption-ansible-playbook-v)_ |
+| <nobr>`-p`<br>`--prepare` | Only runs the preparation step and expects that the subsequent layers accept this option so as to run only the preparation step in that layer, and forwards the option to subsequent layers, if needed.<br><br>This has a particular feature that allows to pass arguments to each step that will handle it (as long as subsequent layers handle it). For example, passing the args `-vv` after the project name would generally be used only by the last step, but in this case it will be used as args to run the [Controller Preparation Step](#controller-preparation-step) and no args to subsequent steps.<br><br>You can pass `--` to indicate the end of the arguments for a given step, so the following args `-a -b -- -c -- -d` will pass the args `-a -b` to the [Controller Preparation Step](#controller-preparation-step), and `-c -- -d` to the next step. You can use `--skip` to skip a given step (you shouldn't pass `--` in this case). For example, `--skip -c -- -d` will skip the [Controller Preparation Step](#controller-preparation-step) and pass `-c -- -d` to the next step.<br><br>_Using the cloud layer defined at http://github.com/lucasbasquerotto/cloud, this will run the steps [Controller Preparation Step](#controller-preparation-step), [Cloud Preparation Step](#) and [Cloud Context Preparation Step](#), but won't run the [Cloud Context Main Step](#). You will have 3 steps in this case, so if you run `ctl/run launch <project_name> -- --skip -vv`, the [Controller Preparation Step](#controller-preparation-step) will run without args, the [Cloud Preparation Step](#) will be skipped and the [Cloud Context Preparation Step](#) will run in [verbose mode](https://docs.ansible.com/ansible/latest/cli/ansible-playbook.html#cmdoption-ansible-playbook-v)_ |
 | <nobr>`-V`<br>`--no-vault` | By default, the launch expects an unencrypted [vault file](#main-vault-file) at `secrets/projects/<project_name>/vault`. This option runs the [Cloud Context Preparation Step](#) without the vault file (this step shouldn't use encrypted values to be decrypted using a vault file, otherwise an error will be thrown). |
-| <nobr>`--ctl` | Runs only the [Controller Preparation Step](#) and generates the [Controller Output Vars](#). Usiful to generate the variables that will be used in a demo that doesn't need the controller layer, like the [official demo](#). |
+| <nobr>`--ctl` | Runs only the [Controller Preparation Step](#controller-preparation-step) and generates the [Controller Output Vars](#). Usiful to generate the variables that will be used in a demo that doesn't need the controller layer, like the [official demo](#). |
 | <nobr>`--debug` | Runs in verbose mode and forwars this option to the subsequent step. |
 
-## Examples
+## Launch Examples
 
 General deployment:
 
