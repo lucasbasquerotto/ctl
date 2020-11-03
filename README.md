@@ -8,6 +8,18 @@ The demos are great for what they are meant to be: demos, prototypes. They shoul
 
 The following instructions assume that they are being run from the parent folder of this repository, the `<root>` folder (the folder that will contain the data for all projects).
 
+## Root Repository
+
+The `root` folder is the base directory in which the projects managed by the controller are defined. It's the parent of the controller repository (`ctl`) and contains:
+
+- The `secrets` directory: has the vault files to decrypt the ssh files to clone the [projects environment repositories](#)).
+
+- The `projects` directory: has the project files, secrets and repositories.
+
+- The `users` directory: has the users home directories (when [`use_subuser`](#main-environment-options) is `true`).
+
+- The `data` directory: used mainly in local development environments to contain project deployment data (like logs, databases and uploaded files).
+
 ## Setup
 
 The machine that will deploy the projects should have the following tools:
@@ -32,25 +44,29 @@ The above command will ask you to enter the repository which willl be cloned (`g
 
 If you have a symlink at `ctl/env-main` pointing to an empty directory, the git repository will be cloned at that target repository.
 
-To make things more practical, you can create a repository to become the root folder of your environment and then make an instruction that runs the entire setup step in a more straightforward way.
+To make things more practical, you can create a repository to become the root folder of your environment and then make an instruction that runs the entire setup step in a more straightforward way, with just a simple command like `./setup`.
 
 This [repository](#) does that, and you can fork it and change only the `env.sh` file, defining in it the controller repository and branch, your main environment repository, and optionally the location of this repository relatively to the root directory (a symlink will be created at `ctl/env-main`).
 
 ## Main Environment Repository
 
-The main environemnt repository will be a hub containing information about the projects to deploy. It will be located at `ctl/env-main` and must have the following files:
+The main environment repository will be a hub containing information about the projects to deploy. It will be located at `ctl/env-main` and must have the following files:
 
 - **Main Environment Options File**: `env.sh`
 
-File that will be sourced during launch to know which container engine should run the projects nad also which image it will run. It also has other useful [options](#main-environment-options) and [examples](#main-environment-options-file---examples) explained below.
+File that will be sourced during [launch](#launch) to know which container engine should run the projects and also which container image it will run. It also has other useful [options](#main-environment-options) and [examples](#main-environment-options-file---examples) explained below.
+
+- **Main Environment Vars File**: `vars.yml`
+
+File that contains the specifications for all projects. It will be used during [launch](#launch) to deploy the project specified in the launch command. See its [structure](#main-environment-vars) and the [example](#main-environment-vars-file---example) below.
 
 ## Main Environment Options
 
 | Option | Default | Description |
 | ------ | ------- | ----------- |
-| <nobr>`container` | | The container repository. |
-| <nobr>`root` | `false` | When `true`, runs the container in the [Controller Preparation Step](#controller-preparation-step) as root (with `sudo`). |
+| <nobr>`container` | | The container repository (and tag) that will run the [Controller Preparation Step](#controller-preparation-step). |
 | <nobr>`container_type` | `docker` | The container engine CLI used when running the container. The command to run the container is the value of this option. The commands accepted by the CLI are assumed to be compatible with the ones from the docker CLI. |
+| <nobr>`root` | `false` | When `true`, runs the container in the [Controller Preparation Step](#controller-preparation-step) as root (with `sudo`). |
 | <nobr>`use_subuser` | `false` | When `true`, runs the container in the [Controller Preparation Step](#controller-preparation-step), as well as the container to run the steps in the next layer, with the user `<subuser_prefix><project_name>` (the user will be created if it doesn't exists already, and the home directory will be `users/project-<project_name>`). |
 | <nobr>`subuser_prefix` | | The prefix used to create the user that will run the containers. The username will be `<subuser_prefix><project_name>`. When `use_subuser` is `true`, this option is required and cannot be empty. |
 
@@ -81,31 +97,165 @@ export use_subuser=true
 export subuser_prefix=project-
 ```
 
+## Main Environment Vars
+
+| Option | Default | Description |
+| ------ | ------- | ----------- |
+| <nobr>`dev` | `false` | When `true`, defines that the project will run in a development environment. If the value is `false`, the project can't be launched with the [`--dev`](#launch-options) option. |
+| <nobr>`init` | `{}` | Define a dictionary in which the value of each key is an object of the type specified in the [Init](#main-env-vars---init) section. |
+| <nobr>`repo` | `{}` | Define a dictionary in which the value of each key is an object of the type specified in the [Repo](#main-env-vars---repo) section. |
+| <nobr>`repo_vault` | `{}` | Define a dictionary in which the value of each key is an object of the type specified in the [Repo Vault](#main-env-vars---repo-vault) section. |
+| <nobr>`env_params` | `{}` | Define a dictionary in which the value of each key is an object of the type specified in the [Env Params](#main-env-vars---env-params) section. |
+
+TODO
+
+### Main Env Vars - Init
+
+This object contains data about the container in which the step after the [Controller Preparation Step](#controller-preparation-step) will run.
+
+| Option | Default | Description |
+| ------ | ------- | ----------- |
+| <nobr>`container` | | The container repository (and tag) that will run the steps after the [Controller Preparation Step](#controller-preparation-step). |
+| <nobr>`container_type` | `docker` | The container engine CLI used when running the container. The command to run the container is the value of this option. The commands accepted by the CLI are assumed to be compatible with the ones from the docker CLI. |
+| <nobr>`root` | `false` | When `true`, runs the container as root (with `sudo`). |
+| <nobr>`run_file` | `false` | The executable file to run inside the container after the [Controller Preparation Step](#controller-preparation-step) ends. [See details.](#cloud-layer) |
+
+### Main Env Vars - Repo
+
+This object contains data about the [project environment repository](#).
+
+| Option | Default | Description |
+| ------ | ------- | ----------- |
+| <nobr>`src` | | The repository source (URL). |
+| <nobr>`version` | `master` | The repository branch or tag. |
+| <nobr>`ssh_file` | | (Optional) The location (relative to the [main environment repository](#main-environment-repository)) of the ssh file needed to clone the repository. |
+| <nobr>`ssh_file_encrypted` | `false` | Specifies if the file specified in the option `ssh_file` is encrypted with [ansible-vault](#encrypt-with-ansible) (the key to decrypted the file should be in the [Main Vault File](#main-vault-file)). |
+
+### Main Env Vars - Repo Vault
+
+This object contains the location to the [Project Vault File](#).
+
+| Option | Default | Description |
+| ------ | ------- | ----------- |
+| <nobr>`file` | | The project vault file (relative to the [project environment repository](#)). |
+| <nobr>`force` | `false` | Will ask for the vault passphrase whenever the vault value should be used. This option is only considered if `file` is empty. |
+
+### Main Env Vars - Env Params
+
+This object contains project specific variables. It's expected that the next layer is able to handle this option, merging the options defined here with the options defined in the [project environment file](#). Specifying options here can be convenient to deploy multiple similar projects without having to create a different [project environment file](#) for each case, achieving a more DRY approach. To make staging and production environments more predictable, it's advisable to **not** use this option for such projects.
+
+There are no pre-established properties for this option (they are project specific).
+
+_Using the cloud layer defined at http://github.com/lucasbasquerotto/cloud, the variables defined in this option will be accessible through the `params` object in the [project environment file](#)._
+
+### Main Env Vars - Path Params
+
+This object could be considered a special case of the [Env Params](#main-env-vars---env-params) section. It contains paths to repositories, to be mapped to different locations than they would be otherwise. The paths are relative to the root repository.
+
+Repositories mapped this way will be cloned the first time (when the directory is empty) and ignored from then on, allowing the deployment of projects along with real-time changes to the deployment code, if the code is inside one of the mapped repositories.
+
+Mapped repositories can be shared accross different projects as long as the mapped locations are the same.
+
+_Using the cloud layer defined at http://github.com/lucasbasquerotto/cloud, this option will be ignored when not running in a development environment ([`dev: false`](#main-environment-vars)). In this case, it accepts the following options:_
+
+| Option | Default | Description |
+| ------ | ------- | ----------- |
+| <nobr>`path_env` | | Path in which the [project environment repository](#) will be cloned. |
+| <nobr>`path_env_base` | | Path in which the environemnt base repository, defined in the `env` option inside [project environment file](#), will be cloned. |
+| <nobr>`path_map_repos` | `{}` | Dictionary with objects in the form `[repo]: string`, in which repositories defined in the [project environment file](#) are mapped to the specified paths. |
+
+## Main Environment Vars File - Example
+
+```yaml
+dev: true
+
+init:
+  default:
+    container: "lucasbasquerotto/cloud:1.3.6"
+    root: true
+  other:
+    container: "lucasbasquerotto/cloud:1.3.6"
+    container_type: "podman"
+  other2:
+    container: "lucasbasquerotto/cloud"
+    container_type: "podman"
+    root: true
+
+repo:
+  default:
+    src: "ssh://git@github.com/lucasbasquerotto/project-env-demo.git"
+    version: "master"
+    ssh_file: "ssh/repo.encrypted.key"
+    ssh_file_encrypted: true
+  other:
+    src: "ssh://git@github.com/lucasbasquerotto/other-project-env-demo.git"
+    version: "master"
+    ssh_file: "ssh/repo.encrypted.key"
+    ssh_file_encrypted: true
+
+repo_vault:
+  default:
+    file: "vault/main"
+  other:
+    force: true
+
+env_params:
+  local:
+    pod_custom_dir_sync: true
+    named_volumes: true
+  custom:
+    name: "my-custom-project"
+
+path_params:
+  default:
+    path_env: "repos/env"
+    path_env_base: "repos/env-base"
+    path_map_repos:
+      env_base: "repos/env-base"
+      cloud: "repos/cloud"
+      custom_cloud: "repos/custom-cloud"
+      pod: "repos/pod"
+      custom_pod: "repos/custom-pod"
+      app: "repos/app"
+
+# TODO
+```
+
 # Controller Preparation Step
 
 This step is the first and only step executed in the controller layer to launch the project (deployment). The [main environment repository](#main-environment-repository) must be present at `ctl/env-main` so that this step can be run.
 
-This file should have the following
+This step generates the [Controller Output Vars](#), as well as the [project ssh key file](#project-ssh-key-file) and the [project vault file](#project-vault-file).
 
 ## Main Vault File
 
 The main vault file for a project is located at `secrets/projects/<project_name>/vault` and contains the value to decrypt:
 
-1) The [ssh key file](#) to clone the [project environment repository](#).
+1) The [project ssh key file](#project-ssh-key-file) to clone the [project environment repository](#).
 
-2) The [project vault file](#).
+2) The [project vault file](#project-vault-file) to decrypt the contents of the [project environment file](#).
 
-The encryption should be done with [ansible-vault](#encrypt-with-ansible).
+## Project SSH Key File
 
-## Launch Options
+The SSH file used to clone the [project environment repository](#). This file is optional and isn't needed for public repositories, but it's very important that this ssh file is specified if the aforementioned repository has secrets in it (and the repository should be private).
 
-Below are the options that can be used to launch a project (when running `ctl/run launch ...`):
+## Project Vault File
+
+The vault file used to decrypt the [project environment file](#) in the [project environment repository](#). This file is optional, but recommended to be used if the environemnt file has secrets in it. It's also recommended to make the repository private. The encryption should be done with [ansible-vault](#encrypt-with-ansible).
+
+# Launch
+
+The launch command deploys a project. It is executed like `ctl/run launch ...` (or alternatively `ctl/run l ...`, or even `ctl/launch ...`) and is responsible to run the [Controller Preparation Step](#controller-preparation-step) and call the command to run the subsequent steps (in the next layers). Below you can see the [options](#launch-options) that can be used with it as well as [examples](#launch-examples) of running this step.
+
+## Launch options
+
+Below are the options that can be used to [launch](#launch) a project:
 
 | Option        | Description |
 | ------------- | ----------- |
 | <nobr>`-d`<br>`--dev` | Runs the project in a development environment. It allows to map paths to repositories to share the repository across multiple projects and avoid cleaning live changes made to the repository that were still not commited (will not update the repository to the version specified, which allows to develop and test changes without the need to push those changes). |
 | <nobr>`-e`<br>`--enter` | Enters the container that runs the preparation step in the controller layer, instead of executing it. The command that would be executed can be seen by running (inside the container) `cat tmp/cmd`. This command doesn't work with the `--inside` option. |
-| <nobr>`-f`<br>`--fast` | Skips the [Controller Preparation Step](#controller-preparation-step) and may skip preparation steps in subsequent layers (if thos layers use this option and forwards it to the next layer).<br><br>_Using the cloud layer defined at http://github.com/lucasbasquerotto/cloud, this will skips the [Controller Preparation Step](#controller-preparation-step), [Cloud Preparation Step](#) and [Cloud Context Preparation Step](#), running only the [Cloud Context Main Step](#) for each context._ |
+| <nobr>`-f`<br>`--fast` | Skips the [Controller Preparation Step](#controller-preparation-step) and may skip preparation steps in subsequent layers (if thos layers use this option and forwards it to the next layer).<br><br>_Using the cloud layer defined at http://github.com/lucasbasquerotto/cloud, this will skip the [Controller Preparation Step](#controller-preparation-step), [Cloud Preparation Step](#) and [Cloud Context Preparation Step](#), running only the [Cloud Context Main Step](#) for each context._ |
 | <nobr>`-i`<br>`--inside` | Considers that the current environment is already inside an environment that has the necessary stuff to run the project, without the need to run it inside a container (the environment may already be a container). See [Running Inside a Container](#) and [Running Without Containers](#) for more information. |
 | <nobr>`-p`<br>`--prepare` | Only runs the preparation step and expects that the subsequent layers accept this option so as to run only the preparation step in that layer, and forwards the option to subsequent layers, if needed.<br><br>This has a particular feature that allows to pass arguments to each step that will handle it (as long as subsequent layers handle it). For example, passing the args `-vv` after the project name would generally be used only by the last step, but in this case it will be used as args to run the [Controller Preparation Step](#controller-preparation-step) and no args to subsequent steps.<br><br>You can pass `--` to indicate the end of the arguments for a given step, so the following args `-a -b -- -c -- -d` will pass the args `-a -b` to the [Controller Preparation Step](#controller-preparation-step), and `-c -- -d` to the next step. You can use `--skip` to skip a given step (you shouldn't pass `--` in this case). For example, `--skip -c -- -d` will skip the [Controller Preparation Step](#controller-preparation-step) and pass `-c -- -d` to the next step.<br><br>_Using the cloud layer defined at http://github.com/lucasbasquerotto/cloud, this will run the steps [Controller Preparation Step](#controller-preparation-step), [Cloud Preparation Step](#) and [Cloud Context Preparation Step](#), but won't run the [Cloud Context Main Step](#). You will have 3 steps in this case, so if you run `ctl/run launch <project_name> -- --skip -vv`, the [Controller Preparation Step](#controller-preparation-step) will run without args, the [Cloud Preparation Step](#) will be skipped and the [Cloud Context Preparation Step](#) will run in [verbose mode](https://docs.ansible.com/ansible/latest/cli/ansible-playbook.html#cmdoption-ansible-playbook-v)_ |
 | <nobr>`-V`<br>`--no-vault` | By default, the launch expects an unencrypted [vault file](#main-vault-file) at `secrets/projects/<project_name>/vault`. This option runs the [Cloud Context Preparation Step](#) without the vault file (this step shouldn't use encrypted values to be decrypted using a vault file, otherwise an error will be thrown). |
@@ -149,6 +299,22 @@ The first time you run a project, you will be asked to you enter the valt pass t
 ```
 
 _(The generated project vault file will be at `<root>/secrets/<project_name>/vault`)_
+
+# Project Environment Repository
+
+This is the repository that contains project specific stuff, in special, the [project environment file](#).
+
+## Project Environment File
+
+The file that will act as an entrypoint to deploy the project. Contains the project specific variables.
+
+_Using the cloud layer defined at http://github.com/lucasbasquerotto/cloud, this file will follow the structure defined [here](#http://github.com/lucasbasquerotto/cloud#environment-file)._
+
+# Cloud Layer
+
+After running the [Controller Preparation Step](#controller-preparation-step), the next step will run inside the [container](#main-env-vars---init) defined for the project, running the file `/usr/local/bin/run` by default (or the file defined in the `run_file` option).
+
+_Using the cloud layer defined at http://github.com/lucasbasquerotto/cloud, the executable file is already at `/usr/local/bin/run`. The details of what is done at this point are defined at the [Cloud Preparation Step](#)._
 
 # Encrypt with Ansible
 
