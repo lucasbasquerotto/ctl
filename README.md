@@ -107,8 +107,8 @@ File that contains the specifications for all projects. It will be used during [
 | <nobr>`container`</nobr> | | The container repository (and tag) that will run the [Controller Preparation Step](#controller-preparation-step). |
 | <nobr>`container_type`</nobr> | `docker` | The container engine CLI used when running the container. The command to run the container is the value of this option. The commands accepted by the CLI are assumed to be compatible with the ones from the docker CLI. |
 | <nobr>`root`</nobr> | `false` | When `true`, runs the container in the [Controller Preparation Step](#controller-preparation-step) as root (with `sudo`). |
-| <nobr>`use_subuser`</nobr> | `false` | When `true`, runs the container in the [Controller Preparation Step](#controller-preparation-step), as well as the container to run the steps in the next layer, with the user `<subuser_prefix><project_name>` (the user will be created if it doesn't exists already, and the home directory will be `users/project-<project_name>`). |
-| <nobr>`subuser_prefix`</nobr> | | The prefix used to create the user that will run the containers. The username will be `<subuser_prefix><project_name>`. When `use_subuser` is `true`, this option is required and cannot be empty. |
+| <nobr>`use_subuser`</nobr> | `false` | When `true`, runs the container in the [Controller Preparation Step](#controller-preparation-step), as well as the container to run the steps in the next layer, with the username `<subuser_prefix><project_name>` (the user will be created if it doesn't exists already, and the home directory will be `users/<username>`). |
+| <nobr>`subuser_prefix`</nobr> | | The prefix used to create the user that will run the containers. The username will be `<subuser_prefix><project_name>`. For example, if `subuser_prefix` is `project-` and `project_name` is `my-demo`, the username will be `project-my-demo`. When `use_subuser` is `true`, this option is required and cannot be empty. |
 
 ## Main Environment Options File - Examples
 
