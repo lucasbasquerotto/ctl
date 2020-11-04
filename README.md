@@ -1,6 +1,6 @@
 # (Under Construction) Controller Layer
 
-This repository corresponds to the controller layer used to deploy projects. This is the top layer and is responsible to manage and deploy projects. After setting up this layer, you can start deploying projects, according to the projects defined in the [main environment repository](#main-environment-repository).
+This repository corresponds to the controller layer and is used to deploy projects. This is the top layer and is responsible to manage and deploy projects. After setting up this layer, you can start deploying projects, according to the projects defined in the [main environment repository](#main-environment-repository).
 
 The deployment of a specific project is done by the cloud layer, which uses the [variables](#controller-output-vars) generated in the [preparation step](#controller-preparation-step) of this layer (controller).
 
@@ -295,12 +295,12 @@ Below are the options that can be used to [launch](#launch) a project:
 | ------------- | ----------- |
 | <nobr>`-d`</nobr><br><nobr>`--dev`</nobr> | Runs the project in a development environment. It allows to map paths to repositories to share the repository across multiple projects and avoid cleaning live changes made to the repository that were still not commited (will not update the repository to the version specified, which allows to develop and test changes without the need to push those changes). |
 | <nobr>`-e`</nobr><br><nobr>`--enter`</nobr> | Enters the container that runs the preparation step in the controller layer, instead of executing it. The command that would be executed can be seen by running (inside the container) `cat tmp/cmd`. This command doesn't work with the `--inside` option. |
-| <nobr>`-f`</nobr><br><nobr>`--fast`</nobr> | Skips the [Controller Preparation Step](#controller-preparation-step) and may skip preparation steps in subsequent layers (if thos layers use this option and forwards it to the next layer).<br><br>_Using the cloud layer defined at http://github.com/lucasbasquerotto/cloud, this will skip the [Controller Preparation Step](#controller-preparation-step), [Cloud Preparation Step](#) and [Cloud Context Preparation Step](#), running only the [Cloud Context Main Step](#) for each context._ |
+| <nobr>`-f`</nobr><br><nobr>`--fast`</nobr> | Skips the [Controller Preparation Step](#controller-preparation-step) and may skip preparation steps in subsequent layers (if those layers use this option and forwards it to the next layer).<br><br>_Using the cloud layer defined at http://github.com/lucasbasquerotto/cloud, this will skip the [Controller Preparation Step](#controller-preparation-step), [Cloud Preparation Step](#) and [Cloud Context Preparation Step](#), running only the [Cloud Context Main Step](#) for each context._ |
 | <nobr>`-i`</nobr><br><nobr>`--inside`</nobr> | Considers that the current environment is already inside an environment that has the necessary stuff to run the project, without the need to run it inside a container (the environment may already be a container). See [Running Inside a Container](#) and [Running Without Containers](#) for more information. |
 | <nobr>`-p`</nobr><br><nobr>`--prepare`</nobr> | Only runs the preparation step and expects that the subsequent layers accept this option so as to run only the preparation step in that layer, and forwards the option to subsequent layers, if needed.<br><br>This has a particular feature that allows to pass arguments to each step that will handle it (as long as subsequent layers handle it). For example, passing the args `-vv` after the project name would generally be used only by the last step, but in this case it will be used as args to run the [Controller Preparation Step](#controller-preparation-step) and no args to subsequent steps.<br><br>You can pass `--` to indicate the end of the arguments for a given step, so the following args `-a -b -- -c -- -d` will pass the args `-a -b` to the [Controller Preparation Step](#controller-preparation-step), and `-c -- -d` to the next step. You can use `--skip` to skip a given step (you shouldn't pass `--` in this case). For example, `--skip -c -- -d` will skip the [Controller Preparation Step](#controller-preparation-step) and pass `-c -- -d` to the next step.<br><br>_Using the cloud layer defined at http://github.com/lucasbasquerotto/cloud, this will run the steps [Controller Preparation Step](#controller-preparation-step), [Cloud Preparation Step](#) and [Cloud Context Preparation Step](#), but won't run the [Cloud Context Main Step](#). You will have 3 steps in this case, so if you run `ctl/run launch <project_name> -- --skip -vv`, the [Controller Preparation Step](#controller-preparation-step) will run without args, the [Cloud Preparation Step](#) will be skipped and the [Cloud Context Preparation Step](#) will run in [verbose mode](https://docs.ansible.com/ansible/latest/cli/ansible-playbook.html#cmdoption-ansible-playbook-v)_ |
 | <nobr>`-V`</nobr><br><nobr>`--no-vault`</nobr> | By default, the launch expects an unencrypted [vault file](#main-vault-file) at `secrets/projects/<project_name>/vault`. This option runs the [Cloud Context Preparation Step](#) without the vault file (this step shouldn't use encrypted values to be decrypted using a vault file, otherwise an error will be thrown). |
 | <nobr>`--ctl`</nobr> | Runs only the [Controller Preparation Step](#controller-preparation-step) and generates the [Controller Output Vars](#controller-output-vars). Usiful to generate the variables that will be used in a demo that doesn't need the controller layer, like the [official demo](#). |
-| <nobr>`--debug`</nobr> | Runs in verbose mode and forwars this option to the subsequent step. |
+| <nobr>`--debug`</nobr> | Runs in verbose mode and forwards this option to the subsequent step. |
 
 ## Launch Examples
 
@@ -371,6 +371,7 @@ path_params:
         env_base: repos/env-base
         pod: repos/pod
 project_dir_rel: projects/project-key
+repo:
     src: ssh://git@github.com/lucasbasquerotto/project-env-demo.git
     ssh_file: ssh.key
     version: master
