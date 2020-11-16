@@ -204,7 +204,7 @@
       set_fact:
         project_init_params:
           key: "{{ env_project_key }}"
-          migration: "{{ project.migration | default('') }}"
+          migration: "{{ env_migration | default(project.migration | default(''), true) }}"
           ctxs: "{{ project.ctxs | default([]) }}"
           dev: "{{ env_dev | default(false, true) }}"
           local: "{{ project.local | default(false, true) }}"

@@ -34,6 +34,7 @@ while getopts ':defipV-:' OPT; do
 		V|no-vault ) no_vault="true";;
 		ctl ) ctl="true";;
 		debug ) debug=( "-vvvvv" ); args+=( "--debug" );;
+		migration ) migration="${OPTARG:-}";;
 		\? ) error "[error] unknown short option: -${OPTARG:-}";;
 		?* ) error "[error] unknown long option: --${OPT:-}";;
 	esac
@@ -210,6 +211,7 @@ else
 			--extra-vars "env_root_dir=$root_dir_inside" \
 			--extra-vars "env_project_key=$project" \
 			--extra-vars "env_dev=${dev:-}" \
+			--extra-vars "env_migration=${migration:-}" \
 			ansible/main.yml \
 			${prepare_args[@]+"${prepare_args[@]}"} \
 		)
