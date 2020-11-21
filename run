@@ -65,12 +65,34 @@ case "$command" in
 		rm -rf "$ctl_dir/tmp"
 		;;
 	"stop-all")
-		mapfile -t list < <(sudo docker ps -q)
-		[[ ${#list[@]} -gt 0 ]] && sudo docker container stop "${list[@]}"
+		# shellcheck source=./files/env.sample.sh
+		source "${ctl_dir}/env-main/env.sh"
+		
+		var_container_type="${container_type:-}"
+		var_root="${root:-}"
+		cmd=( "$var_container_type" )
+
+		if [ "$var_root" = 'true' ]; then
+			cmd=( sudo "$var_container_type" )
+		fi
+
+		mapfile -t list < <("${cmd[@]}" ps -q)
+		[[ ${#list[@]} -gt 0 ]] && "${cmd[@]}" container stop "${list[@]}"
 		;;
 	"rm-all")
-		mapfile -t list < <(sudo docker ps -aq)
-		[[ ${#list[@]} -gt 0 ]] && sudo docker container rm -f "${list[@]}"
+		# shellcheck source=./files/env.sample.sh
+		source "${ctl_dir}/env-main/env.sh"
+
+		var_container_type="${container_type:-}"
+		var_root="${root:-}"
+		cmd=( "$var_container_type" )
+
+		if [ "$var_root" = 'true' ]; then
+			cmd=( sudo "$var_container_type" )
+		fi
+
+		mapfile -t list < <("${cmd[@]}" ps -aq)
+		[[ ${#list[@]} -gt 0 ]] && "${cmd[@]}" container rm -f "${list[@]}"
 		;;
 	"enter")
 		# shellcheck source=./files/env.sample.sh
