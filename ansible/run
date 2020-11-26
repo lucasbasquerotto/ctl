@@ -53,7 +53,6 @@ fi
 
 shift $((OPTIND-1))
 
-
 if [ "$var_allow_container_type" != 'true' ]; then
 	if [ "$var_container_type" != 'docker' ] && [ "$var_container_type" != 'podman' ]; then
 		error "[error] unsupported container type: $var_container_type"

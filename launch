@@ -48,6 +48,15 @@ if [ "${dev:-}" = "true" ]; then
 	ctl_title="[ctl - dev mode]"
 fi
 
+if [ "${enter:-}" = "true" ]; then
+	if [ "${ctl:-}" = "true" ]; then
+		fast="false"
+	else
+		enter="false"
+		args+=( "--enter" )
+	fi
+fi
+
 start="$(date '+%F %T')"
 echo -e "${CYAN}$start $ctl_title [start] running the project ($project)${NC}"
 
@@ -56,11 +65,6 @@ if [ -z "$project" ]; then
 fi
 
 shift;
-
-if [ "${prepare:-}" = 'true' ] && [ "${enter:-}" = 'true' ]; then
-	args+=( "--enter" );
-	enter=false
-fi
 
 if [ -n "${1:-}" ]; then
 	args+=( "--" );
@@ -282,7 +286,7 @@ else
 	fi
 fi
 
-if [ "${enter:-}" != 'true' ] && [ "${ctl:-}" != 'true' ]; then
+if [ "${ctl:-}" != 'true' ]; then
 	cmd=( bash "${root_dir}/projects/$project/files/ctl/run" ${args[@]+"${args[@]}"} "${@}" )
 	error_msg="[error] $ctl_title project $project - run"
 
