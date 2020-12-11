@@ -239,7 +239,7 @@ else
 			if [ "$var_use_subuser" != 'true' ]; then
 				cd "$ctl_dir"
 				export ANSIBLE_CONFIG="$ctl_dir/ansible/ansible.cfg"
-				"${inner_cmd[@]}" || error "$error_msg (same user)"
+				"${inner_cmd[@]}" || error "$error_msg"
 			else
 				sudo su - "$subuser" <<-SHELL || error "$error_msg (as $subuser)"
 					set -eou pipefail
@@ -275,7 +275,7 @@ else
 			)
 
 			if [ "$var_use_subuser" != 'true' ]; then
-				"${cmd[@]}" || error "$error_msg (same user)"
+				"${cmd[@]}" || error "$error_msg"
 			else
 				sudo su - "$subuser" <<-SHELL || error "$error_msg (as $subuser)"
 					set -eou pipefail
@@ -291,7 +291,7 @@ if [ "${ctl:-}" != 'true' ]; then
 	error_msg="[error] $ctl_title project $project - run"
 
 	if [ "$var_use_subuser" != 'true' ]; then
-		"${cmd[@]}" || error "$error_msg (same user)"
+		"${cmd[@]}" || error "$error_msg"
 	else
 		sudo su - "$subuser" <<-SHELL || error "$error_msg (as $subuser)"
 			set -eou pipefail
