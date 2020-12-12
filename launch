@@ -185,29 +185,29 @@ if [ "$var_root" = 'true' ]; then
     container_cmd=( sudo "$var_container_type" )
 fi
 
+prepare_args=()
+skip=''
+
+if [ "${prepare:-}" = 'true' ]; then
+	if [ "${1:-}" = "--skip" ]; then
+		skip='true';
+		shift;
+	else
+		for arg in "$@"; do
+			shift;
+
+			if [ "$arg" = "--" ]; then
+				break;
+			fi
+
+			prepare_args+=( "$arg" )
+		done
+	fi
+fi
+
 if [ "${fast:-}" = 'true' ]; then
 	echo "$ctl_title skipping init project (fast)..."
 else
-    prepare_args=()
-	skip=''
-
-    if [ "${prepare:-}" = 'true' ]; then
-		if [ "${1:-}" = "--skip" ]; then
-			skip='true';
-			shift;
-		else
-			for arg in "$@"; do
-				shift;
-
-				if [ "$arg" = "--" ]; then
-					break;
-				fi
-
-				prepare_args+=( "$arg" )
-			done
-		fi
-    fi
-
 	if [ "${skip:-}" = 'true' ]; then
 		echo "$ctl_title skipping init project (skip)..."
 	else
