@@ -188,6 +188,7 @@
 
     - name: "{{ project_title }} - define the project files"
       set_fact:
+        projext_lax: "{{ project.lax | default(env_dev | default(false, true), true) }}"
         project_repo_ssh_file: >-
           {{
             ((project_params.repo.ssh_file | default('')) != '')
@@ -207,6 +208,7 @@
           migration: "{{ env_migration | default(project.migration | default(''), true) }}"
           ctxs: "{{ project.ctxs | default([]) }}"
           dev: "{{ env_dev | default(false, true) }}"
+          lax: "{{ projext_lax | default(false, true) }}"
           local: "{{ project.local | default(false, true) }}"
           project_dir_rel: "{{ project_dir_rel }}"
           init:
@@ -232,7 +234,7 @@
       file:
         path: "{{ project_item }}"
         state: directory
-        mode: "{{ env_dev | default(false, true) | bool | ternary(0777, 0755) }}"
+        mode: "{{ projext_lax | default(false, true) | bool | ternary(0777, 0755) }}"
       loop:
         - "{{ project_base_dir }}"
         - "{{ project_secrets_base_dir }}"
@@ -254,14 +256,14 @@
       copy:
         src: "{{ env_main_dir }}/{{ project_params.repo_vault.file }}"
         dest: "{{ project_secrets_dir }}/{{ project_repo_vault_file }}"
-        mode: "{{ env_dev | default(false, true) | bool | ternary(0666, 0600) }}"
+        mode: "{{ projext_lax | default(false, true) | bool | ternary(0666, 0600) }}"
       when: project_repo_vault_file != ''
 
     - name: "{{ project_title }} - create the project init config file (vars.yml)"
       copy:
         content: "{{ project_init_params | to_nice_yaml }}"
         dest: "{{ project_files_dir }}/vars.yml"
-        mode: "{{ env_dev | default(false, true) | bool | ternary(0666, 0600) }}"
+        mode: "{{ projext_lax | default(false, true) | bool | ternary(0666, 0600) }}"
 
     - name: "{{ project_title }} - project_init_params_list_seed"
       set_fact:
@@ -304,10 +306,10 @@
       copy:
         content: "{{ project_init_params_list | join('\n') }}"
         dest: "{{ project_files_dir }}/vars.sh"
-        mode: "{{ env_dev | default(false, true) | bool | ternary(0666, 0600) }}"
+        mode: "{{ projext_lax | default(false, true) | bool | ternary(0666, 0600) }}"
 
     - name: "{{ project_title }} - create the project main run file"
       copy:
         src: "run"
         dest: "{{ project_files_dir }}/run"
-        mode: "{{ env_dev | default(false, true) | bool | ternary(0777, 0700) }}"
+        mode: "{{ projext_lax | default(false, true) | bool | ternary(0777, 0700) }}"
