@@ -19,7 +19,7 @@ args=()
 debug=()
 
 # shellcheck disable=SC2214
-while getopts ':defipV-:' OPT; do
+while getopts ':defipsV-:' OPT; do
 	if [ "$OPT" = "-" ]; then     # long option: reformulate OPT and OPTARG
 		OPT="${OPTARG%%=*}"       # extract long option name
 		OPTARG="${OPTARG#$OPT}"   # extract long option argument (may be empty)
@@ -29,9 +29,9 @@ while getopts ':defipV-:' OPT; do
 		d|dev ) dev="true";;
 		e|enter ) enter="true";;
 		f|force ) args+=( "--force" );;
-		s|fast ) fast="true"; args+=( "--fast" );;
 		i|inside ) inside="true"; args+=( "--inside" );;
 		p|prepare ) prepare="true"; args+=( "--prepare" );;
+		s|fast ) fast="true"; args+=( "--fast" );;
 		V|no-vault ) no_vault="true";;
 		ctl ) ctl="true";;
 		end ) args+=( "--end" );;

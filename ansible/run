@@ -29,7 +29,7 @@ function error {
 last_index=1
 
 # shellcheck disable=SC2214
-while getopts ':efip-:' OPT; do
+while getopts ':efips-:' OPT; do
 	last_index="$OPTIND"
 	if [ "$OPT" = "-" ]; then     # long option: reformulate OPT and OPTARG
 		OPT="${OPTARG%%=*}"       # extract long option name
@@ -39,9 +39,9 @@ while getopts ':efip-:' OPT; do
 	case "$OPT" in
 		e|enter ) enter="true";;
 		f|force ) args+=( "--force" );;
-		s|fast ) args+=( "--fast" );;
 		i|inside ) inside="true";;
 		p|prepare ) args+=( "--prepare" );;
+		s|fast ) args+=( "--fast" );;
 		end ) args+=( "--end" );;
 		debug ) args+=( "--debug" );;
 		\? ) error "[error] unknown short option: -${OPTARG:-}";;
