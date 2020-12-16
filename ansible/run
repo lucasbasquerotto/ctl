@@ -38,9 +38,11 @@ while getopts ':efip-:' OPT; do
 	fi
 	case "$OPT" in
 		e|enter ) enter="true";;
-		f|fast ) args+=( "--fast" );;
+		f|force ) args+=( "--force" );;
+		s|fast ) args+=( "--fast" );;
 		i|inside ) inside="true";;
 		p|prepare ) args+=( "--prepare" );;
+		end ) args+=( "--end" );;
 		debug ) args+=( "--debug" );;
 		\? ) error "[error] unknown short option: -${OPTARG:-}";;
 		?* ) error "[error] unknown long option: --${OPT:-}";;

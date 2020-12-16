@@ -28,11 +28,13 @@ while getopts ':defipV-:' OPT; do
 	case "$OPT" in
 		d|dev ) dev="true";;
 		e|enter ) enter="true";;
-		f|fast ) fast="true"; args+=( "--fast" );;
+		f|force ) args+=( "--force" );;
+		s|fast ) fast="true"; args+=( "--fast" );;
 		i|inside ) inside="true"; args+=( "--inside" );;
 		p|prepare ) prepare="true"; args+=( "--prepare" );;
 		V|no-vault ) no_vault="true";;
 		ctl ) ctl="true";;
+		end ) args+=( "--end" );;
 		debug ) debug=( "-vvvvv" ); args+=( "--debug" );;
 		migration ) migration="${OPTARG:-}";;
 		\? ) error "[error] unknown short option: -${OPTARG:-}";;
