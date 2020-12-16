@@ -188,7 +188,7 @@
 
     - name: "{{ project_title }} - define the project files"
       set_fact:
-        projext_lax: "{{ project.lax | default(env_dev | default(false, true), true) }}"
+        projext_lax: "{{ project.lax | default(env_dev | default(false, true)) }}"
         project_repo_ssh_file: >-
           {{
             ((project_params.repo.ssh_file | default('')) != '')
@@ -312,4 +312,4 @@
       copy:
         src: "run"
         dest: "{{ project_files_dir }}/run"
-        mode: "{{ projext_lax | default(false, true) | bool | ternary(0777, 0700) }}"
+        mode: "{{ projext_lax | default(false, true) | bool | ternary(0777, 0711) }}"
