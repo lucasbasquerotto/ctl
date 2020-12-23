@@ -168,8 +168,7 @@ This object contains data about the [project environment repository](#project-en
 | ------ | ------- | ----------- |
 | <nobr>`src`</nobr> | | The repository source (URL). |
 | <nobr>`version`</nobr> | `master` | The repository branch or tag. |
-| <nobr>`ssh_file`</nobr> | | (Optional) The location (relative to the [main environment repository](#main-environment-repository)) of the ssh file needed to clone the repository. |
-| <nobr>`ssh_file_encrypted`</nobr> | `false` | Specifies if the file specified in the option `ssh_file` is encrypted with [ansible-vault](#encrypt-and-decrypt) (the key to decrypted the file should be in the [Main Vault File](#main-vault-file)). |
+| <nobr>`ssh_file`</nobr> | | (Optional) The location (relative to the [main environment repository](#main-environment-repository)) of the ssh file needed to clone the repository. The file can be in an encrypted with [ansible-vault](#encrypt-and-decrypt) (the key to decrypt the file should be in the [Main Vault File](#main-vault-file)). |
 
 ### Main Env Vars - Repo Vault
 
@@ -226,12 +225,10 @@ repo:
     src: "ssh://git@github.com/lucasbasquerotto/project-env-demo.git"
     version: "master"
     ssh_file: "ssh/repo.encrypted.key"
-    ssh_file_encrypted: true
   other:
     src: "ssh://git@github.com/lucasbasquerotto/other-project-env-demo.git"
     version: "master"
     ssh_file: "ssh/repo.encrypted.key"
-    ssh_file_encrypted: true
 
 repo_vault:
   default:

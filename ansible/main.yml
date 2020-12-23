@@ -248,7 +248,6 @@
       copy:
         src: "{{ env_main_dir }}/{{ project_params.repo.ssh_file }}"
         dest: "{{ project_secrets_dir }}/{{ project_repo_ssh_file }}"
-        decrypt: "{{ project_params.repo.ssh_file_encrypted | default(false) | bool }}"
         mode: 0600
       when: project_repo_ssh_file != ''
 
