@@ -4,20 +4,20 @@ files:
   dest: ".env"
   root: true
 
-{% if (params.credentials.vault.encrypted_value | default('')) != '' 
+{% if (params.credentials.vault.encrypted_value | default('')) != ''
 %}templates:
 
 - src: "templates/vault.tpl"
   dest: "tmp/var/vault"
   root: true
-  params: 
+  params:
     vault: "{{ params.credentials.vault.encrypted_value }}"
 
 {% if params.main.test | default('false') | bool
 %}- src: "env-main/test/tpl.yml"
   dest: "env-test/test.yml"
   root: true
-  params: 
+  params:
     domain: "{{ params.dependencies_node_ip_dict['main-domain-test'] }}"
     test: {{ params.main | to_json }}
 {% endif %}
