@@ -19,22 +19,22 @@ args=()
 debug=()
 
 # shellcheck disable=SC2214
-while getopts ':defipsV-:' OPT; do
+while getopts ':definpsV-:' OPT; do
 	if [ "$OPT" = "-" ]; then     # long option: reformulate OPT and OPTARG
 		OPT="${OPTARG%%=*}"       # extract long option name
 		OPTARG="${OPTARG#$OPT}"   # extract long option argument (may be empty)
 		OPTARG="${OPTARG#=}"      # if long option argument, remove assigning `=`
 	fi
 	case "$OPT" in
-		d|dev ) dev="true";;
-		e|enter ) enter="true";;
+		d|dev ) dev='true';;
+		e|enter ) enter='true';;
 		f|force ) args+=( "--force" );;
-		i|inside ) inside="true"; args+=( "--inside" );;
-		p|prepare ) prepare="true"; args+=( "--prepare" );;
-		s|fast ) fast="true"; args+=( "--fast" );;
-		V|no-vault ) no_vault="true";;
-		ctl ) ctl="true";;
-		end ) args+=( "--end" );;
+		i|inside ) inside='true'; args+=( "--inside" );;
+		n|next ) next='true'; args+=( "--next" );;
+		p|prepare ) prepare='true'; args+=( "--prepare" );;
+		s|fast ) fast='true'; args+=( "--fast" );;
+		V|no-vault ) no_vault='true';;
+		ctl ) ctl='true';;
 		debug ) debug=( "-vvvvv" ); args+=( "--debug" );;
 		migration ) migration="${OPTARG:-}";;
 		\? ) error "[error] unknown short option: -${OPTARG:-}";;
@@ -46,12 +46,16 @@ shift $((OPTIND-1))
 project="${1:-}"
 ctl_title="[ctl]"
 
-if [ "${dev:-}" = "true" ]; then
+if [ "${dev:-}" = 'true' ]; then
 	ctl_title="[ctl - dev mode]"
 fi
 
-if [ "${enter:-}" = "true" ]; then
-	if [ "${ctl:-}" = "true" ]; then
+if [ "${next:-}" = 'true' ] && [ "${prepare:-}" = 'true' ]; then
+	error "[error] next and prepare shouldn't be both true"
+fi
+
+if [ "${enter:-}" = 'true' ]; then
+	if [ "${ctl:-}" = 'true' ]; then
 		fast="false"
 	else
 		enter="false"
@@ -141,7 +145,7 @@ fi
 
 vault=()
 
-if [ "${no_vault:-}" != "true" ]; then
+if [ "${no_vault:-}" != 'true' ]; then
 	mkdir -p "$secrets_dir"
 
 	vault_file="$secrets_dir/vault"
