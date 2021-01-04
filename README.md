@@ -282,7 +282,7 @@ The vault file used to decrypt the [project environment file](#project-environme
 
 # Launch
 
-The launch command deploys a project. It is executed like `ctl/run launch ...` (or alternatively `ctl/run l ...`, or even `ctl/launch ...`) and is responsible to run the [Controller Preparation Step](#controller-preparation-step) and call the command to run the subsequent steps (in the next layers). Below you can see the [options](#launch-options) that can be used with it as well as [examples](#launch-examples) of running this step.
+The launch command deploys a project. It is executed like `ctl/launch ...` (or alternatively `ctl/run launch ...`, or even `ctl/run l ...`) and is responsible to run the [Controller Preparation Step](#controller-preparation-step) and call the command to run the subsequent steps (in the next layers). Below you can see the [options](#launch-options) that can be used with it as well as [examples](#launch-examples) of running this step.
 
 ## Launch options
 
@@ -293,47 +293,56 @@ Below are the options that can be used to [launch](#launch) a project:
 | <nobr>`-d`</nobr><br><nobr>`--dev`</nobr> | Runs the project in a development environment. It allows to map paths to repositories to share the repository across multiple projects and avoid cleaning live changes made to the repository that were still not commited (will not update the repository to the version specified, which allows to develop and test changes without the need to push those changes). |
 | <nobr>`-e`</nobr><br><nobr>`--enter`</nobr> | Enters the container that runs the preparation step in the controller layer, instead of executing it. The command that would be executed can be seen by running (inside the container) `cat tmp/cmd`. This command doesn't work with the `--inside` option. |
 | <nobr>`-f`</nobr><br><nobr>`--force`</nobr> | Force the execution even if the repository commit is the same as the last time it was executed. |
-| <nobr>`-s`</nobr><br><nobr>`--fast`</nobr> | Skips the [Controller Preparation Step](#controller-preparation-step) and may skip preparation steps in subsequent layers (if those layers use this option and forwards it to the next layer).<br><br>_Using the cloud layer defined at http://github.com/lucasbasquerotto/cloud, this will skip the [Controller Preparation Step](#controller-preparation-step), [Cloud Preparation Step](http://github.com/lucasbasquerotto/cloud#cloud-preparation-step) and [Cloud Context Preparation Step](http://github.com/lucasbasquerotto/cloud#cloud-context-preparation-step), running only the [Cloud Context Main Step](http://github.com/lucasbasquerotto/cloud#cloud-context-main-step) for each context._ |
 | <nobr>`-i`</nobr><br><nobr>`--inside`</nobr> | Considers that the current environment is already inside an environment that has the necessary stuff to run the project, without the need to run it inside a container (the environment may already be a container). See [Running Inside a Container](#) and [Running Without Containers](#) for more information. |
-| <nobr>`-p`</nobr><br><nobr>`--prepare`</nobr> | Only runs the preparation step and expects that the subsequent layers accept this option so as to run only the preparation step in that layer, and forwards the option to subsequent layers, if needed.<br><br>This has a particular feature that allows to pass arguments to each step that will handle it (as long as subsequent layers handle it). For example, passing the args `-vv` after the project name would generally be used only by the last step, but in this case it will be used as args to run the [Controller Preparation Step](#controller-preparation-step) and no args to subsequent steps.<br><br>You can pass `--` to indicate the end of the arguments for a given step, so the following args `-a -b -- -c -- -d` will pass the args `-a -b` to the [Controller Preparation Step](#controller-preparation-step), and `-c -- -d` to the next step. You can use `--skip` to skip a given step (you shouldn't pass `--` in this case). For example, `--skip -c -- -d` will skip the [Controller Preparation Step](#controller-preparation-step) and pass `-c -- -d` to the next step.<br><br>_Using the cloud layer defined at http://github.com/lucasbasquerotto/cloud, this will run the steps [Controller Preparation Step](#controller-preparation-step), [Cloud Preparation Step](http://github.com/lucasbasquerotto/cloud#cloud-preparation-step) and [Cloud Context Preparation Step](http://github.com/lucasbasquerotto/cloud#cloud-context-preparation-step), but won't run the [Cloud Context Main Step](http://github.com/lucasbasquerotto/cloud#cloud-context-main-step). You will have 3 steps in this case, so if you run `ctl/run launch <project_name> -- --skip -vv`, the [Controller Preparation Step](#controller-preparation-step) will run without args, the [Cloud Preparation Step](http://github.com/lucasbasquerotto/cloud#cloud-preparation-step) will be skipped and the [Cloud Context Preparation Step](http://github.com/lucasbasquerotto/cloud#cloud-context-preparation-step) will run in [verbose mode](https://docs.ansible.com/ansible/latest/cli/ansible-playbook.html#cmdoption-ansible-playbook-v)_ |
+| <nobr>`-p`</nobr><br><nobr>`--prepare`</nobr> | Only runs the preparation step and expects that the subsequent layers accept this option so as to run only the preparation step in that layer, and forwards the option to subsequent layers, if needed.<br><br>This has a particular feature that allows to pass arguments to each step that will handle it (as long as subsequent layers handle it). For example, passing the args `-vv` after the project name would generally be used only by the last step ([Cloud Context Main Step](#cloud-context-main-step)), but in this case it will be used as args to run the [Controller Preparation Step](#controller-preparation-step) and no args to subsequent steps.<br><br>You can pass `--` to indicate the end of the arguments for a given step, so the following args `-a -b -- -c -- -d` will pass the args `-a -b` to the [Controller Preparation Step](#controller-preparation-step), and `-c -- -d` to the next step. You can use `--skip` to skip a given step (you shouldn't pass `--` in this case). For example, `--skip -c -- -d` will skip the [Controller Preparation Step](#controller-preparation-step) and pass `-c -- -d` to the next step.<br><br>_Using the cloud layer defined at http://github.com/lucasbasquerotto/cloud, this will run the steps [Controller Preparation Step](#controller-preparation-step), [Cloud Preparation Step](http://github.com/lucasbasquerotto/cloud#cloud-preparation-step) and [Cloud Context Preparation Step](http://github.com/lucasbasquerotto/cloud#cloud-context-preparation-step), but won't run the [Cloud Context Main Step](http://github.com/lucasbasquerotto/cloud#cloud-context-main-step). You will have 3 steps in this case, so if you run `ctl/run launch <project_name> -- --skip -vv`, the [Controller Preparation Step](#controller-preparation-step) will run without args, the [Cloud Preparation Step](http://github.com/lucasbasquerotto/cloud#cloud-preparation-step) will be skipped and the [Cloud Context Preparation Step](http://github.com/lucasbasquerotto/cloud#cloud-context-preparation-step) will run in [verbose mode](https://docs.ansible.com/ansible/latest/cli/ansible-playbook.html#cmdoption-ansible-playbook-v)_ |
+| <nobr>`-s`</nobr><br><nobr>`--fast`</nobr> | Skips the [Controller Preparation Step](#controller-preparation-step) and may skip preparation steps in subsequent layers (if those layers use this option and forwards it to the next layer).<br><br>_Using the cloud layer defined at http://github.com/lucasbasquerotto/cloud, this will skip the [Controller Preparation Step](#controller-preparation-step), [Cloud Preparation Step](http://github.com/lucasbasquerotto/cloud#cloud-preparation-step) and [Cloud Context Preparation Step](http://github.com/lucasbasquerotto/cloud#cloud-context-preparation-step), running only the [Cloud Context Main Step](http://github.com/lucasbasquerotto/cloud#cloud-context-main-step) for each context._ |
 | <nobr>`-V`</nobr><br><nobr>`--no-vault`</nobr> | By default, the launch expects an unencrypted [vault file](#main-vault-file) at `secrets/projects/<project_name>/vault`. This option runs the [Cloud Context Preparation Step](http://github.com/lucasbasquerotto/cloud#cloud-context-preparation-step) without the vault file (this step shouldn't use encrypted values to be decrypted using a vault file, otherwise an error will be thrown). |
 | <nobr>`--ctl`</nobr> | Runs only the [Controller Preparation Step](#controller-preparation-step) and generates the [Controller Output Vars](#controller-output-vars). Usiful to generate the variables that will be used in a demo that doesn't need the controller layer, like the [official demo](#). |
 | <nobr>`--debug`</nobr> | Runs in verbose mode and forwards this option to the subsequent step. |
+| <nobr>`--migration`</nobr> | Runs with the project `migration` parameter set as the value specified in this parameter. This value overrides the `migration` value specified the value specified for the project in the vars.yml file (when both are specified). This parameter is useful to make sure that an automated process deploy the project only if this value is the same as the one specified for the environment. This is also useful to make sure that a migration that must run manually doesn't run automatically (the automatic process would fail in the preparation step, because the migration value is different from the one specified in the environment file, then you can run manually specifying this paramenter explicitly when launching the project). |
 
 ## Launch Examples
 
 General deployment:
 
 ```bash
-./ctl/run launch <project_name>
+./ctl/launch <project_name>
 ```
 
-_(Or `ctl/run l <project_name>`, or even `ctl/launch <project_name>`)_
+_(Or `ctl/run launch <project_name>`, also equivalent to `ctl/run l <project_name>`)_
 
-For development (will map repositories to specified paths and make permissions less strict):
+For development (will map repositories to specified paths and make permissions less strict by default):
 
 ```bash
-./ctl/run launch -d <project_name>
+./ctl/launch -d <project_name>
 ```
+
+_(Commonly used with the `-f`/`--force` and `-s`/`--fast` flags)_
 
 Fast deployment (will skip the preparation steps; avoid using it in production environments):
 
 ```bash
-./ctl/run launch -f <project_name>
+./ctl/run launch -s <project_name>
+```
+
+Force a run, and run only the main step, in a development environment (using `-f`/`--force`, because subsequent runs with the same commit for the enviroment repository defined for the project would skip the deployment without this flag, but during development, with live changes, this is probably not wanted, so this flag force the deployment):
+
+```bash
+./ctl/run launch -dfs <project_name>
 ```
 
 Prepare the project environment (will not deploy the project, just prepare it to be deployed, like cloning/pulling git repositories, generating files from templates, moving files, and so on):
 
 ```bash
-./ctl/run launch -p <project_name>
+./ctl/launch -p <project_name>
 ```
 
-_(If you run `ctl/run launch -pf <project_name>` all steps will be skipped)_
+_If you run `ctl/launch -ps <project_name>` all steps will be skipped, unless some step treats it as a special case. Using the cloud layer defined at http://github.com/lucasbasquerotto/cloud, this will run only some tasks of the [Cloud Context Preparation Step](http://github.com/lucasbasquerotto/cloud#cloud-context-preparation-step), tasks that don't require a network connection, so it should be pretty fast. Mainly used for schema validation during development (running with `./ctl/run launch -dps <project_name>`), in this case._
 
 The first time you run a project, you will be asked to you enter the valt pass to decrypt files for that project, unless you choose to run with the `--no-vault` argument:
 
 ```bash
-./ctl/run launch --no-vault <project_name>
+./ctl/launch --no-vault <project_name>
 ```
 
 _(The generated project vault file will be at `<root>/secrets/<project_name>/vault`)_
