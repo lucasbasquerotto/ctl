@@ -350,43 +350,50 @@ _(The generated project vault file will be at `<root>/secrets/<project_name>/vau
 
 ## Controller Output Vars
 
-The [Controller Preparation Step](#controller-preparation-step) generates a file with variables to be used by the next [step](#cloud-layer). The file has the following structure:
+The [Controller Preparation Step](#controller-preparation-step) generates 2 files with variables, 1 is to be sourced by a shell script (`vars.sh`) with the parameters needed to execute the next step, and the other is a yaml file with variables to be used by the next [step](#cloud-layer).
+
+The shell file has the following structure:
+
+```bash
+export key=demo
+export dev=true
+export project_dir_rel=projects/demo
+export container=lucasbasquerotto/cloud:1.4.9
+export container_type=docker
+export allow_container_type=false
+export root=true
+export run_file=/usr/local/bin/run
+export force_vault=false
+```
+
+The yaml file has the following structure:
 
 ```yaml
-ctxs:
-- ctx1
-- ctx2
-dev: true
-env_file: path/to/env.yml
+ctxs: []
+dev: 'true'
 env_params:
-    param1: value1
-    param2: value2
+  env_dir: common
 init:
-    container: lucasbasquerotto/cloud:1.3.6
-    container_type: docker
-    root: true
-    run_file: /usr/local/bin/run
-key: project-key
+  allow_container_type: false
+  container: lucasbasquerotto/cloud:1.4.9
+  container_type: docker
+  root: true
+  run_file: /usr/local/bin/run
+key: demo
+lax: true
+local: false
 migration: ''
 path_params:
-    path_env: repos/env
-    path_env_base: repos/env-base
-    path_map_repos:
-        app: repos/app
-        cloud: repos/cloud
-        custom_cloud: repos/custom-cloud
-        custom_pod: repos/custom-pod
-        env_base: repos/env-base
-        pod: repos/pod
-project_dir_rel: projects/project-key
+  path_env: repos/env
+project_dir_rel: projects/demo
 repo:
-    src: ssh://git@github.com/lucasbasquerotto/project-env-demo.git
-    ssh_file: ssh.key
-    version: master
+  env_file: common/demo.yml
+  src: https://github.com/lucasbasquerotto/env-base.git
+  ssh_file: ''
+  version: master
 repo_vault:
-    file: vault
-    force: true
-root_dir: <root_dir>
+  file: ''
+  force: false
 ```
 
 For example, running `./run launch --dev demo` with the `vars.yml` being the same as the [example](#main-environment-vars-file---example) above, the generated file will be:
