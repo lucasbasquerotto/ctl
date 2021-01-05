@@ -1,7 +1,7 @@
 #!/bin/bash
 export key=''
 export dev=''
-export project_dir_rel=''
+export project_dir_relpath=''
 export container=''
 export container_type=''
 export allow_container_type=''

@@ -46,7 +46,7 @@ docker run -it --rm -v /var/demo/env:/env -v /var/demo/data:/lrd local/demo
 
 The demos are great for what they are meant to be: demos, prototypes. **They shouldn't be used for development** (bad DX if you need real time changes without having to push and pull newer versions of repositories, furthermore you are unable to clone repositories in specific locations defined by you in the project folder). **They also shouldn't be used in production environments** due to bad security (the vault value used for decryption is `123456`, and changes to the [project environment repository](#project-environment-repository) may be lost if you forget to push them).
 
-## Root Repository
+## Root Directory
 
 The `root` folder is the base directory in which the projects managed by the controller are defined. It's the parent of the controller repository (`ctl`) and contains:
 
@@ -352,21 +352,7 @@ _(The generated project vault file will be at `<root>/secrets/<project_name>/vau
 
 The [Controller Preparation Step](#controller-preparation-step) generates 2 files with variables, 1 is to be sourced by a shell script (`vars.sh`) with the parameters needed to execute the next step, and the other is a yaml file with variables to be used by the next [step](#cloud-layer).
 
-The shell file has the following structure:
-
-```bash
-export key=demo
-export dev=true
-export project_dir_rel=projects/demo
-export container=lucasbasquerotto/cloud:1.4.9
-export container_type=docker
-export allow_container_type=false
-export root=true
-export run_file=/usr/local/bin/run
-export force_vault=false
-```
-
-The yaml file has the following structure:
+The yaml file has the following structure (the values may differ):
 
 ```yaml
 ctxs: []
@@ -381,11 +367,10 @@ init:
   run_file: /usr/local/bin/run
 key: demo
 lax: true
-local: false
 migration: ''
 path_params:
   path_env: repos/env
-project_dir_rel: projects/demo
+project_dir_relpath: projects/demo
 repo:
   env_file: common/demo.yml
   src: https://github.com/lucasbasquerotto/env-base.git
@@ -396,11 +381,55 @@ repo_vault:
   force: false
 ```
 
-For example, running `./run launch --dev demo` with the `vars.yml` being the same as the [example](#main-environment-vars-file---example) above, the generated file will be:
+| Option | Description |
+| ------ | ----------- |
+| <nobr>`ctxs`</nobr> | Array with the contexts defined for the project. |
+| <nobr>`dev`</nobr> | Boolean (or string equivalent) to specify if the project will run in development mode. |
+| <nobr>`env_params`</nobr> | Object with the parameters specified in the `vars.yml` file in the [main environment repository](#main-environment-repository). The parameters used will depend on the project and can be accessed in the [project environment file](#project-environment-file). |
+| <nobr>`init.allow_container_type`</nobr> | Boolean (or string equivalent) to specify if the container engine that will deploy the project is to be allowed even if it's not one of the supported engines (docker and podman). |
+| <nobr>`init.container`</nobr> | The container image that will deploy the project. |
+| <nobr>`init.container_type`</nobr> | The container engine that will run the container that will deploy the project. |
+| <nobr>`init.root`</nobr> | Boolean (or string equivalent) to specify if the container should be run as root. |
+| <nobr>`init.run_file`</nobr> | Path to the file inside the container that will serve as an entrypoint to deploy the project. |
+| <nobr>`key`</nobr> | Unique identifier of the project. |
+| <nobr>`lax`</nobr> | Indicates if files and directories created and copied during the deployment will have less strict permissions (when `true`; recommended when in development). |
+| <nobr>`migration`</nobr> | This will set the `migration` variable to be used to compare with the `migration` variable defined in the [project environment file](#project-environment-file), throwing an error in the preparation step, when the later value is defined and is different than the first `migration` variable. |
+| <nobr>`path_params`</nobr> | Dictionary of repositories and paths in which the repositories should be cloned when in development mode. The exact structure of this parameter should be defined in the next steps.<br><br>_Using the cloud layer defined at http://github.com/lucasbasquerotto/cloud, The expected structure of this parameter is defined [here](http://github.com/lucasbasquerotto/cloud#cloud-input-vars)._ |
+| <nobr>`project_dir_relpath`</nobr> | Path, relative to the [controller root directory](#root-directory), in which the artifacts created by this project are located. **This indicates where the project directory is located.**. |
+| <nobr>`repo.env_file`</nobr> | The location of the [project environment file](#project-environment-file), inside the project environment repository. |
+| <nobr>`repo.src`</nobr> | The source of the [project environment repository](#project-environment-repository). |
+| <nobr>`repo.ssh_file`</nobr> | When specified (non empty), is the path in which the ssh key file to be used to clone the repository (when private) is located (the original path is relative to the [main environment repository](#main-environment-repository), but at this point the original file was already copied, and possibly decrypted, to a path inside the project directory, `project_base_dir`). |
+| <nobr>`repo.version`</nobr> | The version (branch/tag) of the [project environment repository](#project-environment-repository). |
+| <nobr>`repo_vault.file`</nobr> | Path to the vault file with the pass to decrypt the project encrypted values. |
+| <nobr>`repo_vault.force`</nobr> | Boolean (or string equivalent) to specify if the vault pass will be prompted if a vault file is not specified (when there isn't a vault file (`repo_vault.file` is empty), and `repo_vault.force` is `false`, the project mustn't have encrypted values, or an error will be thrown, when trying to decrypt them). |
 
-```yaml
-#TODO
+The shell file has the following structure (the values may differ):
+
+```bash
+export key=demo
+export dev=true
+export project_dir_relpath=projects/demo
+export container=lucasbasquerotto/cloud:1.4.9
+export container_type=docker
+export allow_container_type=false
+export root=true
+export run_file=/usr/local/bin/run
+export force_vault=false
 ```
+
+| Option | Description |
+| ------ | ----------- |
+| <nobr>`key`</nobr> | Equivalent to `key` in the `vars.yml` file explained above. |
+| <nobr>`dev`</nobr> | Equivalent to `dev` in the `vars.yml` file explained above. |
+| <nobr>`project_dir_relpath`</nobr> | Equivalent to `project_dir_relpath` in the `vars.yml` file explained above. |
+| <nobr>`container`</nobr> | Equivalent to `init.container` in the `vars.yml` file explained above. |
+| <nobr>`container_type`</nobr> | Equivalent to `init.container_type` in the `vars.yml` file explained above. |
+| <nobr>`allow_container_type`</nobr> | Equivalent to `init.allow_container_type` in the `vars.yml` file explained above. |
+| <nobr>`root`</nobr> | Equivalent to `init.root` in the `vars.yml` file explained above. |
+| <nobr>`run_file`</nobr> | Equivalent to `init.run_file` in the `vars.yml` file explained above. |
+| <nobr>`force_vault`</nobr> | Equivalent to `repo_vault.force` in the `vars.yml` file explained above. |
+
+The values of the files above are the output after running `./run launch --dev demo` with the `vars.yml` in the main environment repository being the same as the [example](#main-environment-vars-file---example) above.
 
 # Project Environment Repository
 

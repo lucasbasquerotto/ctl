@@ -68,9 +68,9 @@
           }}
       tags: ["no_print"]
 
-    - name: "{{ project_title }} - project_dir_rel"
+    - name: "{{ project_title }} - project_dir_relpath"
       set_fact:
-        project_dir_rel: "projects/{{ env_project_key }}"
+        project_dir_relpath: "projects/{{ env_project_key }}"
       tags: ["no_print"]
 
     - name: "{{ project_title }} - project_params - validate (required)"
@@ -175,9 +175,9 @@
 
     - name: "{{ project_title }} - define the project base dirs"
       set_fact:
-        project_base_dir: "{{ main_root_dir }}/{{ project_dir_rel }}"
-        project_secrets_base_dir: "{{ main_root_dir }}/{{ project_dir_rel }}/secrets"
-        project_files_base_dir: "{{ main_root_dir }}/{{ project_dir_rel }}/files"
+        project_base_dir: "{{ main_root_dir }}/{{ project_dir_relpath }}"
+        project_secrets_base_dir: "{{ main_root_dir }}/{{ project_dir_relpath }}/secrets"
+        project_files_base_dir: "{{ main_root_dir }}/{{ project_dir_relpath }}/files"
       tags: ["no_print"]
 
     - name: "{{ project_title }} - define the project dirs"
@@ -209,8 +209,7 @@
           ctxs: "{{ project.ctxs | default([]) }}"
           dev: "{{ env_dev | default(false, true) }}"
           lax: "{{ projext_lax | default(false, true) }}"
-          local: "{{ project.local | default(false, true) }}"
-          project_dir_rel: "{{ project_dir_rel }}"
+          project_dir_relpath: "{{ project_dir_relpath }}"
           init:
             container: "{{ project_params.init.container }}"
             container_type: "{{ project_params.init.container_type | default('') }}"
@@ -271,8 +270,8 @@
             value: "{{ project_init_params.key }}"
           - key: "dev"
             value: "{{ project_init_params.dev | bool | ternary('true', 'false') }}"
-          - key: "project_dir_rel"
-            value: "{{ project_init_params.project_dir_rel }}"
+          - key: "project_dir_relpath"
+            value: "{{ project_init_params.project_dir_relpath }}"
           - key: "container"
             value: "{{ project_init_params.init.container }}"
           - key: "container_type"
