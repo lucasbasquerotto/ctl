@@ -200,7 +200,7 @@ _Using the cloud layer defined at http://github.com/lucasbasquerotto/cloud, this
 | Option | Default | Description |
 | ------ | ------- | ----------- |
 | <nobr>`path_env`</nobr> | | Path in which the [project environment repository](#project-environment-repository) will be cloned. |
-| <nobr>`path_env_base`</nobr> | | Path in which the environemnt base repository, defined in the `env` option inside [project environment file](#project-environment-file), will be cloned. |
+| <nobr>`path_env_base`</nobr> | | Path in which the environment base repository, defined in the `env` option inside [project environment file](#project-environment-file), will be cloned. |
 | <nobr>`path_map_repos`</nobr> | `{}` | Dictionary with objects in the form `[repo]: string`, in which repositories defined in the [project environment file](#project-environment-file) are mapped to the specified paths. |
 
 ## Main Environment Vars File - Example
@@ -278,7 +278,7 @@ The SSH file used to clone the [project environment repository](#project-environ
 
 ## Project Vault File
 
-The vault file used to decrypt the [project environment file](#project-environment-file) in the [project environment repository](#project-environment-repository). This file is optional, but recommended to be used if the environemnt file has secrets in it. It's also recommended to make the repository private. The encryption should be done with [ansible-vault](#encrypt-and-decrypt).
+The vault file used to decrypt the [project environment file](#project-environment-file) in the [project environment repository](#project-environment-repository). This file is optional, but recommended to be used if the environment file has secrets in it. It's also recommended to make the repository private. The encryption should be done with [ansible-vault](#encrypt-and-decrypt).
 
 # Launch
 
