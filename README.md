@@ -326,7 +326,7 @@ Fast deployment (will skip the preparation steps; avoid using it in production e
 ./ctl/run launch -s <project_name>
 ```
 
-Force a run, and run only the main step, in a development environment (using `-f`/`--force`, because subsequent runs with the same commit for the enviroment repository defined for the project would skip the deployment without this flag, but during development, with live changes, this is probably not wanted, so this flag force the deployment):
+Force a run, and run only the main step, in a development environment (using `-f`/`--force`, because subsequent runs with the same commit for the environment repository defined for the project would skip the deployment without this flag, but during development, with live changes, this is probably not wanted, so this flag force the deployment):
 
 ```bash
 ./ctl/run launch -dfs <project_name>
