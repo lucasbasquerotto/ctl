@@ -8,7 +8,7 @@ root_dir="$(cd "$project_dir/../.." && pwd)"
 # shellcheck source=./vars.sample.sh
 . "$dir/vars.sh"
 
-var_key="$key"
+project="$key"
 var_dev="$dev"
 var_container="$container"
 var_container_type="$container_type"
@@ -29,7 +29,7 @@ function error {
 last_index=1
 
 # shellcheck disable=SC2214
-while getopts ':efinps-:' OPT; do
+while getopts ':efimnps-:' OPT; do
 	last_index="$OPTIND"
 	if [ "$OPT" = "-" ]; then     # long option: reformulate OPT and OPTARG
 		OPT="${OPTARG%%=*}"       # extract long option name
@@ -40,6 +40,7 @@ while getopts ':efinps-:' OPT; do
 		e|enter ) enter='true';;
 		f|force ) args+=( "--force" );;
 		i|inside ) inside='true';;
+		m|multiple ) multiple='true';;
 		n|next ) args+=( "--next" );;
 		p|prepare ) args+=( "--prepare" );;
 		s|fast ) args+=( "--fast" );;
@@ -87,8 +88,14 @@ fi
 if [ "${inside:-}" = 'true' ]; then
     "${inner_cmd[@]}" || error "[error] project run - init (inside)"
 else
+	name_cmd=()
+
+	if [ "${multiple:-}" != 'true' ]; then
+		name_cmd=( --name="local-ctl-$project" )
+	fi
+
 	"${cmd[@]}" run --rm -it \
-		--name="local-ctl-$var_key" \
+		${name_cmd[@]+"${name_cmd[@]}"} \
 		--workdir='/main' \
 		-e "FORCE_VAULT=$var_force_vault" \
 		"${volumes[@]}" \

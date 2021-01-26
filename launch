@@ -19,7 +19,7 @@ args=()
 debug=()
 
 # shellcheck disable=SC2214
-while getopts ':definpsV-:' OPT; do
+while getopts ':defimnpsV-:' OPT; do
 	if [ "$OPT" = "-" ]; then     # long option: reformulate OPT and OPTARG
 		OPT="${OPTARG%%=*}"       # extract long option name
 		OPTARG="${OPTARG#$OPT}"   # extract long option argument (may be empty)
@@ -30,6 +30,7 @@ while getopts ':definpsV-:' OPT; do
 		e|enter ) enter='true';;
 		f|force ) args+=( "--force" );;
 		i|inside ) inside='true'; args+=( "--inside" );;
+		m|multiple ) multiple='true'; args+=( "--multiple" );;
 		n|next ) next='true'; args+=( "--next" );;
 		p|prepare ) prepare='true'; args+=( "--prepare" );;
 		s|fast ) fast='true'; args+=( "--fast" );;
@@ -267,9 +268,15 @@ else
 				main_env_dir="$(readlink -f "$main_env_dir")"
 			fi
 
+			name_cmd=()
+
+			if [ "${multiple:-}" != 'true' ]; then
+				name_cmd=( --name="local-ctl-$project" )
+			fi
+
 			cmd=( \
 				"${container_cmd[@]}" run --rm -it \
-					--name="local-ctl-$project" \
+					${name_cmd[@]+"${name_cmd[@]}"} \
 					--workdir "/main/ctl" \
 					-v "${ctl_dir}:/main/ctl:ro" \
 					-v "${main_env_dir}:/main/ctl/env-main:ro" \
