@@ -33,6 +33,7 @@ while getopts ':defimnpsV-:' OPT; do
 		m|multiple ) multiple='true'; args+=( "--multiple" );;
 		n|next ) next='true'; args+=( "--next" );;
 		p|prepare ) prepare='true'; args+=( "--prepare" );;
+		P|no-prompt ) no_prompt='true';;
 		s|fast ) fast='true'; args+=( "--fast" );;
 		V|no-vault ) no_vault='true';;
 		ctl ) ctl='true';;
@@ -151,7 +152,7 @@ if [ "${no_vault:-}" != 'true' ]; then
 
 	vault_file="$secrets_dir/vault"
 
-	if [ ! -f "$vault_file" ]; then
+	if [ ! -f "$vault_file" ] && [ "${no_prompt:-}" != 'true' ]; then
 		echo -n "Enter the main vault pass (to decrypt the ssh keys of the environment repositories): "
 		read -r -s vault_pass
 		echo
@@ -173,7 +174,9 @@ if [ "${no_vault:-}" != 'true' ]; then
 		fi
 	fi
 
-	vault=( '--vault-id' "$secrets_dir_cmd/vault" )
+	if [ -f "$vault_file" ]; then
+		vault=( '--vault-id' "$secrets_dir_cmd/vault" )
+	fi
 fi
 
 if [ "$var_container_type" = "" ]; then
