@@ -61,11 +61,7 @@
 
     - name: "[ctl] [project - {{ env_project_key }}] - define project title"
       set_fact:
-        project_title: >-
-          [ctl] [project - {{ env_project_key }}]{{
-            ((project.title | default('')) != '')
-            | ternary(' - ' + (project.title | default('')), '')
-          }}
+        project_title: "[project - {{ env_project_key }}] [ctl]"
       tags: ["no_print"]
 
     - name: "{{ project_title }} - project_dir_relpath"

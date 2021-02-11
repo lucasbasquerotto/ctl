@@ -19,7 +19,7 @@ args=()
 debug=()
 
 # shellcheck disable=SC2214
-while getopts ':defimnpsV-:' OPT; do
+while getopts ':defimnpPsV-:' OPT; do
 	if [ "$OPT" = "-" ]; then     # long option: reformulate OPT and OPTARG
 		OPT="${OPTARG%%=*}"       # extract long option name
 		OPTARG="${OPTARG#$OPT}"   # extract long option argument (may be empty)
