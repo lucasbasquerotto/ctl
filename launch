@@ -82,15 +82,23 @@ if [ "${dev:-}" = 'true' ]; then
     ln -rsfT "${root_dir}" "${root_dir}/link"
 fi
 
-secrets_dir_rel="secrets/projects/$project"
-secrets_dir="$root_dir/$secrets_dir_rel"
+secrets_dir_relpath="secrets/projects/$project"
+secrets_dir="$root_dir/$secrets_dir_relpath"
+
+project_dir_relpath="projects/main/$project"
+
+if [ "${dev:-}" = 'true' ]; then
+	project_dir_relpath="projects/dev/$project"
+fi
+
+project_dir="${root_dir}/$project_dir_relpath"
 
 [ "${inside:-}" = 'true' ] \
 	&& root_dir_inside="$root_dir" \
 	|| root_dir_inside="/main"
 [ "${inside:-}" = 'true' ] \
 	&& secrets_dir_cmd="$secrets_dir" \
-	|| secrets_dir_cmd="/main/$secrets_dir_rel"
+	|| secrets_dir_cmd="/main/$secrets_dir_relpath"
 [ "${inside:-}" = 'true' ] \
 	&& hosts_file="$ctl_dir/ansible/hosts" \
 	|| hosts_file="/main/ctl/ansible/hosts"
@@ -129,20 +137,20 @@ if [ "$var_use_subuser" = 'true' ]; then
 		sudo usermod -d "$subuser_home_dir" "$subuser"
 	fi
 
-	if [ ! -d "${root_dir}/projects/$project" ]; then
-		sudo mkdir -p "${root_dir}/projects/$project"
-		sudo chown "$subuser":"$subuser" "${root_dir}/projects/$project"
+	if [ ! -d "$project_dir" ]; then
+		sudo mkdir -p "$project_dir"
+		sudo chown "$subuser":"$subuser" "$project_dir"
 	fi
 
-	if [ ! -d "${root_dir}/secrets/projects/$project" ]; then
-		sudo mkdir -p "${root_dir}/secrets/projects/$project"
-		sudo chown "$subuser":"$subuser" "${root_dir}/secrets/projects/$project"
+	if [ ! -d "$secrets_dir" ]; then
+		sudo mkdir -p "$secrets_dir"
+		sudo chown "$subuser":"$subuser" "$secrets_dir"
 	fi
 
 	echo "[ctl] creating and defining user $subuser - end"
 else
-	mkdir -p "${root_dir}/projects/$project"
-	mkdir -p "${root_dir}/secrets/projects/$project"
+	mkdir -p "$project_dir"
+	mkdir -p "$secrets_dir"
 fi
 
 vault=()
@@ -221,13 +229,13 @@ else
 	if [ "${skip:-}" = 'true' ]; then
 		echo "$ctl_title skipping init project (skip)..."
 	else
-
 		inner_cmd=( \
 			ansible-playbook \
 			${vault[@]+"${vault[@]}"} \
 			${debug[@]+"${debug[@]}"} \
 			-i "$hosts_file" \
 			--extra-vars "env_root_dir=$root_dir_inside" \
+			--extra-vars "env_project_dir_relpath=$project_dir_relpath" \
 			--extra-vars "env_project_key=$project" \
 			--extra-vars "env_dev=${dev:-}" \
 			--extra-vars "env_migration=${migration:-}" \
@@ -283,8 +291,8 @@ else
 					--workdir "/main/ctl" \
 					-v "${ctl_dir}:/main/ctl:ro" \
 					-v "${main_env_dir}:/main/ctl/env-main:ro" \
-					-v "${root_dir}/projects/$project:/main/projects/$project" \
-					-v "${root_dir}/secrets/projects/$project:/main/secrets/projects/$project" \
+					-v "$project_dir:/main/$project_dir_relpath" \
+					-v "$secrets_dir:/main/$secrets_dir_relpath" \
 					-e ANSIBLE_CONFIG=/main/ctl/ansible/ansible.cfg \
 					"$var_container" \
 					${inner_cmd[@]+"${inner_cmd[@]}"} \
@@ -303,7 +311,7 @@ else
 fi
 
 if [ "${ctl:-}" != 'true' ]; then
-	cmd=( bash "${root_dir}/projects/$project/files/ctl/run" ${args[@]+"${args[@]}"} "${@}" )
+	cmd=( bash "$project_dir/files/ctl/run" ${args[@]+"${args[@]}"} "${@}" )
 	error_msg="[error] $ctl_title project $project - run"
 
 	if [ "$var_use_subuser" != 'true' ]; then
