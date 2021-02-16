@@ -250,9 +250,9 @@ path_params:
     path_map_repos:
       env_base: "repos/env-base"
       cloud: "repos/cloud"
-      custom_cloud: "repos/custom-cloud"
+      ext_cloud: "repos/ext-cloud"
       pod: "repos/pod"
-      custom_pod: "repos/custom-pod"
+      ext_pod: "repos/ext-pod"
       app: "repos/app"
 
 # TODO
