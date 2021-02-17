@@ -28,8 +28,8 @@ shift;
 
 case "$command" in
 	"setup"|"s")
-		env_repo_default=${1:-}
-		env_repo_branch_default=${2:-master}
+		ext_repo_default=${1:-}
+		ext_repo_branch_default=${2:-master}
 
 		echo -e "${CYAN}$(date '+%F %T') Setup started at $(date '+%F %T')${NC}"
 
@@ -43,7 +43,7 @@ case "$command" in
 		if [ -z "$git_repo" ]; then
 			rm -rf "$main_env_dir"
 
-			if [ -z "$env_repo_default" ]; then
+			if [ -z "$ext_repo_default" ]; then
 				read -r -e -p "Enter the main (global) git environment repository: " \
 					-i "your-repo.git" git_repo
 
@@ -52,8 +52,8 @@ case "$command" in
 				read -r -e -p "Enter the repository branch: " \
 					-i "master" git_branch
 			else
-				git_repo="$env_repo_default"
-				git_branch="${env_repo_branch_default:-master}"
+				git_repo="$ext_repo_default"
+				git_branch="${ext_repo_branch_default:-master}"
 			fi
 
 			git config --global credential.helper store
@@ -67,7 +67,7 @@ case "$command" in
 	"stop-all")
 		# shellcheck source=./files/env.sample.sh
 		source "${ctl_dir}/env-main/env.sh"
-		
+
 		var_container_type="${container_type:-}"
 		var_root="${root:-}"
 		cmd=( "$var_container_type" )
