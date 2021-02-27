@@ -39,6 +39,8 @@ while getopts ':defimnpPsV-:' OPT; do
 		ctl ) ctl='true';;
 		debug ) debug=( "-vvvvv" ); args+=( "--debug" );;
 		migration ) migration="${OPTARG:-}";;
+		clear ) clear='true';;
+		new-pass ) new_pass='true';;
 		\? ) error "[error] unknown short option: -${OPTARG:-}";;
 		?* ) error "[error] unknown long option: --${OPT:-}";;
 	esac
@@ -82,16 +84,26 @@ if [ "${dev:-}" = 'true' ]; then
     ln -rsfT "${root_dir}" "${root_dir}/link"
 fi
 
-secrets_dir_relpath="secrets/projects/$project"
-secrets_dir="$root_dir/$secrets_dir_relpath"
 
 project_dir_relpath="projects/main/$project"
+secrets_dir_relpath="secrets/projects/main/$project"
 
 if [ "${dev:-}" = 'true' ]; then
 	project_dir_relpath="projects/dev/$project"
+	secrets_dir_relpath="secrets/projects/dev/$project"
 fi
 
 project_dir="${root_dir}/$project_dir_relpath"
+secrets_dir="$root_dir/$secrets_dir_relpath"
+
+if [ "${new_pass:-}" ]; then
+	rm -rf "$secrets_dir"
+fi
+
+if [ "${clear:-}" ]; then
+	rm -rf "$project_dir"
+	exit 0
+fi
 
 [ "${inside:-}" = 'true' ] \
 	&& root_dir_inside="$root_dir" \
