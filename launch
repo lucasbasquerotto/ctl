@@ -19,13 +19,14 @@ args=()
 debug=()
 
 # shellcheck disable=SC2214
-while getopts ':defimnpPsV-:' OPT; do
+while getopts ':cdefimnpPsVw-:' OPT; do
 	if [ "$OPT" = "-" ]; then     # long option: reformulate OPT and OPTARG
 		OPT="${OPTARG%%=*}"       # extract long option name
 		OPTARG="${OPTARG#$OPT}"   # extract long option argument (may be empty)
 		OPTARG="${OPTARG#=}"      # if long option argument, remove assigning `=`
 	fi
 	case "$OPT" in
+		c|clear ) clear='true';;
 		d|dev ) dev='true';;
 		e|enter ) enter='true';;
 		f|force ) args+=( "--force" );;
@@ -36,11 +37,10 @@ while getopts ':defimnpPsV-:' OPT; do
 		P|no-prompt ) no_prompt='true';;
 		s|fast ) fast='true'; args+=( "--fast" );;
 		V|no-vault ) no_vault='true';;
+		w|new-pass ) new_pass='true';;
 		ctl ) ctl='true';;
 		debug ) debug=( "-vvvvv" ); args+=( "--debug" );;
 		migration ) migration="${OPTARG:-}";;
-		clear ) clear='true';;
-		new-pass ) new_pass='true';;
 		\? ) error "[error] unknown short option: -${OPTARG:-}";;
 		?* ) error "[error] unknown long option: --${OPT:-}";;
 	esac
@@ -84,7 +84,6 @@ if [ "${dev:-}" = 'true' ]; then
     ln -rsfT "${root_dir}" "${root_dir}/link"
 fi
 
-
 project_dir_relpath="projects/main/$project"
 secrets_dir_relpath="secrets/projects/main/$project"
 
@@ -102,234 +101,233 @@ fi
 
 if [ "${clear:-}" ]; then
 	rm -rf "$project_dir"
-	exit 0
-fi
-
-[ "${inside:-}" = 'true' ] \
-	&& root_dir_inside="$root_dir" \
-	|| root_dir_inside="/main"
-[ "${inside:-}" = 'true' ] \
-	&& secrets_dir_cmd="$secrets_dir" \
-	|| secrets_dir_cmd="/main/$secrets_dir_relpath"
-[ "${inside:-}" = 'true' ] \
-	&& hosts_file="$ctl_dir/ansible/hosts" \
-	|| hosts_file="/main/ctl/ansible/hosts"
-
-# shellcheck source=./files/env.sample.sh
-source "${ctl_dir}/env-main/env.sh"
-
-var_container="$container"
-var_container_type="${container_type:-}"
-var_allow_container_type="${allow_container_type:-}"
-var_root="${root:-}"
-var_use_subuser="${use_subuser:-}"
-var_subuser_prefix="${subuser_prefix:-}"
-
-subuser="${var_subuser_prefix}${project}"
-
-if [ -n "$var_use_subuser" ] && [ -z "$var_subuser_prefix" ]; then
-	error "[error] no subuser prefix specified"
-fi
-
-if [ "$var_use_subuser" = 'true' ]; then
-	echo "[ctl] creating and defining user $subuser - start..."
-
-	subuser_home_dir="${root_dir}/users/$subuser"
-
-	if ! id -u "$subuser" &>/dev/null; then
-		sudo rm -rf "$subuser_home_dir"
-		sudo useradd "$subuser" --no-create-home --shell /bin/bash \
-			|| error "[error] create subuser"
-		sudo passwd -l "$subuser" || error "[error] disable subuser login"
-	fi
-
-	if [ ! -d "$subuser_home_dir" ]; then
-		sudo mkdir -p "$subuser_home_dir"
-		sudo chown "$subuser":"$subuser" "$subuser_home_dir"
-		sudo usermod -d "$subuser_home_dir" "$subuser"
-	fi
-
-	if [ ! -d "$project_dir" ]; then
-		sudo mkdir -p "$project_dir"
-		sudo chown "$subuser":"$subuser" "$project_dir"
-	fi
-
-	if [ ! -d "$secrets_dir" ]; then
-		sudo mkdir -p "$secrets_dir"
-		sudo chown "$subuser":"$subuser" "$secrets_dir"
-	fi
-
-	echo "[ctl] creating and defining user $subuser - end"
+	echo "project cleared ($project_dir)"
 else
-	mkdir -p "$project_dir"
-	mkdir -p "$secrets_dir"
-fi
+	[ "${inside:-}" = 'true' ] \
+		&& root_dir_inside="$root_dir" \
+		|| root_dir_inside="/main"
+	[ "${inside:-}" = 'true' ] \
+		&& secrets_dir_cmd="$secrets_dir" \
+		|| secrets_dir_cmd="/main/$secrets_dir_relpath"
+	[ "${inside:-}" = 'true' ] \
+		&& hosts_file="$ctl_dir/ansible/hosts" \
+		|| hosts_file="/main/ctl/ansible/hosts"
 
-vault=()
+	# shellcheck source=./files/env.sample.sh
+	source "${ctl_dir}/env-main/env.sh"
 
-if [ "${no_vault:-}" != 'true' ]; then
-	mkdir -p "$secrets_dir"
+	var_container="$container"
+	var_container_type="${container_type:-}"
+	var_allow_container_type="${allow_container_type:-}"
+	var_root="${root:-}"
+	var_use_subuser="${use_subuser:-}"
+	var_subuser_prefix="${subuser_prefix:-}"
 
-	vault_file="$secrets_dir/vault"
+	subuser="${var_subuser_prefix}${project}"
 
-	if [ ! -f "$vault_file" ] && [ "${no_prompt:-}" != 'true' ]; then
-		echo -n "Enter the main vault pass (to decrypt the ssh keys of the environment repositories): "
-		read -r -s vault_pass
-		echo
+	if [ -n "$var_use_subuser" ] && [ -z "$var_subuser_prefix" ]; then
+		error "[error] no subuser prefix specified"
+	fi
 
-		error_msg="[error] it wasn't possible to create the vault file ($vault_file)"
+	if [ "$var_use_subuser" = 'true' ]; then
+		echo "[ctl] creating and defining user $subuser - start..."
 
-		if [ "$var_use_subuser" = 'true' ]; then
+		subuser_home_dir="${root_dir}/users/$subuser"
+
+		if ! id -u "$subuser" &>/dev/null; then
+			sudo rm -rf "$subuser_home_dir"
+			sudo useradd "$subuser" --no-create-home --shell /bin/bash \
+				|| error "[error] create subuser"
+			sudo passwd -l "$subuser" || error "[error] disable subuser login"
+		fi
+
+		if [ ! -d "$subuser_home_dir" ]; then
+			sudo mkdir -p "$subuser_home_dir"
+			sudo chown "$subuser":"$subuser" "$subuser_home_dir"
+			sudo usermod -d "$subuser_home_dir" "$subuser"
+		fi
+
+		if [ ! -d "$project_dir" ]; then
+			sudo mkdir -p "$project_dir"
+			sudo chown "$subuser":"$subuser" "$project_dir"
+		fi
+
+		if [ ! -d "$secrets_dir" ]; then
+			sudo mkdir -p "$secrets_dir"
 			sudo chown "$subuser":"$subuser" "$secrets_dir"
-			sudo su - "$subuser" <<-SHELL || error "$error_msg (as $subuser)"
-				set -eou pipefail
-				touch "$vault_file"
+		fi
+
+		echo "[ctl] creating and defining user $subuser - end"
+	else
+		mkdir -p "$project_dir"
+		mkdir -p "$secrets_dir"
+	fi
+
+	vault=()
+
+	if [ "${no_vault:-}" != 'true' ]; then
+		mkdir -p "$secrets_dir"
+
+		vault_file="$secrets_dir/vault"
+
+		if [ ! -f "$vault_file" ] && [ "${no_prompt:-}" != 'true' ]; then
+			echo -n "Enter the main vault pass (to decrypt the ssh keys of the environment repositories): "
+			read -r -s vault_pass
+			echo
+
+			error_msg="[error] it wasn't possible to create the vault file ($vault_file)"
+
+			if [ "$var_use_subuser" = 'true' ]; then
+				sudo chown "$subuser":"$subuser" "$secrets_dir"
+				sudo su - "$subuser" <<-SHELL || error "$error_msg (as $subuser)"
+					set -eou pipefail
+					touch "$vault_file"
+					chmod 600 "$vault_file"
+					echo "$vault_pass" > "$vault_file"
+				SHELL
+			else
+				touch "$vault_file" || error "$error_msg"
 				chmod 600 "$vault_file"
 				echo "$vault_pass" > "$vault_file"
-			SHELL
-		else
-			touch "$vault_file" || error "$error_msg"
-			chmod 600 "$vault_file"
-			echo "$vault_pass" > "$vault_file"
+			fi
+		fi
+
+		if [ -f "$vault_file" ]; then
+			vault=( '--vault-id' "$secrets_dir_cmd/vault" )
 		fi
 	fi
 
-	if [ -f "$vault_file" ]; then
-		vault=( '--vault-id' "$secrets_dir_cmd/vault" )
+	if [ "$var_container_type" = "" ]; then
+		var_container_type="docker"
 	fi
-fi
 
-if [ "$var_container_type" = "" ]; then
-	var_container_type="docker"
-fi
-
-if [ "$var_allow_container_type" != 'true' ]; then
-	if [ "$var_container_type" != 'docker' ] && [ "$var_container_type" != 'podman' ]; then
-		error "[error] $ctl_title unsupported container type: $var_container_type"
+	if [ "$var_allow_container_type" != 'true' ]; then
+		if [ "$var_container_type" != 'docker' ] && [ "$var_container_type" != 'podman' ]; then
+			error "[error] $ctl_title unsupported container type: $var_container_type"
+		fi
 	fi
-fi
 
-container_cmd=( "$var_container_type" )
+	container_cmd=( "$var_container_type" )
 
-if [ "$var_root" = 'true' ]; then
-    container_cmd=( sudo "$var_container_type" )
-fi
+	if [ "$var_root" = 'true' ]; then
+		container_cmd=( sudo "$var_container_type" )
+	fi
 
-prepare_args=()
-skip=''
+	prepare_args=()
+	skip=''
 
-if [ "${prepare:-}" = 'true' ]; then
-	if [ "${1:-}" = "--skip" ]; then
-		skip='true';
-		shift;
-	else
-		for arg in "$@"; do
+	if [ "${prepare:-}" = 'true' ]; then
+		if [ "${1:-}" = "--skip" ]; then
+			skip='true';
 			shift;
-
-			if [ "$arg" = "--" ]; then
-				break;
-			fi
-
-			prepare_args+=( "$arg" )
-		done
-	fi
-fi
-
-if [ "${fast:-}" = 'true' ]; then
-	echo "$ctl_title skipping init project (fast)..."
-else
-	if [ "${skip:-}" = 'true' ]; then
-		echo "$ctl_title skipping init project (skip)..."
-	else
-		inner_cmd=( \
-			ansible-playbook \
-			${vault[@]+"${vault[@]}"} \
-			${debug[@]+"${debug[@]}"} \
-			-i "$hosts_file" \
-			--extra-vars "env_root_dir=$root_dir_inside" \
-			--extra-vars "env_project_dir_relpath=$project_dir_relpath" \
-			--extra-vars "env_project_key=$project" \
-			--extra-vars "env_dev=${dev:-}" \
-			--extra-vars "env_migration=${migration:-}" \
-			ansible/main.yml \
-			${prepare_args[@]+"${prepare_args[@]}"} \
-		)
-
-		if [ "${enter:-}" = 'true' ]; then
-			mkdir -p "$ctl_dir/tmp"
-			echo "${inner_cmd[@]+"${inner_cmd[*]}"}" > "$ctl_dir/tmp/cmd"
-			inner_cmd=( /bin/bash )
-		fi
-
-		error_msg="[error] [ctl] project run - prepare"
-
-		if [ "${inside:-}" = 'true' ]; then
-			error_msg="$error_msg (inside)"
-
-			if [ "$var_use_subuser" != 'true' ]; then
-				cd "$ctl_dir"
-				export ANSIBLE_CONFIG="$ctl_dir/ansible/ansible.cfg"
-				"${inner_cmd[@]}" || error "$error_msg"
-			else
-				sudo su - "$subuser" <<-SHELL || error "$error_msg (as $subuser)"
-					set -eou pipefail
-					cd "$ctl_dir"
-					export ANSIBLE_CONFIG="$ctl_dir/ansible/ansible.cfg"
-					${inner_cmd[@]}
-				SHELL
-			fi
 		else
-			main_env_dir="${ctl_dir:?}/env-main"
+			for arg in "$@"; do
+				shift;
 
-			if [ -L "$main_env_dir" ]; then
-				main_env_dir="$(readlink -f "$main_env_dir")"
-			fi
+				if [ "$arg" = "--" ]; then
+					break;
+				fi
 
-			name_cmd=()
+				prepare_args+=( "$arg" )
+			done
+		fi
+	fi
 
-			if [ "${multiple:-}" != 'true' ]; then
-				name_cmd=( --name="local-ctl-$project" )
-			fi
-
-			cmd=( \
-				"${container_cmd[@]}" run --rm -it \
-					${name_cmd[@]+"${name_cmd[@]}"} \
-					--workdir "/main/ctl" \
-					-v "${ctl_dir}:/main/ctl:ro" \
-					-v "${main_env_dir}:/main/ctl/env-main:ro" \
-					-v "$project_dir:/main/$project_dir_relpath" \
-					-v "$secrets_dir:/main/$secrets_dir_relpath" \
-					-e ANSIBLE_CONFIG=/main/ctl/ansible/ansible.cfg \
-					"$var_container" \
-					${inner_cmd[@]+"${inner_cmd[@]}"} \
+	if [ "${fast:-}" = 'true' ]; then
+		echo "$ctl_title skipping init project (fast)..."
+	else
+		if [ "${skip:-}" = 'true' ]; then
+			echo "$ctl_title skipping init project (skip)..."
+		else
+			inner_cmd=( \
+				ansible-playbook \
+				${vault[@]+"${vault[@]}"} \
+				${debug[@]+"${debug[@]}"} \
+				-i "$hosts_file" \
+				--extra-vars "env_root_dir=$root_dir_inside" \
+				--extra-vars "env_project_dir_relpath=$project_dir_relpath" \
+				--extra-vars "env_project_key=$project" \
+				--extra-vars "env_dev=${dev:-}" \
+				--extra-vars "env_migration=${migration:-}" \
+				ansible/main.yml \
+				${prepare_args[@]+"${prepare_args[@]}"} \
 			)
 
-			if [ "$var_use_subuser" != 'true' ]; then
-				"${cmd[@]}" || error "$error_msg"
+			if [ "${enter:-}" = 'true' ]; then
+				mkdir -p "$ctl_dir/tmp"
+				echo "${inner_cmd[@]+"${inner_cmd[*]}"}" > "$ctl_dir/tmp/cmd"
+				inner_cmd=( /bin/bash )
+			fi
+
+			error_msg="[error] [ctl] project run - prepare"
+
+			if [ "${inside:-}" = 'true' ]; then
+				error_msg="$error_msg (inside)"
+
+				if [ "$var_use_subuser" != 'true' ]; then
+					cd "$ctl_dir"
+					export ANSIBLE_CONFIG="$ctl_dir/ansible/ansible.cfg"
+					"${inner_cmd[@]}" || error "$error_msg"
+				else
+					sudo su - "$subuser" <<-SHELL || error "$error_msg (as $subuser)"
+						set -eou pipefail
+						cd "$ctl_dir"
+						export ANSIBLE_CONFIG="$ctl_dir/ansible/ansible.cfg"
+						${inner_cmd[@]}
+					SHELL
+				fi
 			else
-				sudo su - "$subuser" <<-SHELL || error "$error_msg (as $subuser)"
-					set -eou pipefail
-					${cmd[@]}
-				SHELL
+				main_env_dir="${ctl_dir:?}/env-main"
+
+				if [ -L "$main_env_dir" ]; then
+					main_env_dir="$(readlink -f "$main_env_dir")"
+				fi
+
+				name_cmd=()
+
+				if [ "${multiple:-}" != 'true' ]; then
+					name_cmd=( --name="local-ctl-$project" )
+				fi
+
+				cmd=( \
+					"${container_cmd[@]}" run --rm -it \
+						${name_cmd[@]+"${name_cmd[@]}"} \
+						--workdir "/main/ctl" \
+						-v "${ctl_dir}:/main/ctl:ro" \
+						-v "${main_env_dir}:/main/ctl/env-main:ro" \
+						-v "$project_dir:/main/$project_dir_relpath" \
+						-v "$secrets_dir:/main/$secrets_dir_relpath" \
+						-e ANSIBLE_CONFIG=/main/ctl/ansible/ansible.cfg \
+						"$var_container" \
+						${inner_cmd[@]+"${inner_cmd[@]}"} \
+				)
+
+				if [ "$var_use_subuser" != 'true' ]; then
+					"${cmd[@]}" || error "$error_msg"
+				else
+					sudo su - "$subuser" <<-SHELL || error "$error_msg (as $subuser)"
+						set -eou pipefail
+						${cmd[@]}
+					SHELL
+				fi
 			fi
 		fi
 	fi
-fi
 
-if [ "${ctl:-}" != 'true' ]; then
-	cmd=( bash "$project_dir/files/ctl/run" ${args[@]+"${args[@]}"} "${@}" )
-	error_msg="[error] $ctl_title project $project - run"
+	if [ "${ctl:-}" != 'true' ]; then
+		cmd=( bash "$project_dir/files/ctl/run" ${args[@]+"${args[@]}"} "${@}" )
+		error_msg="[error] $ctl_title project $project - run"
 
-	if [ "$var_use_subuser" != 'true' ]; then
-		"${cmd[@]}" || error "$error_msg"
-	else
-		sudo su - "$subuser" <<-SHELL || error "$error_msg (as $subuser)"
-			set -eou pipefail
-			${cmd[@]}
-		SHELL
+		if [ "$var_use_subuser" != 'true' ]; then
+			"${cmd[@]}" || error "$error_msg"
+		else
+			sudo su - "$subuser" <<-SHELL || error "$error_msg (as $subuser)"
+				set -eou pipefail
+				${cmd[@]}
+			SHELL
+		fi
 	fi
 fi
-
 end="$(date '+%F %T')"
 echo -e "${CYAN}$end $ctl_title [end] running the project ($project)${NC}"
 
