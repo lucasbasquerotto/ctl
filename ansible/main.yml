@@ -1,24 +1,20 @@
 - name: Play 01 - Prepare the project
   hosts: main
-  gather_facts: no
   tasks:
     ### Main - Start ###
 
-    - set_fact:
-        main_title: "[ctl] main"
-        main_root_dir: "{{ env_root_dir }}"
+    - name: "[project - {{ env_project_key | default('') }}] [ctl] - initial vars"
+      set_fact:
+        project_title: "[project - {{ env_project_key | default('') }}] [ctl]"
         env_main_dir: "{{ env_root_dir }}/ctl/env-main"
       tags: ["no_print"]
 
-    - name: "{{ main_title }} - gathering facts"
-      setup:
-
-    - name: "{{ main_title }} - vars - load the main environment vars"
+    - name: "{{ project_title }} - load the main environment vars"
       include_vars:
         file: "{{ env_main_dir }}/vars.yml"
         name: env
 
-    - name: "{{ main_title }} - vars - prepare"
+    - name: "{{ project_title }} - vars - prepare"
       set_fact:
         project_vars: "{{ env | lrd.ctl.prepare(args=tmp_args) }}"
       vars:
@@ -32,19 +28,20 @@
 
     ### Project - Directories and Files ###
 
-    - name: "{{ project_vars.title }} - define the project base dirs"
+    - name: "{{ project_title }} - define the project directories"
       set_fact:
-        project_base_dir: "{{ main_root_dir }}/{{ env_project_dir_relpath }}"
+        project_base_dir: "{{ tmp_main_root_dir }}/{{ env_project_dir_relpath }}"
         project_secrets_base_dir: "{{ tmp_secrets_base_dir }}"
         project_files_base_dir: "{{ tmp_files_base_dir }}"
         project_secrets_dir: "{{ tmp_secrets_base_dir }}/ctl"
         project_files_dir: "{{ tmp_files_base_dir }}/ctl"
       vars:
-        tmp_secrets_base_dir: "{{ main_root_dir }}/{{ env_project_dir_relpath }}/secrets"
-        tmp_files_base_dir: "{{ main_root_dir }}/{{ env_project_dir_relpath }}/files"
+        tmp_main_root_dir: "{{ env_root_dir }}"
+        tmp_secrets_base_dir: "{{ tmp_main_root_dir }}/{{ env_project_dir_relpath }}/secrets"
+        tmp_files_base_dir: "{{ tmp_main_root_dir }}/{{ env_project_dir_relpath }}/files"
       tags: ["no_print"]
 
-    - name: "{{ project_vars.title }} - create the project directories"
+    - name: "{{ project_title }} - create the project directories"
       file:
         path: "{{ project_item }}"
         state: directory
@@ -58,36 +55,31 @@
       loop_control:
         loop_var: project_item
 
-    - name: "{{ project_vars.title }} - copy the repository ssh file"
+    - name: "{{ project_title }} - create the project files"
       copy:
-        src: "{{ env_main_dir }}/{{ project_vars.repo.ssh_file }}"
-        dest: "{{ project_secrets_dir }}/{{ project_vars.repo_ssh_file }}"
-        mode: 0600
-      when: project_vars.repo_ssh_file != ''
-      tags: ["no_print_skipped"]
-
-    - name: "{{ project_vars.title }} - copy the vault file"
-      copy:
-        src: "{{ env_main_dir }}/{{ project_vars.repo_vault.file | default('') }}"
-        dest: "{{ project_secrets_dir }}/{{ project_vars.repo_vault_file }}"
-        mode: "{{ project_vars.lax | default(false, true) | bool | ternary(0666, 0600) }}"
-      when: project_vars.repo_vault_file != ''
-      tags: ["no_print_skipped"]
-
-    - name: "{{ project_vars.title }} - create the project init config file (vars.yml)"
-      copy:
-        content: "{{ project_vars.init_vars | to_nice_yaml }}"
-        dest: "{{ project_files_dir }}/vars.yml"
-        mode: "{{ project_vars.lax | default(false, true) | bool | ternary(0666, 0600) }}"
-
-    - name: "{{ project_vars.title }} - create the project init config file (vars.sh)"
-      copy:
-        content: "{{ project_vars.init_shell_vars_content }}"
-        dest: "{{ project_files_dir }}/vars.sh"
-        mode: "{{ project_vars.lax | default(false, true) | bool | ternary(0666, 0600) }}"
-
-    - name: "{{ project_vars.title }} - create the project main run file"
-      copy:
-        src: "run"
-        dest: "{{ project_files_dir }}/run"
-        mode: "{{ project_vars.lax | default(false, true) | bool | ternary(0777, 0711) }}"
+        content: "{{ project_item.content | default(omit, true) }}"
+        src: "{{ project_item.src | default(omit, true) }}"
+        dest: "{{ project_item.dest }}"
+        mode: "{{ project_item.mode }}"
+      loop:
+        - src: "{{ env_main_dir }}/{{ project_vars.repo.ssh_file }}"
+          dest: "{{ project_secrets_dir }}/{{ project_vars.repo_ssh_file }}"
+          mode: "0600"
+          when: "{{ project_vars.repo_ssh_file != '' }}"
+        - src: "{{ env_main_dir }}/{{ project_vars.repo_vault.file | default('') }}"
+          dest: "{{ project_secrets_dir }}/{{ project_vars.repo_vault_file }}"
+          mode: "{{ project_vars.lax | default(false, true) | bool | ternary(0666, 0600) }}"
+          when: "{{ project_vars.repo_vault_file != '' }}"
+        - content: "{{ project_vars.init_vars | to_nice_yaml }}"
+          dest: "{{ project_files_dir }}/vars.yml"
+          mode: "{{ project_vars.lax | default(false, true) | bool | ternary(0666, 0600) }}"
+        - content: "{{ project_vars.init_shell_vars_content }}"
+          dest: "{{ project_files_dir }}/vars.sh"
+          mode: "{{ project_vars.lax | default(false, true) | bool | ternary(0666, 0600) }}"
+        - src: "run"
+          dest: "{{ project_files_dir }}/run"
+          mode: "{{ project_vars.lax | default(false, true) | bool | ternary(0777, 0711) }}"
+      when: project_item.when | default(true) | bool
+      loop_control:
+        loop_var: project_item
+        label: "{{ project_item.dest }}"

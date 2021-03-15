@@ -69,8 +69,6 @@ def prepare(env_vars, args):
             + '(at the "projects" section)'
         ]]
       else:
-        result['title'] = '[project - ' + env_project_key + '] [ctl]'
-
         if not project.get('env_file'):
           error_msgs += [[
               'project: ' + str(env_project_key),
