@@ -15,7 +15,9 @@ import inspect
 import os
 import traceback
 
-from ansible_collections.lrd.ctl.plugins.module_utils.lrd_utils import merge_dicts
+from ansible_collections.lrd.ctl.plugins.module_utils.lrd_utils import (
+    merge_dicts, to_bool
+)
 
 
 def prepare(env_vars, args):
@@ -27,7 +29,7 @@ def prepare(env_vars, args):
     env_vars = env_vars or dict()
     args = args or dict()
 
-    env_dev = args.get('env_dev') or False,
+    env_dev = to_bool(args.get('env_dev'), False)
     env_project_key = args.get('env_project_key')
     env_migration = args.get('env_migration')
     env_project_dir_relpath = args.get('env_project_dir_relpath')
@@ -67,7 +69,7 @@ def prepare(env_vars, args):
             + '(at the "projects" section)'
         ]]
       else:
-        title = '[project - ' + env_project_key + '] [ctl]'
+        result['title'] = '[project - ' + env_project_key + '] [ctl]'
 
         if not project.get('env_file'):
           error_msgs += [[
@@ -95,7 +97,7 @@ def prepare(env_vars, args):
               error_msgs += [[
                   'project: ' + str(env_project_key),
                   'shared key (' + str(key) + '): ' + str(mapped_key),
-                  'msg: the shared key is not present at the "' str(key)
+                  'msg: the shared key is not present at the "' + str(key)
                   + '" section in the main environment file'
               ]]
             elif not isinstance(value, dict):
@@ -104,7 +106,8 @@ def prepare(env_vars, args):
                   'shared key (' + str(key) + '): ' + str(mapped_key),
                   'type: ' + str(type(value)),
                   'msg: the shared key is not defined as a dictionary at '
-                  + 'the "' str(key) + '" section in the main environment file'
+                  + 'the "' + str(key) +
+                  '" section in the main environment file'
               ]]
 
           result[key] = value
@@ -159,18 +162,23 @@ def prepare(env_vars, args):
 
         repo_params = result.get('repo') or dict()
 
-        for key in ['src', 'version']
+        for key in ['src', 'version']:
           if not repo_params.get(key):
             error_msgs += [[
                 'project: ' + str(env_project_key),
                 'msg: ' + str(key) + ' not specified in the '
                 + 'project repo params'
+            ]]
 
         repo_vault_params = result.get('repo_vault') or dict()
 
-        project_lax = project.get('lax') or env_dev
-        project_repo_ssh_file = 'ssh.key' if repo_params.get('ssh_file') else ''
-        project_repo_vault_file = 'vault' if repo_vault_params.get('file') else ''
+        project_lax = to_bool(project.get('lax'), env_dev)
+        project_repo_ssh_file = (
+            'ssh.key' if repo_params.get('ssh_file') else ''
+        )
+        project_repo_vault_file = (
+            'vault' if repo_vault_params.get('file') else ''
+        )
 
         result['lax'] = project_lax
         result['repo_ssh_file'] = project_repo_ssh_file
@@ -188,9 +196,9 @@ def prepare(env_vars, args):
                   container=init_params.get('container'),
                   container_type=init_params.get('container_type') or '',
                   allow_container_type=(
-                      init_params.get('allow_container_type') or False
+                      to_bool(init_params.get('allow_container_type'), False)
                   ),
-                  root=init_params.get('root') or False,
+                  root=to_bool(init_params.get('root'), False),
                   run_file=init_params.get('run_file') or '/usr/local/bin/run',
               ),
               repo=dict(
@@ -200,7 +208,7 @@ def prepare(env_vars, args):
                   ssh_file=project_repo_ssh_file,
               ),
               repo_vault=dict(
-                  force=repo_vault_params.get('force') or False,
+                  force=to_bool(repo_vault_params.get('force'), False),
                   file=project_repo_vault_file,
               ),
               env_params=env_params,
@@ -226,7 +234,10 @@ def prepare(env_vars, args):
                   project_dir_relpath=env_project_dir_relpath,
                   container=init_params.get('container'),
                   container_type=init_params.get('container_type'),
-                  allow_container_type=init_params.get('allow_container_type'),
+                  allow_container_type=(
+                      'true' if init_params.get(
+                          'allow_container_type') else 'false'
+                  ),
                   root='true' if init_params.get('root') else 'false',
                   run_file=project_init_vars.get('init').get('run_file'),
                   force_vault=(
