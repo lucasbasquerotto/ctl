@@ -370,6 +370,7 @@ init:
   run_file: /usr/local/bin/run
 key: demo
 lax: true
+no_log: false
 migration: ''
 path_params:
   path_env: repos/env
@@ -397,6 +398,7 @@ repo_vault:
 | <nobr>`key`</nobr> | Unique identifier of the project. |
 | <nobr>`lax`</nobr> | Indicates if files and directories created and copied during the deployment will have less strict permissions (when `true`; recommended when in development). |
 | <nobr>`migration`</nobr> | This will set the `migration` variable to be used to compare with the `migration` variable defined in the [project environment file](#project-environment-file), throwing an error in the preparation step, when the later value is defined and is different than the first `migration` variable. |
+| <nobr>`no_log`</nobr> | When `true`, won't print the ansible plays, tasks and module arguments, as well as outputs. Use only if absolutely necessary. |
 | <nobr>`path_params`</nobr> | Dictionary of repositories and paths in which the repositories should be cloned when in development mode. The exact structure of this parameter should be defined in the next steps.<br><br>_Using the cloud layer defined at http://github.com/lucasbasquerotto/cloud, The expected structure of this parameter is defined [here](http://github.com/lucasbasquerotto/cloud#cloud-input-vars)._ |
 | <nobr>`project_dir_relpath`</nobr> | Path, relative to the [controller root directory](#root-directory), in which the artifacts created by this project are located. **This indicates where the project directory is located.**. |
 | <nobr>`repo.env_file`</nobr> | The location of the [project environment file](#project-environment-file), inside the project environment repository. |

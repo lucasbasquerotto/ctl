@@ -7,12 +7,14 @@
       set_fact:
         project_title: "[project - {{ env_project_key | default('') }}] [ctl]"
         env_main_dir: "{{ env_root_dir }}/ctl/env-main"
+      no_log: "{{ project_vars.no_log | default(omit, true) }}"
       tags: ["no_print"]
 
     - name: "{{ project_title }} - load the main environment vars"
       include_vars:
         file: "{{ env_main_dir }}/vars.yml"
         name: env
+      no_log: "{{ project_vars.no_log | default(omit, true) }}"
 
     - name: "{{ project_title }} - vars - prepare"
       set_fact:
@@ -24,6 +26,7 @@
           env_project_key: "{{ env_project_key }}"
           env_dev: "{{ env_dev }}"
           env_migration: "{{ env_migration }}"
+      no_log: "{{ project_vars.no_log | default(omit, true) }}"
       tags: ["no_print"]
 
     ### Project - Directories and Files ###
@@ -39,6 +42,7 @@
         tmp_main_root_dir: "{{ env_root_dir }}"
         tmp_secrets_base_dir: "{{ tmp_main_root_dir }}/{{ env_project_dir_relpath }}/secrets"
         tmp_files_base_dir: "{{ tmp_main_root_dir }}/{{ env_project_dir_relpath }}/files"
+      no_log: "{{ project_vars.no_log | default(omit, true) }}"
       tags: ["no_print"]
 
     - name: "{{ project_title }} - create the project directories"
@@ -54,6 +58,7 @@
         - "{{ project_files_dir }}"
       loop_control:
         loop_var: project_item
+      no_log: "{{ project_vars.no_log | default(omit, true) }}"
 
     - name: "{{ project_title }} - create the project files"
       copy:
@@ -83,3 +88,4 @@
       loop_control:
         loop_var: project_item
         label: "{{ project_item.dest }}"
+      no_log: "{{ project_vars.no_log | default(omit, true) }}"

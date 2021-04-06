@@ -171,6 +171,7 @@ def prepare(env_vars, args):
         repo_vault_params = result.get('repo_vault') or dict()
 
         project_lax = to_bool(project.get('lax'), env_dev)
+        project_no_log = to_bool(project.get('no_log'))
         project_repo_ssh_file = (
             'ssh.key' if repo_params.get('ssh_file') else ''
         )
@@ -179,6 +180,7 @@ def prepare(env_vars, args):
         )
 
         result['lax'] = project_lax
+        result['no_log'] = project_no_log
         result['repo_ssh_file'] = project_repo_ssh_file
         result['repo_vault_file'] = project_repo_vault_file
 
@@ -189,6 +191,7 @@ def prepare(env_vars, args):
               ctxs=project.get('ctxs') or [],
               dev=env_dev,
               lax=project_lax,
+              no_log=project_no_log,
               project_dir_relpath=env_project_dir_relpath,
               init=dict(
                   container=init_params.get('container'),
