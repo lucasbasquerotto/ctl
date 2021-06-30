@@ -8,11 +8,14 @@
 # pylint: disable=import-error
 # pylint: disable=broad-except
 
+# pyright: reportUnusedImport=true
+# pyright: reportUnusedVariable=true
+# pyright: reportMissingImports=false
+
 from __future__ import absolute_import, division, print_function
 __metaclass__ = type  # pylint: disable=invalid-name
 
 import inspect
-import os
 import traceback
 
 from ansible_collections.lrd.ctl.plugins.module_utils.lrd_utils import (
