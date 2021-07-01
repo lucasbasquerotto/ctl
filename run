@@ -1,6 +1,8 @@
 #!/bin/bash
 set -eou pipefail
 
+trap 'echo "[error] ${BASH_SOURCE[0]}:$LINENO" >&2; exit 3;' ERR
+
 ctl_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 main_env_dir="${ctl_dir:?}/env-main"
 
@@ -13,7 +15,7 @@ RED='\033[0;31m'
 NC='\033[0m' # No Color
 
 function error {
-	msg="$(date '+%F %T') - ${BASH_SOURCE[0]}: line ${BASH_LINENO[0]}: ${*}"
+	msg="$(date '+%F %T') - ${BASH_SOURCE[0]}:${BASH_LINENO[0]}: ${*}"
 	>&2 echo -e "${RED}${msg}${NC}"
 	exit 2
 }
@@ -101,9 +103,11 @@ case "$command" in
 		var_container="$container"
 		var_container_type="${container_type:-}"
 		var_allow_container_type="${allow_container_type:-}"
+		var_container_network="${container_network:-}"
+		var_container_opts="${container_opts:-}"
 		var_root="${root:-}"
 
-		if [ "$var_container_type" = "" ]; then
+		if [ -z "$var_container_type" ]; then
 			var_container_type="docker"
 		fi
 
@@ -119,12 +123,26 @@ case "$command" in
 			cmd=( sudo "$var_container_type" )
 		fi
 
+		cmd_args=()
+
+		if [ -n "$var_container_network" ]; then
+			"${cmd[@]}" network inspect "$var_container_network" >/dev/null 2>&1 || \
+    			"${cmd[@]}" network create --driver bridge "$var_container_network"
+			cmd_args+=( --network "$var_container_network" )
+		fi
+
+		if [ -n "$var_container_opts" ]; then
+			mapfile -td ' ' var_container_args < <(printf '%s' "${var_container_opts:-}")
+			cmd_args+=( ${var_container_args[@]+"${var_container_args[@]}"} )
+		fi
+
 		"${cmd[@]}" run --rm -it \
 			--name="local-ctl-init" \
 			--workdir="/main/tmp" \
 			-v "${ctl_dir}/tmp:/main/tmp" \
 			-e "UID=$(id -u)" \
 			-e "GID=$(id -g)" \
+			${cmd_args[@]+"${cmd_args[@]}"}
 			"$var_container" \
 			|| error "[error] $command"
 		;;

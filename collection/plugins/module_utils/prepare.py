@@ -229,21 +229,25 @@ def prepare(env_vars, args):
               export container={container}
               export container_type={container_type}
               export allow_container_type={allow_container_type}
+              export container_network={container_network}
+              export container_opts={container_opts}
               export root={root}
               export run_file={run_file}
               export force_vault={force_vault}
               """.format(
-                  key=project_init_vars.get('key'),
+                  key=repr(project_init_vars.get('key')),
                   dev='true' if project_init_vars.get('dev') else 'false',
-                  project_dir_relpath=env_project_dir_relpath,
-                  container=init_params.get('container'),
-                  container_type=init_params.get('container_type'),
+                  project_dir_relpath=repr(env_project_dir_relpath),
+                  container=repr(init_params.get('container')),
+                  container_type=repr(init_params.get('container_type')),
                   allow_container_type=(
                       'true' if init_params.get(
                           'allow_container_type') else 'false'
                   ),
+                  container_network=repr(init_params.get('container_network')),
+                  container_opts=repr(init_params.get('container_opts')),
                   root='true' if init_params.get('root') else 'false',
-                  run_file=project_init_vars.get('init').get('run_file'),
+                  run_file=repr(project_init_vars.get('init').get('run_file')),
                   force_vault=(
                       'true' if repo_vault_params.get('force') else 'false'
                   ),
