@@ -235,19 +235,24 @@ def prepare(env_vars, args):
               export run_file={run_file}
               export force_vault={force_vault}
               """.format(
-                  key=repr(project_init_vars.get('key')),
+                  key=repr(project_init_vars.get('key') or ''),
                   dev='true' if project_init_vars.get('dev') else 'false',
-                  project_dir_relpath=repr(env_project_dir_relpath),
-                  container=repr(init_params.get('container')),
-                  container_type=repr(init_params.get('container_type')),
+                  project_dir_relpath=repr(env_project_dir_relpath or ''),
+                  container=repr(init_params.get('container') or ''),
+                  container_type=repr(init_params.get('container_type') or ''),
                   allow_container_type=(
-                      'true' if init_params.get(
-                          'allow_container_type') else 'false'
+                      'true'
+                      if init_params.get('allow_container_type')
+                      else 'false'
                   ),
-                  container_network=repr(init_params.get('container_network')),
-                  container_opts=repr(init_params.get('container_opts')),
+                  container_network=repr(
+                      init_params.get('container_network') or ''
+                  ),
+                  container_opts=repr(init_params.get('container_opts') or ''),
                   root='true' if init_params.get('root') else 'false',
-                  run_file=repr(project_init_vars.get('init').get('run_file')),
+                  run_file=repr(
+                      project_init_vars.get('init').get('run_file') or ''
+                  ),
                   force_vault=(
                       'true' if repo_vault_params.get('force') else 'false'
                   ),

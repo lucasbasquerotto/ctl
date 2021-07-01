@@ -142,7 +142,7 @@ case "$command" in
 			-v "${ctl_dir}/tmp:/main/tmp" \
 			-e "UID=$(id -u)" \
 			-e "GID=$(id -g)" \
-			${cmd_args[@]+"${cmd_args[@]}"}
+			${cmd_args[@]+"${cmd_args[@]}"} \
 			"$var_container" \
 			|| error "[error] $command"
 		;;
