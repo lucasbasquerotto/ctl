@@ -1,0 +1,22 @@
+root: "elasticsearch_schema"
+schemas:
+  elasticsearch_schema:
+    non_empty: true
+    type: "dict"
+    description: "elasticsearch schema"
+    props:
+      use_secure_elasticsearch:
+        type: "bool"
+        description: >-
+          specify if the elasticsearch security should be enabled
+          (requires tls and authentication)
+      elasticsearch_user:
+        type: "str"
+        description: "fluentd user for elasticsearch"
+      elasticsearch_password:
+        type: "str"
+        description: "fluentd password for elasticsearch"
+      elasticsearch_hosts:
+        type: "list"
+        elem_type: "str"
+        description: "elasticsearch host list"

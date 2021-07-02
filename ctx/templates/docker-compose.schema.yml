@@ -1,0 +1,76 @@
+root: "docker_compose_schema"
+schemas:
+  docker_compose_schema:
+    non_empty: true
+    type: "dict"
+    description: "elasticsearch schema"
+    props:
+      local:
+        required: true
+        type: "bool"
+        description: "pod in local host"
+      data_dir:
+        non_empty: true
+        type: "str"
+        description: "pod data directory"
+      use_fluentd:
+        required: true
+        type: "bool"
+        description: "specify if the containers logging driver is fluentd"
+      use_internal_fluentd:
+        required: true
+        type: "bool"
+        description: "specify if the fluentd service is defined in the pod"
+      use_internal_ssl:
+        required: true
+        type: "bool"
+        description: "specify if there are tls certificate an key to be used internally"
+      use_secure_elasticsearch:
+        required: true
+        type: "bool"
+        description: >-
+          specify if the elasticsearch security should be enabled
+          (requires tls and authentication)
+      fluentd_port:
+        required: true
+        type: "int"
+          description: "fluentd external (host) port; defaults to 24224"
+      fluentd_output_plugin:
+        required: true
+        type: "str"
+        choices: ["file", "elasticsearch"]
+        description: "fluentd output plugin; defaults to 'file'"
+      images:
+        non_empty: true
+        schema: "images"
+        description: "container images"
+      memory:
+        required: true
+        schema: "memory"
+        description: "container memory limits"
+  images:
+    type: "dict"
+    description: "elasticsearch schema"
+    props:
+      toolbox_image:
+        non_empty: true
+        type: "str"
+        description: "toolbox image repository"
+      toolbox_version:
+        non_empty: true
+        type: "str"
+        description: "toolbox image tag"
+      fluentd_image:
+        non_empty: true
+        type: "str"
+        description: "fluentd image repository"
+      fluentd_version:
+        non_empty: true
+        type: "str"
+        description: "fluentd image tag"
+  memory:
+    type: "dict"
+    description: "elasticsearch schema"
+    props:
+      schema: "memory"
+      description: "container memory limits"

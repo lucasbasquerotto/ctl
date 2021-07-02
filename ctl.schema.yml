@@ -1,0 +1,90 @@
+root: "pod_schema"
+schemas:
+  pod_schema:
+    type: "dict"
+    description: "controller pod schema"
+    props:
+      params:
+        description: "controller pod params"
+        schema: "params"
+      credentials:
+        description: "controller pod credentials"
+        schema: "credentials"
+      contents:
+        description: "controller pod contents"
+        type: "dict"
+      input:
+        description: "controller pod input"
+        required: true
+        schema: "input"
+  input:
+    type: "dict"
+    lax: true
+    description: "controller pod input schema"
+    props:
+      data_dir:
+        non_empty: true
+        type: "str"
+        description: "pod data directory"
+      dependencies:
+        type: "map"
+        elem_schema: "dependency"
+        description: "pod external (node) dependencies"
+  dependency:
+    type: "dict"
+    lax: true
+    description: "pod external dependency"
+    props:
+      host_list:
+        required: true
+        type: "list"
+        elem_type: "str"
+        description: "dependency host list"
+  params:
+    type: "dict"
+    description: "controller pod params schema"
+    props:
+      fluentd_output_plugin:
+        type: "str"
+        choices: ["file", "elasticsearch"]
+        description: "fluentd output plugin; defaults to 'file'"
+      fluentd_port:
+        type: "int"
+        description: "fluentd external (host) port; defaults to 24224"
+      use_secure_elasticsearch:
+        type: "bool"
+        description: >-
+          specify if the elasticsearch security should be enabled
+          (requires tls and authentication)
+      internal_ssl:
+        schema: "internal_ssl"
+        description: "internal ssl (for secure elasticsearch)"
+  internal_ssl:
+    type: "dict"
+    description: "internal tls files"
+    props:
+      fullchain:
+        type: "str"
+        description: "tls fullchain location (in the environment directory)"
+      cert:
+        type: "str"
+        description: "tls certificate location (in the environment directory)"
+      ca:
+        type: "str"
+        description: "tls certificate authority (ca) location (in the environment directory)"
+      privkey:
+        type: "str"
+        description: "tls private key location (in the environment directory)"
+  credentials:
+    type: "dict"
+    description: "controller pod credentials schema"
+    props:
+      elasticsearch:
+        schema: "elasticsearch_credentials"
+        description: "elasticsearch credentials"
+  elasticsearch_credentials:
+    description: "elasticsearch credentials schema"
+    props:
+      fluentd_password:
+        type: "str"
+        description: "fluentd password for elasticsearch"
