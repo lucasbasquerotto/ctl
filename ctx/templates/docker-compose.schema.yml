@@ -3,7 +3,7 @@ schemas:
   docker_compose_schema:
     non_empty: true
     type: "dict"
-    description: "elasticsearch schema"
+    description: "docker-compose schema"
     props:
       local:
         required: true
@@ -61,16 +61,18 @@ schemas:
         type: "str"
         description: "toolbox image tag"
       fluentd_image:
-        non_empty: true
         type: "str"
         description: "fluentd image repository"
       fluentd_version:
-        non_empty: true
         type: "str"
         description: "fluentd image tag"
   memory:
     type: "dict"
     description: "elasticsearch schema"
     props:
-      schema: "memory"
-      description: "container memory limits"
+      toolbox:
+        type: "str"
+        description: "toolbox service memory limit"
+      fluentd:
+        type: "str"
+        description: "fluentd service memory limit"

@@ -3,13 +3,6 @@ set -eou pipefail
 
 trap 'echo "[error] ${BASH_SOURCE[0]}:$LINENO" >&2; exit 3;' ERR
 
-ctl_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-main_env_dir="${ctl_dir:?}/env-main"
-
-if [ -L "$main_env_dir" ]; then
-	main_env_dir="$(readlink -f "$main_env_dir")"
-fi
-
 CYAN='\033[0;36m'
 RED='\033[0;31m'
 NC='\033[0m' # No Color
@@ -19,6 +12,13 @@ function error {
 	>&2 echo -e "${RED}${msg}${NC}"
 	exit 2
 }
+
+ctl_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+main_env_dir="${ctl_dir:?}/env-main"
+
+if [ -L "$main_env_dir" ]; then
+	main_env_dir="$(readlink -f "$main_env_dir")"
+fi
 
 command="${1:-}"
 
@@ -148,6 +148,9 @@ case "$command" in
 		;;
 	"launch"|"l")
 		"$ctl_dir/launch" "${@}"
+		;;
+	"upgrade"|"u")
+		"$ctl_dir/ctx/scripts/main.sh" "${@}"
 		;;
 	*)
 		echo -e "${RED}[error] invalid command: $command${NC}"
