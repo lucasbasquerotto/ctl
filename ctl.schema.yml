@@ -22,6 +22,10 @@ schemas:
     lax: true
     description: "controller pod input schema"
     props:
+      local:
+        non_empty: true
+        type: "bool"
+        description: "pod in local host"
       data_dir:
         non_empty: true
         type: "str"
@@ -44,6 +48,14 @@ schemas:
     type: "dict"
     description: "controller pod params schema"
     props:
+      use_fluentd:
+        type: "bool"
+        description: "specify if the containers logging driver is fluentd"
+      internal:
+        type: "bool"
+        description: >-
+          specify that the pod is internal (there are no services with external ports);
+          if use_fluentd=true, the fluentd service must be running outside the pod
       fluentd_output_plugin:
         type: "str"
         choices: ["file", "elasticsearch"]
@@ -59,6 +71,13 @@ schemas:
       internal_ssl:
         schema: "internal_ssl"
         description: "internal ssl (for secure elasticsearch)"
+      images:
+        non_empty: true
+        schema: "images"
+        description: "container images"
+      memory:
+        schema: "memory"
+        description: "container memory limits"
   internal_ssl:
     type: "dict"
     description: "internal tls files"
@@ -75,6 +94,34 @@ schemas:
       privkey:
         type: "str"
         description: "tls private key location (in the environment directory)"
+  images:
+    type: "dict"
+    description: "elasticsearch schema"
+    props:
+      toolbox_image:
+        non_empty: true
+        type: "str"
+        description: "toolbox image repository"
+      toolbox_version:
+        non_empty: true
+        type: "str"
+        description: "toolbox image tag"
+      fluentd_image:
+        type: "str"
+        description: "fluentd image repository"
+      fluentd_version:
+        type: "str"
+        description: "fluentd image tag"
+  memory:
+    type: "dict"
+    description: "elasticsearch schema"
+    props:
+      toolbox:
+        type: "str"
+        description: "toolbox service memory limit"
+      fluentd:
+        type: "str"
+        description: "fluentd service memory limit"
   credentials:
     type: "dict"
     description: "controller pod credentials schema"
@@ -83,6 +130,7 @@ schemas:
         schema: "elasticsearch_credentials"
         description: "elasticsearch credentials"
   elasticsearch_credentials:
+    type: "dict"
     description: "elasticsearch credentials schema"
     props:
       fluentd_password:

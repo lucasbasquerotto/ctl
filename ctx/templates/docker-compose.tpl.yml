@@ -17,7 +17,7 @@ x-logging:
   mainlog: &mainlog
     driver: "fluentd"
     options:
-      tag: "{% raw %}docker.{{.Name}}{% endraw %}"
+      tag: "{% raw %}container.{{.Name}}{% endraw %}"
       fluentd-address: "localhost:{{ params.fluentd_port }}"
   jsonlog: &jsonlog
     driver: "json-file"
@@ -61,9 +61,6 @@ services:
     {#############################################################}
 
     volumes:
-    - "{{ params.data_dir }}:/var/main/data"
-    - "{{ params.data_dir }}/tmp:/tmp/main"
-    - "{{ params.data_dir }}/log:/var/log/main"
 
     {#############################################################}
     {% if params.use_internal_ssl | bool %}
@@ -73,6 +70,8 @@ services:
     {% endif %}
     {#############################################################}
 
+    - "{{ params.data_dir }}:/var/main/data"
+    - "{{ params.data_dir }}/log:/var/log/main"
     logging: *mainlog
     command: "tail -f /dev/null"
 
@@ -115,9 +114,8 @@ services:
     {% endif %}
     {#############################################################}
 
+    - "./env/fluentd/fluent.conf:/fluentd/etc/fluent.conf"
     - "{{ params.data_dir }}/log/fluentd:/var/log/main/fluentd"
-    - "{{ params.data_dir }}/tmp/fluentd:/tmp/main/fluentd"
-    - "{{ params.data_dir }}/tmp/tmp/fluentd:/tmp/main/tmp/fluentd"
     logging: *jsonlog
 
     {#############################################################}

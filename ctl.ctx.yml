@@ -7,6 +7,12 @@
 {% set var_elasticsearch_hosts = input.dependencies.elasticsearch.host_list | default([]) %}
 {% set var_use_secure_elasticsearch = params.use_secure_elasticsearch | default(false) | bool %}
 
+{% set var_use_internal_fluentd =
+  (params.use_fluentd | default(false) | bool)
+  and
+  (not (params.internal | default(false) | bool))
+%}
+
 {% set var_use_internal_ssl = var_use_secure_elasticsearch %}
 {% set var_internal_ssl_fullchain = params.internal_ssl.fullchain | default('') %}
 {% set var_internal_ssl_cert = params.internal_ssl.cert | default('') %}
@@ -43,11 +49,13 @@ env_files:
 
 templates:
 
+- when: false
+
 - dest: "docker-compose.yml"
   src: "ctx/templates/docker-compose.tpl.yml"
   schema: "ctx/templates/docker-compose.schema.yml"
   params:
-    local: "{{ var_local }}"
+    local: "{{ input.local }}"
     data_dir: "{{ var_data_dir }}"
     use_fluentd: "{{ params.use_fluentd | default(false) }}"
     use_internal_fluentd: "{{ var_use_internal_fluentd }}"
@@ -55,8 +63,8 @@ templates:
     use_secure_elasticsearch: "{{ var_use_secure_elasticsearch }}"
     fluentd_port: "{{ var_fluentd_port }}"
     fluentd_output_plugin: "{{ var_fluentd_output_plugin }}"
-    images: {{ params.images | to_json }}
-    memory: {{ params.memory | to_json }}
+    images: {{ params.images | default({}) | to_json }}
+    memory: {{ params.memory | default({}) | to_json }}
 
 ##############################################################
 {% if var_use_internal_fluentd and (var_fluentd_output_plugin == 'elasticsearch') %}
@@ -69,6 +77,19 @@ templates:
     elasticsearch_user: "fluentd"
     elasticsearch_password: "{{ credentials.elasticsearch.fluentd_password | default('') }}"
     elasticsearch_hosts: {{ var_elasticsearch_hosts | to_json }}
+
+{% endif %}
+##############################################################
+
+files:
+
+- when: false
+
+##############################################################
+{% if var_use_internal_fluentd and (var_fluentd_output_plugin != 'elasticsearch') %}
+
+- dest: "env/fluentd/fluent.conf"
+  src: "ctx/containers/fluentd/file.conf"
 
 {% endif %}
 ##############################################################

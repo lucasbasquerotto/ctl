@@ -95,7 +95,7 @@ else
 	cmd_args=()
 
 	if [ "${multiple:-}" != 'true' ]; then
-		cmd_args+=( --name="local-ctl-$project" )
+		cmd_args+=( --name="ctl-$project" )
 	fi
 
 	if [ -n "$var_container_network" ]; then

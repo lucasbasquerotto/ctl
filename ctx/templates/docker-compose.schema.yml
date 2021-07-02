@@ -34,7 +34,7 @@ schemas:
       fluentd_port:
         required: true
         type: "int"
-          description: "fluentd external (host) port; defaults to 24224"
+        description: "fluentd external (not in pod) port; defaults to 24224"
       fluentd_output_plugin:
         required: true
         type: "str"

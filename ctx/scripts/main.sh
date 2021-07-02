@@ -30,11 +30,11 @@ case "$command" in
 
         if [ -f "$file" ]; then
             chmod 755 "$dir"
-            chown 100:100
+            chown 100:100 "$file"
         fi
 
         cd "$ctl_dir"
-        docker-compose up
+        docker-compose up -d
 		;;
 	*)
 		error "invalid command: $command"
