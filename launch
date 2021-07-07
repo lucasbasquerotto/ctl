@@ -330,15 +330,15 @@ else
 	fi
 
 	if [ "${ctl:-}" != 'true' ]; then
-		cmd=( bash "$project_dir/files/ctl/run" ${args[@]+"${args[@]}"} "${@}" )
+		cmd=( "$project_dir/files/ctl/run" ${args[@]+"${args[@]}"} "${@}" )
 		error_msg="[error] $ctl_title project $project - run"
 
 		if [ "$var_use_subuser" != 'true' ]; then
-			"${cmd[@]}" || error "$error_msg"
+			bash "${cmd[@]}" || error "$error_msg"
 		else
 			sudo su - "$subuser" <<-SHELL || error "$error_msg (as $subuser)"
 				set -eou pipefail
-				${cmd[@]}
+				bash ${cmd[@]}
 			SHELL
 		fi
 	fi

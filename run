@@ -3,7 +3,6 @@ set -eou pipefail
 
 trap 'echo "[error] ${BASH_SOURCE[0]}:$LINENO" >&2; exit 3;' ERR
 
-CYAN='\033[0;36m'
 RED='\033[0;31m'
 NC='\033[0m' # No Color
 
@@ -33,7 +32,7 @@ case "$command" in
 		ext_repo_default=${1:-}
 		ext_repo_branch_default=${2:-master}
 
-		echo -e "${CYAN}$(date '+%F %T') Setup started at $(date '+%F %T')${NC}"
+		echo -e "$(date '+%F %T') Setup started at $(date '+%F %T')"
 
 		git_repo=''
 		git_branch=''
@@ -148,6 +147,16 @@ case "$command" in
 		;;
 	"launch"|"l")
 		"$ctl_dir/launch" "${@}"
+		;;
+	"unique:launch")
+		args=( "$ctl_dir/launch" "${@}" )
+		echo "$command: run-one ${args[*]}" >&2
+		run-one "${args[@]}"
+		;;
+	"unique:launch:force")
+		args=( "$ctl_dir/launch" "${@}" )
+		echo "$command: run-this-one ${args[*]}" >&2
+		run-this-one "${args[@]}"
 		;;
 	"upgrade"|"u")
 		"$ctl_dir/ctx/scripts/main.sh" "$command" "${@}"
