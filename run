@@ -148,15 +148,32 @@ case "$command" in
 	"launch"|"l")
 		"$ctl_dir/launch" "${@}"
 		;;
-	"unique:launch")
-		args=( "$ctl_dir/launch" "${@}" )
-		echo "$command: run-one ${args[*]}" >&2
-		run-one "${args[@]}"
-		;;
-	"unique:launch:force")
-		args=( "$ctl_dir/launch" "${@}" )
-		echo "$command: run-this-one ${args[*]}" >&2
-		run-this-one "${args[@]}"
+	"unique:launch"|"unique:launch:force")
+		original_args=( "${@}" )
+
+		while [[ "${#}" -gt 0 ]]; do
+			if [[ "${1:-}" != -* ]]; then
+				break
+			fi
+
+			shift
+		done
+
+		project="${1:-}"
+
+		function cleanup {
+			if [ -n "$project" ]; then
+				echo "removing container on error, if needed..." >&2
+				sudo docker rm --force "ctl-$project"
+			fi
+		}
+
+		[ "$command" = "unique:launch:force" ] && trap 'cleanup; exit 4;' ERR
+
+		cmd=( run-one )
+		[ "$command" = "unique:launch:force" ] && cmd=( run-this-one )
+		cmd+=( "$ctl_dir/launch" "${original_args[@]}" )
+		"${cmd[@]}"
 		;;
 	"upgrade"|"u")
 		"$ctl_dir/ctx/scripts/main.sh" "$command" "${@}"
