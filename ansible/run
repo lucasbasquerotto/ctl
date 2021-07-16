@@ -94,6 +94,10 @@ if [ "${inside:-}" = 'true' ]; then
 else
 	cmd_args=()
 
+	if [ -t 1 ]; then
+		cmd_args+=( -it )
+	fi
+
 	if [ "${multiple:-}" != 'true' ]; then
 		cmd_args+=( --name="ctl-$project" )
 	fi
@@ -109,7 +113,7 @@ else
 		cmd_args+=( ${var_container_args[@]+"${var_container_args[@]}"} )
 	fi
 
-	"${cmd[@]}" run --rm -it \
+	"${cmd[@]}" run --rm \
 		${cmd_args[@]+"${cmd_args[@]}"} \
 		--workdir='/main' \
 		-e "FORCE_VAULT=$var_force_vault" \

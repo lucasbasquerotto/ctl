@@ -289,6 +289,10 @@ else
 
 				cmd_args=()
 
+				if [ -t 1 ]; then
+					cmd_args+=( -it )
+				fi
+
 				if [ "${multiple:-}" != 'true' ]; then
 					cmd_args+=( --name="ctl-$project" )
 				fi
@@ -305,7 +309,7 @@ else
 				fi
 
 				cmd=( \
-					"${container_cmd[@]}" run --rm -it \
+					"${container_cmd[@]}" run --rm \
 						${cmd_args[@]+"${cmd_args[@]}"} \
 						--workdir "/main/ctl" \
 						-v "${ctl_dir}:/main/ctl:ro" \
