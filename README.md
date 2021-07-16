@@ -492,7 +492,7 @@ The generated files will be in the `<root>/ctl/tmp` folder.
 # inside the container
 # replace <var> with the name of the variable that will be created
 # E.g.: if the variable is called db_pass, use it instead of <var>
-ansible-vault encrypt_string --vault-id workspace@prompt --stdin-name '<var>'
+ansible-vault encrypt_string --vault-id workspace@prompt --stdin-name 'var'
 # [enter the vault password twice]
 # [enter the value to be encripted and press Ctrl+d twice]
 exit
