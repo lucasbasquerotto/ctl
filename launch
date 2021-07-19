@@ -299,7 +299,7 @@ else
 
 				if [ -n "$var_container_network" ]; then
 					"${container_cmd[@]}" network inspect "$var_container_network" >/dev/null 2>&1 || \
-						"${container_cmd[@]}" network create --driver bridge "$var_container_network"
+						run-one "${container_cmd[@]}" network create --driver bridge "$var_container_network"
 					cmd_args+=( --network "$var_container_network" )
 				fi
 
