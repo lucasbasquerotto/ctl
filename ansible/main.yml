@@ -46,7 +46,7 @@
       file:
         path: "{{ project_item }}"
         state: directory
-        mode: "{{ project_vars.lax | default(false, true) | bool | ternary(0777, 0755) }}"
+        mode: "{{ project_vars.lax | default(false, true) | bool | ternary('777', '755') }}"
       loop:
         - "{{ project_base_dir }}"
         - "{{ project_secrets_base_dir }}"
@@ -70,17 +70,17 @@
           when: "{{ project_vars.repo_ssh_file != '' }}"
         - src: "{{ env_main_dir }}/{{ project_vars.repo_vault.file | default('') }}"
           dest: "{{ project_secrets_dir }}/{{ project_vars.repo_vault_file }}"
-          mode: "{{ project_vars.lax | default(false, true) | bool | ternary(0666, 0600) }}"
+          mode: "{{ project_vars.lax | default(false, true) | bool | ternary('666', '600') }}"
           when: "{{ project_vars.repo_vault_file != '' }}"
         - content: "{{ project_vars.init_vars | to_nice_yaml }}"
           dest: "{{ project_files_dir }}/vars.yml"
-          mode: "{{ project_vars.lax | default(false, true) | bool | ternary(0666, 0600) }}"
+          mode: "{{ project_vars.lax | default(false, true) | bool | ternary('666', '600') }}"
         - content: "{{ project_vars.init_shell_vars_content }}"
           dest: "{{ project_files_dir }}/vars.sh"
-          mode: "{{ project_vars.lax | default(false, true) | bool | ternary(0666, 0600) }}"
+          mode: "{{ project_vars.lax | default(false, true) | bool | ternary('666', '600') }}"
         - src: "run"
           dest: "{{ project_files_dir }}/run"
-          mode: "{{ project_vars.lax | default(false, true) | bool | ternary(0777, 0711) }}"
+          mode: "{{ project_vars.lax | default(false, true) | bool | ternary('777', '711') }}"
       when: project_item.when | default(true) | bool
       loop_control:
         loop_var: project_item
