@@ -64,7 +64,7 @@
         dest: "{{ project_item.dest }}"
         mode: "{{ project_item.mode }}"
       loop:
-        - src: "{{ env_main_dir }}/{{ project_vars.repo.ssh_file }}"
+        - src: "{{ env_main_dir }}/{{ project_vars.repo.ssh_file | default('') }}"
           dest: "{{ project_secrets_dir }}/{{ project_vars.repo_ssh_file }}"
           mode: "0600"
           when: "{{ project_vars.repo_ssh_file != '' }}"
