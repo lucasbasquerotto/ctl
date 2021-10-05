@@ -490,15 +490,47 @@ The generated files will be in the `<root>/ctl/tmp` folder.
 ```bash
 ./ctl/run enter
 # inside the container
-# replace <var> with the name of the variable that will be created
-# E.g.: if the variable is called db_pass, use it instead of <var>
-ansible-vault encrypt_string --vault-id workspace@prompt --stdin-name 'var'
+ansible-vault encrypt_string
 # [enter the vault password twice]
-# [enter the value to be encripted and press Ctrl+d twice]
+# [enter the value to be encrypted and press Ctrl+d twice]
 exit
 ```
 
 Then, copy the value displayed in the terminal and paste in the file you want to use it.
+
+When encrypting several strings, it might be useful to create a file with the vault password, and then using this file as the password source for more efficiency:
+
+```bash
+./ctl/run enter
+# [enter the vault password as the value of <password>]
+echo '<password>' > /main/tmp/pass.txt
+
+# encrypt string...
+ansible-vault encrypt_string --vault-password-file /main/tmp/pass.txt
+# [enter the value to be encrypted and press Ctrl+d twice]
+
+# new encryption...
+ansible-vault encrypt_string --vault-password-file /main/tmp/pass.txt
+# [enter the value to be encrypted and press Ctrl+d twice]
+
+# and again...
+ansible-vault encrypt_string --vault-password-file /main/tmp/pass.txt
+# [enter the value to be encrypted and press Ctrl+d twice]
+
+exit
+```
+
+### 2.1. Decrypt strings
+
+
+```bash
+./ctl/run enter
+# inside the container
+ansible-vault decrypt
+# [enter the vault password]
+# [enter the value to be decrypted (without spaces) and press Ctrl+d twice]
+exit
+```
 
 ## 3. Encrypt files
 
@@ -507,10 +539,50 @@ Then, copy the value displayed in the terminal and paste in the file you want to
 ./ctl/run enter
 # inside the container
 # replace <file> with the file name that you moved to the tmp folder
-ansible-vault encrypt --vault-id workspace@prompt `<file>`
+ansible-vault encrypt `<file>`
 # [enter the vault password twice]
-# [enter the value to be encripted and press Ctrl+d twice]
 exit
 ```
 
-The generated files will replace the previous files.
+The generated files will replace the previous files. It may be necessary to change the file owner or permission to access it from the host.
+
+When encrypting several files, it might be useful to create a file with the vault password, and then using this file as the password source for more efficiency:
+
+```bash
+./ctl/run enter
+# [enter the vault password as the value of <password>]
+echo '<password>' > /main/tmp/pass.txt
+
+# encrypt file...
+ansible-vault encrypt --vault-password-file /main/tmp/pass.txt /main/tmp/my-file-1.txt
+
+# new encryption...
+ansible-vault encrypt --vault-password-file /main/tmp/pass.txt /main/tmp/my-file-2.txt
+
+# and again...
+ansible-vault encrypt --vault-password-file /main/tmp/pass.txt /main/tmp/my-file-3.txt
+
+exit
+```
+
+### 3.1. Decrypt files
+
+```bash
+# move the file(s) to the <root>/ctl/tmp folder (<root>/ctl/tmp/<file>)
+./ctl/run enter
+# inside the container
+# replace <file> with the file name that you moved to the tmp folder
+ansible-vault decrypt `<file>`
+# [enter the vault password]
+exit
+```
+
+### 4. Decrypt the project environment file
+
+To decrypt the entire project environemnt file (after applied to the project environment base file, if defined), when using the default [cloud layer](#http://github.com/lucasbasquerotto/cloud), you can run the `launch` command with the `--next` option passing `printenv` as an argument, like the following example:
+
+```bash
+./ctl/launch --next <project_name> --printenv
+```
+
+This will generate the unencrypted environment content and place it in a file at `<project_dir>/secrets/cloud/env.yml`.
