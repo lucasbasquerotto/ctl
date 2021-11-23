@@ -498,7 +498,7 @@ exit
 
 Then, copy the value displayed in the terminal and paste in the file you want to use it.
 
-When encrypting several strings, it might be useful to create a file with the vault password, and then using this file as the password source for more efficiency:
+When encrypting several strings with the same vault password, it might be useful to create a file with the vault password, and then using this file as the password source for more efficiency:
 
 ```bash
 ./ctl/run enter
@@ -528,7 +528,7 @@ exit
 # inside the container
 ansible-vault decrypt
 # [enter the vault password]
-# [enter the value to be decrypted (without spaces) and press Ctrl+d twice]
+# [enter the value to be decrypted (without spaces and without !vault) and press Ctrl+d twice]
 exit
 ```
 
